@@ -23,7 +23,7 @@ export function LoginForm() {
       setError(r.error.message ?? 'Invalid credentials');
       return;
     }
-    router.push('/');
+    router.push('/dashboard');
     router.refresh();
   }
 

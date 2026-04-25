@@ -46,13 +46,13 @@ export async function GET(req: NextRequest) {
   const error = req.nextUrl.searchParams.get('error');
 
   if (error || !code) {
-    return NextResponse.redirect(new URL(`/?ig_error=${error ?? 'no_code'}`, req.url));
+    return NextResponse.redirect(new URL(`/dashboard?ig_error=${error ?? 'no_code'}`, req.url));
   }
 
   // CSRF check: the state must match the cookie set in /start.
   const stateCookie = req.cookies.get('mushu_ig_oauth_state')?.value;
   if (!stateParam || !stateCookie || stateParam !== stateCookie) {
-    return NextResponse.redirect(new URL('/?ig_error=state_mismatch', req.url));
+    return NextResponse.redirect(new URL('/dashboard?ig_error=state_mismatch', req.url));
   }
 
   const session = await auth.api.getSession({ headers: req.headers });
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
   }
   const orgId = session.session.activeOrganizationId;
   if (!orgId) {
-    return NextResponse.redirect(new URL('/?ig_error=no_org', req.url));
+    return NextResponse.redirect(new URL('/dashboard?ig_error=no_org', req.url));
   }
 
   const appId = process.env.META_APP_ID;
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
   if (!shortRes.ok) {
     const body = await shortRes.text();
     console.error('[oauth] short token exchange failed', body);
-    return NextResponse.redirect(new URL('/?ig_error=token_exchange_failed', req.url));
+    return NextResponse.redirect(new URL('/dashboard?ig_error=token_exchange_failed', req.url));
   }
   const short = (await shortRes.json()) as ShortTokenResponse;
 
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
   if (!longRes.ok) {
     const body = await longRes.text();
     console.error('[oauth] long token exchange failed', body);
-    return NextResponse.redirect(new URL('/?ig_error=long_token_failed', req.url));
+    return NextResponse.redirect(new URL('/dashboard?ig_error=long_token_failed', req.url));
   }
   const long = (await longRes.json()) as LongTokenResponse;
 
@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
   meUrl.searchParams.set('access_token', long.access_token);
   const meRes = await fetch(meUrl);
   if (!meRes.ok) {
-    return NextResponse.redirect(new URL('/?ig_error=me_failed', req.url));
+    return NextResponse.redirect(new URL('/dashboard?ig_error=me_failed', req.url));
   }
   const me = (await meRes.json()) as IgUser;
 
@@ -150,5 +150,5 @@ export async function GET(req: NextRequest) {
   }
 
   // TODO: subscribe to webhooks via Graph API once webhook URL is public.
-  return NextResponse.redirect(new URL('/?ig_connected=1', req.url));
+  return NextResponse.redirect(new URL('/dashboard?ig_connected=1', req.url));
 }

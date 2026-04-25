@@ -10,6 +10,7 @@ import {
   Workflow,
   Zap,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -23,7 +24,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/inbox', label: 'Inbox', icon: Inbox, badge: 'v0.3', disabled: true },
   { href: '/flows', label: 'Flows', icon: Workflow },
   { href: '/contacts', label: 'Contacts', icon: Users },
@@ -39,8 +40,14 @@ export function AppSidebar() {
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] py-4">
       <div className="px-5 pb-6">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl">🐲</span>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image
+            src="/mushu-logo.png"
+            alt="Mushu"
+            width={28}
+            height={28}
+            className="rounded-md"
+          />
           <span className="text-lg font-semibold tracking-tight text-[var(--color-mushu-ink)]">
             Mushu
           </span>

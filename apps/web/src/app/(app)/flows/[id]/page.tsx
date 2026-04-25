@@ -13,7 +13,7 @@ export default async function FlowEditorPage({ params }: { params: Promise<{ id:
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/login');
   const orgId = session.session.activeOrganizationId;
-  if (!orgId) redirect('/');
+  if (!orgId) redirect('/dashboard');
 
   const [row] = await db
     .select({

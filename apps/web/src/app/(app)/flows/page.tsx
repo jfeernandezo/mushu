@@ -14,7 +14,7 @@ export default async function FlowsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/login');
   const orgId = session.session.activeOrganizationId;
-  if (!orgId) redirect('/');
+  if (!orgId) redirect('/dashboard');
 
   const flows = await db
     .select({

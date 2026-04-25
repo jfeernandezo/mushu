@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { SignupForm } from '@/components/auth/signup-form';
 
@@ -6,7 +7,14 @@ export default function SignupPage() {
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <div className="text-center">
-          <div className="mb-2 text-4xl">🐲</div>
+          <Image
+            src="/mushu-logo.png"
+            alt="Mushu"
+            width={56}
+            height={56}
+            priority
+            className="mx-auto mb-2 rounded-xl"
+          />
           <h1 className="text-xl font-semibold">Create your Mushu account</h1>
           <p className="text-sm text-[var(--color-mushu-mute)]">
             Free forever — start automating Instagram in minutes.

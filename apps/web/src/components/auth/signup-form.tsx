@@ -24,7 +24,7 @@ export function SignupForm() {
       setError(r.error.message ?? 'Could not sign you up');
       return;
     }
-    router.push('/');
+    router.push('/dashboard');
     router.refresh();
   }
 

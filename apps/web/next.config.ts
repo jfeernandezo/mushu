@@ -11,9 +11,9 @@ const config: NextConfig = {
   // Drizzle/shared workspace packages get traced.
   output: 'standalone',
   outputFileTracingRoot: join(__dirname, '../../'),
-  experimental: {
-    typedRoutes: true,
-  },
+  // typedRoutes disabled for MVP — re-enable in v0.2 once we cast all
+  // dynamic Link hrefs (AppSidebar items, /flows/[id], etc) with `as Route`.
+  typedRoutes: false,
   // Allow workspace packages to be transpiled.
   transpilePackages: ['@mushu/db', '@mushu/shared'],
   serverExternalPackages: ['postgres'],

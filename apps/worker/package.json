@@ -1,0 +1,27 @@
+{
+  "name": "@mushu/worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc --noEmit",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mushu/db": "workspace:*",
+    "@mushu/shared": "workspace:*",
+    "bullmq": "5.34.0",
+    "drizzle-orm": "0.45.2",
+    "ioredis": "5.4.2",
+    "postgres": "3.4.5",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.0",
+    "tsx": "4.19.2",
+    "typescript": "5.9.2"
+  }
+}

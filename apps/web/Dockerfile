@@ -1,59 +1,36 @@
-# syntax=docker/dockerfile:1.7
-# Build context MUST be the monorepo root (so we can resolve workspace packages).
-# Easypanel: set Build Path = "/" and Dockerfile Path = "apps/web/Dockerfile".
+# Single-stage build for portability across Easypanel / vanilla Docker.
+# We accept a slightly larger image in exchange for not relying on BuildKit
+# cache mounts or pnpm-symlink-aware multi-stage COPYs.
+# Build context MUST be the monorepo root.
 
-# ── Stage 1: install ───────────────────────────────────────────────────────────
-FROM node:24-alpine AS deps
-RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
-WORKDIR /repo
+FROM node:24-alpine
 
-# Copy only manifests for max cache efficiency.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
-COPY apps/web/package.json apps/web/
-COPY apps/worker/package.json apps/worker/
-COPY packages/db/package.json packages/db/
-COPY packages/shared/package.json packages/shared/
+RUN apk add --no-cache libc6-compat \
+ && corepack enable \
+ && corepack prepare pnpm@10.32.1 --activate
 
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+WORKDIR /app
 
-# ── Stage 2: build ─────────────────────────────────────────────────────────────
-FROM node:24-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
-WORKDIR /repo
-
-COPY --from=deps /repo/node_modules ./node_modules
-COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /repo/apps/worker/node_modules ./apps/worker/node_modules
-COPY --from=deps /repo/packages/db/node_modules ./packages/db/node_modules
-COPY --from=deps /repo/packages/shared/node_modules ./packages/shared/node_modules
-
+# Copy the whole monorepo at once. .dockerignore strips node_modules, .next, etc.
 COPY . .
 
+# Install all workspaces (pnpm hoists shared deps).
+RUN pnpm install --frozen-lockfile
+
+# Build only the web app.
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @mushu/web build
 
-# ── Stage 3: runner ────────────────────────────────────────────────────────────
-FROM node:24-alpine AS runner
-WORKDIR /app
+# Standalone output sits at apps/web/.next/standalone/apps/web/ because
+# outputFileTracingRoot points to the monorepo root. Move static + public
+# into the standalone tree so the bundled server.js can serve them.
+RUN cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/ \
+ && cp -r apps/web/public apps/web/.next/standalone/apps/web/
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV HOSTNAME=0.0.0.0
-ENV PORT=3000
-
-RUN addgroup --system --gid 1001 nodejs \
- && adduser --system --uid 1001 nextjs
-
-# Next standalone bundles a minimal node_modules; copy from the monorepo
-# tracing root so workspace packages come along.
-COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder --chown=nextjs:nodejs /repo/apps/web/public ./apps/web/public
-
-USER nextjs
+ENV NODE_ENV=production \
+    HOSTNAME=0.0.0.0 \
+    PORT=3000
 
 EXPOSE 3000
 
-# Standalone entry: apps/web/server.js (Next emits this)
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "apps/web/.next/standalone/apps/web/server.js"]

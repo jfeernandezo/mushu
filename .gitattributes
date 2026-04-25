@@ -1,0 +1,17 @@
+# Force LF line endings for files that Linux tools expect LF.
+# Without this, Windows checkouts get CRLF and break pnpm-lock parsing,
+# Dockerfile RUN commands, and shell scripts.
+* text=auto eol=lf
+*.{js,jsx,ts,tsx,json,yaml,yml,md,mjs,cjs} text eol=lf
+*.{sh,bash} text eol=lf
+Dockerfile text eol=lf
+*.lock text eol=lf
+pnpm-lock.yaml text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

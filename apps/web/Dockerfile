@@ -18,7 +18,17 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 
 # Build only the web app.
-ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* vars are inlined into the client bundle at build time, so
+# they MUST be declared as ARGs and exported as ENV before `next build` runs.
+# BETTER_AUTH_{URL,SECRET} are read during prerender too; declaring them
+# avoids a noisy warning and a baked-in default secret in static output.
+ARG NEXT_PUBLIC_APP_URL
+ARG BETTER_AUTH_URL
+ARG BETTER_AUTH_SECRET
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
+    BETTER_AUTH_URL=${BETTER_AUTH_URL} \
+    BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET} \
+    NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter @mushu/web build
 
 # Standalone output sits at apps/web/.next/standalone/apps/web/ because

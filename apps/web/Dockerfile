@@ -23,9 +23,10 @@ RUN pnpm --filter @mushu/web build
 
 # Standalone output sits at apps/web/.next/standalone/apps/web/ because
 # outputFileTracingRoot points to the monorepo root. Move static + public
-# into the standalone tree so the bundled server.js can serve them.
+# into the standalone tree so the bundled server.js can serve them. The
+# public/ dir may not exist yet (we have no static assets in MVP) — guard.
 RUN cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/ \
- && cp -r apps/web/public apps/web/.next/standalone/apps/web/
+ && if [ -d apps/web/public ]; then cp -r apps/web/public apps/web/.next/standalone/apps/web/; fi
 
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \

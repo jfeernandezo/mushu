@@ -20,25 +20,25 @@ export default async function HomePage() {
           className="mx-auto mb-4 rounded-2xl"
         />
         <h1 className="mb-4 text-5xl font-bold tracking-tight">Mushu</h1>
-        <p className="mb-8 text-lg text-zinc-600">
+        <p className="mb-8 text-lg text-[var(--color-mushu-mute)]">
           Your loyal little dragon for Instagram automation. Open-source
           ManyChat alternative — self-hosted, free forever.
         </p>
         <div className="flex justify-center gap-3">
           <a
             href="/login"
-            className="rounded-lg bg-[var(--color-mushu-red)] px-6 py-3 font-medium text-white hover:opacity-90"
+            className="rounded-lg bg-[var(--color-mushu-scarlet)] px-6 py-3 font-medium text-white hover:bg-[var(--color-mushu-scarlet-soft)]"
           >
             Sign in
           </a>
           <a
             href="https://github.com/jfeernandezo/mushu"
-            className="rounded-lg border border-zinc-300 px-6 py-3 font-medium hover:bg-zinc-100"
+            className="rounded-lg border border-[var(--color-mushu-border)] px-6 py-3 font-medium text-[var(--color-mushu-ink)] hover:bg-[var(--color-mushu-surface)]"
           >
             GitHub
           </a>
         </div>
-        <p className="mt-12 text-xs text-zinc-400">
+        <p className="mt-12 text-xs text-[var(--color-mushu-faint)]">
           Pre-alpha. Built by{' '}
           <a className="underline" href="https://rayastudio.com.br">
             Raya Studio

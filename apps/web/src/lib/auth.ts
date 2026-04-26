@@ -12,6 +12,11 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  user: {
+    // Enable self-service delete (Phase B). Requires the user's password.
+    // No verification email — we don't have email infra wired up yet.
+    deleteUser: { enabled: true },
+  },
   plugins: [organization()],
 });
 

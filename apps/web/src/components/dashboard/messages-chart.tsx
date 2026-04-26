@@ -9,6 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useTheme } from '@/components/theme-provider';
+import { THEME_COLORS } from '@/lib/theme-colors';
 
 export interface ChartPoint {
   day: string;
@@ -21,39 +23,43 @@ interface MessagesChartProps {
 }
 
 export function MessagesChart({ data }: MessagesChartProps) {
+  const { resolved } = useTheme();
+  const palette = THEME_COLORS[resolved];
+
   return (
     <div className="h-[280px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 16, right: 12, bottom: 4, left: -16 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#26262A" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={palette.border} vertical={false} />
           <XAxis
             dataKey="day"
-            stroke="#5A5A5E"
+            stroke={palette.faint}
             fontSize={11}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
-            stroke="#5A5A5E"
+            stroke={palette.faint}
             fontSize={11}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
           />
           <Tooltip
-            cursor={{ stroke: '#26262A', strokeWidth: 1 }}
+            cursor={{ stroke: palette.border, strokeWidth: 1 }}
             contentStyle={{
-              backgroundColor: '#141416',
-              border: '1px solid #26262A',
+              backgroundColor: palette.surface,
+              border: `1px solid ${palette.border}`,
               borderRadius: 8,
               fontSize: 12,
+              color: palette.ink,
             }}
-            labelStyle={{ color: '#8B8B8E' }}
+            labelStyle={{ color: palette.mute }}
           />
           <Line
             type="monotone"
             dataKey="current"
-            stroke="#C73E1D"
+            stroke={palette.scarlet}
             strokeWidth={2}
             dot={false}
             name="This week"
@@ -61,7 +67,7 @@ export function MessagesChart({ data }: MessagesChartProps) {
           <Line
             type="monotone"
             dataKey="previous"
-            stroke="#FFC107"
+            stroke={palette.amber}
             strokeWidth={2}
             strokeDasharray="4 4"
             dot={false}

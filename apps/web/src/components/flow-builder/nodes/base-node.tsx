@@ -20,7 +20,7 @@ const CATEGORY_BORDER: Record<BaseNodeProps['category'], string> = {
   trigger: 'border-[var(--color-mushu-amber)]/40',
   action: 'border-[var(--color-mushu-scarlet)]/40',
   logic: 'border-purple-500/40',
-  control: 'border-zinc-500/40',
+  control: 'border-[var(--color-mushu-faint)]/40',
 };
 
 export function BaseNode({

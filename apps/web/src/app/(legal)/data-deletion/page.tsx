@@ -36,7 +36,7 @@ export default function DataDeletionPage() {
           Acesse <strong className={strong}>{APP.url}</strong> e faça login.
         </li>
         <li>
-          Vá em <strong className={strong}>Settings</strong> (ou Configurações da organização).
+          Vá em <strong className={strong}>Settings &rarr; Workspace</strong>.
         </li>
         <li>
           Localize a conta Instagram conectada e clique em{' '}

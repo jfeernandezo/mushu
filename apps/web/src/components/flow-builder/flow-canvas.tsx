@@ -17,6 +17,8 @@ import {
 import '@xyflow/react/dist/style.css';
 import { type DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 import type { FlowGraph, FlowNodeType } from '@mushu/shared/flow';
+import { useTheme } from '@/components/theme-provider';
+import { THEME_COLORS } from '@/lib/theme-colors';
 import {
   ConditionNode,
   DelayNode,
@@ -58,6 +60,8 @@ function FlowCanvas({ initialGraph, onChange, onSelect, selectedId }: FlowCanvas
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(graphToEdges(initialGraph));
   const [hasInitialized, setHasInitialized] = useState(false);
   const reactFlow = useReactFlow();
+  const { resolved } = useTheme();
+  const palette = THEME_COLORS[resolved];
 
   // Push canvas changes upward (debounced).
   useEffect(() => {
@@ -126,9 +130,9 @@ function FlowCanvas({ initialGraph, onChange, onSelect, selectedId }: FlowCanvas
         nodeTypes={nodeTypes}
         fitView
         proOptions={{ hideAttribution: true }}
-        colorMode="dark"
+        colorMode={resolved}
       >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#26262A" />
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} color={palette.border} />
         <Controls className="!bg-[var(--color-mushu-surface)] !text-[var(--color-mushu-ink)]" />
       </ReactFlow>
     </div>

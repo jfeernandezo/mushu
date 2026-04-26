@@ -4,7 +4,7 @@ Este guia leva você do **VPS recém-provisionado** ao **Mushu rodando em produ�
 
 - Auditoria LGPD/segurança (RLS, headers, rate limit, audit log, data export)
 - Permissões granulares + 4 roles (Owner / Admin / Editor / Viewer)
-- Planos Stripe (Free / Pro R$97 / Agency R$197) — opcional
+- Planos Stripe (Free / Pro R$197 / Agency R$597) — opcional. Ver [PRICING_TIERS.md](PRICING_TIERS.md) para detalhes.
 - Convites por email + verificação de email + reset de senha (Hostinger SMTP)
 - Triggers do flow builder: `comment_keyword`, `dm_keyword`, `first_dm`, story_*
 - Bloco `set_tag` totalmente operacional
@@ -333,9 +333,9 @@ App Review é seção dedicada — veja `docs/META_APP_REVIEW.md` (criado em Spr
 
 1. <https://dashboard.stripe.com/products> → **Adicionar produto**:
    - Nome: `Mushu Pro`
-   - Preço: **R$ 97,00 mensal recorrente**, BRL
+   - Preço: **R$ 197,00 mensal recorrente**, BRL
    - Copie o **Price ID** (formato `price_xxxxx`) → `STRIPE_PRICE_ID_PRO`
-2. Repita para `Mushu Agency` a R$ 197,00 → `STRIPE_PRICE_ID_AGENCY`
+2. Repita para `Mushu Agency` a R$ 597,00 → `STRIPE_PRICE_ID_AGENCY`
 
 ### 7.2 Webhook endpoint
 

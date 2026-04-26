@@ -36,6 +36,13 @@
       "when": 1778112000000,
       "tag": "0004_plans_and_subscriptions",
       "breakpoints": false
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1778198400000,
+      "tag": "0005_update_plan_prices",
+      "breakpoints": false
     }
   ]
 }

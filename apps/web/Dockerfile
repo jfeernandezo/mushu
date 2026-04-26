@@ -2,6 +2,24 @@
 # We accept a slightly larger image in exchange for not relying on BuildKit
 # cache mounts or pnpm-symlink-aware multi-stage COPYs.
 # Build context MUST be the monorepo root.
+#
+# ── Build-time vs runtime variables ─────────────────────────────────────────
+# Only THREE variables need to be available at build time. Everything else
+# (DATABASE_URL, STRIPE_*, SMTP_*, META/INSTAGRAM_*, TOKEN_ENCRYPTION_KEY,
+# REDIS_URL, LEGAL_*, etc.) is read at runtime and MUST NOT appear here.
+#
+# Build-time (declared as ARG below):
+#   - NEXT_PUBLIC_APP_URL  — inlined into the client bundle by Next.js
+#   - BETTER_AUTH_URL      — read during prerender (avoids baked default)
+#   - BETTER_AUTH_SECRET   — read during prerender (avoids baked default)
+#
+# ── Easypanel limitation (relevant for ops) ────────────────────────────────
+# Easypanel passes EVERY env var as `--build-arg` to docker build, regardless
+# of which ARGs this Dockerfile declares. Vars not declared here are silently
+# ignored by the build itself BUT appear in plaintext in the build log of the
+# Easypanel panel. Treat the build log as sensitive: rotate all credentials
+# before switching to Stripe live mode. See docs/SECURITY.md for the full
+# pre-live checklist.
 
 FROM node:24-alpine
 

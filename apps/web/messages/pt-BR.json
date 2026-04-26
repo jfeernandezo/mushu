@@ -1,1 +1,78 @@
-{}
+{
+  "landing": {
+    "tagline": "Seu pequeno dragão leal para automação do Instagram. Alternativa open-source ao ManyChat — self-hosted, grátis para sempre.",
+    "signIn": "Entrar",
+    "github": "GitHub",
+    "preAlpha": "Pré-alfa. Feito por"
+  },
+  "auth": {
+    "login": {
+      "title": "Bem-vindo de volta ao Mushu",
+      "subtitle": "Entre para gerenciar suas automações do Instagram.",
+      "noAccount": "Novo por aqui?",
+      "createAccount": "Criar conta",
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "invalidCredentials": "Credenciais inválidas",
+      "welcomeBack": "Bem-vindo de volta"
+    },
+    "signup": {
+      "title": "Crie sua conta no Mushu",
+      "subtitle": "Grátis para sempre — comece a automatizar em minutos.",
+      "haveAccount": "Já tem uma conta?",
+      "signIn": "Entrar",
+      "submit": "Criar conta",
+      "submitting": "Criando…",
+      "couldNotSignUp": "Não foi possível cadastrar",
+      "welcomeNew": "Conta criada — bem-vindo"
+    },
+    "fields": {
+      "emailPlaceholder": "voce@exemplo.com",
+      "passwordPlaceholder": "Senha",
+      "passwordSignupPlaceholder": "Senha (mínimo 8 caracteres)",
+      "namePlaceholder": "Seu nome"
+    }
+  },
+  "legal": {
+    "privacy": "Privacidade",
+    "terms": "Termos",
+    "dataDeletion": "Exclusão de dados",
+    "dataDeletionShort": "Exclusão",
+    "effective": "Vigência a partir de {date}.",
+    "ptOnlyBanner": "Esta página está disponível apenas em português brasileiro porque os textos refletem os requisitos da LGPD aplicáveis ao operador deste serviço."
+  },
+  "nav": {
+    "workspace": "Workspace",
+    "dashboard": "Dashboard",
+    "inbox": "Inbox",
+    "flows": "Fluxos",
+    "contacts": "Contatos",
+    "triggers": "Gatilhos",
+    "analytics": "Análises",
+    "settings": "Configurações"
+  },
+  "topnav": {
+    "search": "Buscar… (⌘/)",
+    "toggleTheme": "Alternar tema",
+    "notifications": "Notificações"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "markAllRead": "Marcar todas como lidas",
+    "allCaughtUp": "Tudo em dia.",
+    "viewAll": "Ver todas as notificações",
+    "relative": {
+      "justNow": "agora",
+      "minutes": "{m}min atrás",
+      "hours": "{h}h atrás",
+      "days": "{d}d atrás"
+    }
+  },
+  "activitiesPanel": {
+    "activities": "Atividades",
+    "activitiesEmpty": "O feed de atividades aparece assim que o worker começar a processar fluxos.",
+    "recentContacts": "Contatos recentes",
+    "recentContactsEmpty": "Sem contatos ainda — eles aparecem aqui conforme pessoas interagem com seu IG.",
+    "unnamed": "Sem nome"
+  }
+}

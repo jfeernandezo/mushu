@@ -1,9 +1,11 @@
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SignupForm } from '@/components/auth/signup-form';
 import { LegalLinks } from '@/components/legal-links';
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const t = await getTranslations('auth.signup');
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="flex w-full max-w-sm flex-col gap-6">
@@ -16,16 +18,14 @@ export default function SignupPage() {
             priority
             className="mx-auto mb-2 rounded-xl"
           />
-          <h1 className="text-xl font-semibold">Create your Mushu account</h1>
-          <p className="text-sm text-[var(--color-mushu-mute)]">
-            Free forever — start automating Instagram in minutes.
-          </p>
+          <h1 className="text-xl font-semibold">{t('title')}</h1>
+          <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
         </div>
         <SignupForm />
         <p className="text-center text-xs text-[var(--color-mushu-faint)]">
-          Already have one?{' '}
+          {t('haveAccount')}{' '}
           <Link href="/login" className="text-[var(--color-mushu-amber)] hover:underline">
-            Sign in
+            {t('signIn')}
           </Link>
         </p>
         <LegalLinks className="mt-2" />

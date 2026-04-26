@@ -1,12 +1,16 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authClient } from '@/lib/auth-client';
 
 export function SignupForm() {
+  const t = useTranslations('auth.signup');
+  const tFields = useTranslations('auth.fields');
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -21,9 +25,12 @@ export function SignupForm() {
     const r = await authClient.signUp.email({ name, email, password });
     setLoading(false);
     if (r.error) {
-      setError(r.error.message ?? 'Could not sign you up');
+      const msg = r.error.message ?? t('couldNotSignUp');
+      setError(msg);
+      toast.error(msg);
       return;
     }
+    toast.success(t('welcomeNew'));
     router.push('/dashboard');
     router.refresh();
   }
@@ -34,7 +41,7 @@ export function SignupForm() {
         type="text"
         autoComplete="name"
         required
-        placeholder="Your name"
+        placeholder={tFields('namePlaceholder')}
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
@@ -42,7 +49,7 @@ export function SignupForm() {
         type="email"
         autoComplete="email"
         required
-        placeholder="you@example.com"
+        placeholder={tFields('emailPlaceholder')}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
@@ -51,13 +58,13 @@ export function SignupForm() {
         autoComplete="new-password"
         required
         minLength={8}
-        placeholder="Password (8+ characters)"
+        placeholder={tFields('passwordSignupPlaceholder')}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
       {error ? <p className="text-xs text-[var(--color-mushu-danger)]">{error}</p> : null}
       <Button type="submit" disabled={loading}>
-        {loading ? 'Creating…' : 'Create account'}
+        {loading ? t('submitting') : t('submit')}
       </Button>
     </form>
   );

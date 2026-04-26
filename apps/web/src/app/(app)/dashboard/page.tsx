@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     return (
       <AppShell
         breadcrumb={[{ label: 'Dashboard' }]}
-        user={{ name: session.user.name, email: session.user.email }}
+
       >
         <NoOrgState />
       </AppShell>
@@ -38,7 +38,7 @@ export default async function DashboardPage() {
   return (
     <AppShell
       breadcrumb={[{ label: 'Dashboard' }]}
-      user={{ name: session.user.name, email: session.user.email }}
+
     >
       <div className="flex flex-col gap-6">
         <div>

@@ -12,7 +12,7 @@ export default async function AnalyticsPage() {
   return (
     <AppShell
       breadcrumb={[{ label: 'Analytics' }]}
-      user={{ name: session.user.name, email: session.user.email }}
+
       showActivitiesPanel={false}
     >
       <div className="flex flex-col gap-6">

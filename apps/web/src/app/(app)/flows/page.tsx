@@ -32,7 +32,7 @@ export default async function FlowsPage() {
   return (
     <AppShell
       breadcrumb={[{ label: 'Flows' }]}
-      user={{ name: session.user.name, email: session.user.email }}
+
       showActivitiesPanel={false}
     >
       <div className="flex flex-col gap-6">

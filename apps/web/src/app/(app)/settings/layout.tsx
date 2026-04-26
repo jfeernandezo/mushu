@@ -12,7 +12,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
   return (
     <AppShell
       breadcrumb={[{ label: 'Settings', href: '/settings' }]}
-      user={{ name: session.user.name, email: session.user.email }}
+
       showActivitiesPanel={false}
     >
       <div className="flex gap-8">

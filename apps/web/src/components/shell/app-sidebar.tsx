@@ -10,32 +10,37 @@ import {
   Workflow,
   Zap,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
+type NavKey = 'dashboard' | 'inbox' | 'flows' | 'contacts' | 'triggers' | 'analytics' | 'settings';
+
 interface NavItem {
   href: string;
-  label: string;
+  key: NavKey;
   icon: LucideIcon;
   badge?: string;
   disabled?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/inbox', label: 'Inbox', icon: Inbox, badge: 'v0.3', disabled: true },
-  { href: '/flows', label: 'Flows', icon: Workflow },
-  { href: '/contacts', label: 'Contacts', icon: Users },
-  { href: '/triggers', label: 'Triggers', icon: Zap },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard },
+  { href: '/inbox', key: 'inbox', icon: Inbox, badge: 'v0.3', disabled: true },
+  { href: '/flows', key: 'flows', icon: Workflow },
+  { href: '/contacts', key: 'contacts', icon: Users },
+  { href: '/triggers', key: 'triggers', icon: Zap },
+  { href: '/analytics', key: 'analytics', icon: BarChart3 },
 ];
 
-const FOOTER_ITEMS: NavItem[] = [{ href: '/settings', label: 'Settings', icon: Settings }];
+const FOOTER_ITEMS: NavItem[] = [{ href: '/settings', key: 'settings', icon: Settings }];
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const tNav = useTranslations('nav');
+  const tLegal = useTranslations('legal');
 
   return (
     <aside className="flex h-screen w-60 flex-col border-r border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] py-4">
@@ -56,11 +61,16 @@ export function AppSidebar() {
 
       <div className="px-3">
         <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-[var(--color-mushu-faint)]">
-          Workspace
+          {tNav('workspace')}
         </p>
         <nav className="flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => (
-            <SidebarLink key={item.href} item={item} active={pathname === item.href} />
+            <SidebarLink
+              key={item.href}
+              item={item}
+              label={tNav(item.key)}
+              active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+            />
           ))}
         </nav>
       </div>
@@ -68,18 +78,23 @@ export function AppSidebar() {
       <div className="mt-auto px-3">
         <nav className="flex flex-col gap-0.5">
           {FOOTER_ITEMS.map((item) => (
-            <SidebarLink key={item.href} item={item} active={pathname === item.href} />
+            <SidebarLink
+              key={item.href}
+              item={item}
+              label={tNav(item.key)}
+              active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+            />
           ))}
         </nav>
         <div className="mt-3 flex flex-wrap gap-x-2 gap-y-1 px-2 text-[10px] text-[var(--color-mushu-faint)]">
           <Link href="/privacy" className="hover:text-[var(--color-mushu-mute)]">
-            Privacidade
+            {tLegal('privacy')}
           </Link>
           <Link href="/terms" className="hover:text-[var(--color-mushu-mute)]">
-            Termos
+            {tLegal('terms')}
           </Link>
           <Link href="/data-deletion" className="hover:text-[var(--color-mushu-mute)]">
-            Exclusão
+            {tLegal('dataDeletionShort')}
           </Link>
         </div>
       </div>
@@ -87,12 +102,20 @@ export function AppSidebar() {
   );
 }
 
-function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
+function SidebarLink({
+  item,
+  label,
+  active,
+}: {
+  item: NavItem;
+  label: string;
+  active: boolean;
+}) {
   const Icon = item.icon;
   const content = (
     <>
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="flex-1">{item.label}</span>
+      <span className="flex-1">{label}</span>
       {item.badge ? (
         <span className="rounded bg-[var(--color-mushu-surface-hover)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-mushu-faint)]">
           {item.badge}

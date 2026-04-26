@@ -1,1 +1,78 @@
-{}
+{
+  "landing": {
+    "tagline": "Your loyal little dragon for Instagram automation. Open-source ManyChat alternative — self-hosted, free forever.",
+    "signIn": "Sign in",
+    "github": "GitHub",
+    "preAlpha": "Pre-alpha. Built by"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back to Mushu",
+      "subtitle": "Sign in to manage your Instagram automations.",
+      "noAccount": "New here?",
+      "createAccount": "Create an account",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "invalidCredentials": "Invalid credentials",
+      "welcomeBack": "Welcome back"
+    },
+    "signup": {
+      "title": "Create your Mushu account",
+      "subtitle": "Free forever — start automating Instagram in minutes.",
+      "haveAccount": "Already have one?",
+      "signIn": "Sign in",
+      "submit": "Create account",
+      "submitting": "Creating…",
+      "couldNotSignUp": "Could not sign you up",
+      "welcomeNew": "Account created — welcome"
+    },
+    "fields": {
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholder": "Password",
+      "passwordSignupPlaceholder": "Password (8+ characters)",
+      "namePlaceholder": "Your name"
+    }
+  },
+  "legal": {
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "dataDeletion": "Data deletion",
+    "dataDeletionShort": "Deletion",
+    "effective": "Effective from {date}.",
+    "ptOnlyBanner": "This page is only available in Brazilian Portuguese because the text reflects LGPD requirements applicable to the service operator."
+  },
+  "nav": {
+    "workspace": "Workspace",
+    "dashboard": "Dashboard",
+    "inbox": "Inbox",
+    "flows": "Flows",
+    "contacts": "Contacts",
+    "triggers": "Triggers",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "topnav": {
+    "search": "Search… (⌘/)",
+    "toggleTheme": "Toggle theme",
+    "notifications": "Notifications"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "allCaughtUp": "You're all caught up.",
+    "viewAll": "View all notifications",
+    "relative": {
+      "justNow": "just now",
+      "minutes": "{m}m ago",
+      "hours": "{h}h ago",
+      "days": "{d}d ago"
+    }
+  },
+  "activitiesPanel": {
+    "activities": "Activities",
+    "activitiesEmpty": "Activity feed lights up once your worker starts processing flows.",
+    "recentContacts": "Recent contacts",
+    "recentContactsEmpty": "No contacts yet — they'll appear here as people interact with your IG.",
+    "unnamed": "Unnamed"
+  }
+}

@@ -1,4 +1,4 @@
-import { db, instagramAccount } from '@mushu/db';
+import { db, instagramAccount, notification } from '@mushu/db';
 import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
@@ -148,6 +148,17 @@ export async function GET(req: NextRequest) {
       expiresAt,
     });
   }
+
+  // Drop a notification so the user sees confirmation in the bell + panel.
+  await db.insert(notification).values({
+    id: crypto.randomUUID(),
+    organizationId: orgId,
+    userId: session.user.id,
+    type: 'ig_connected',
+    title: `Instagram connected: @${me.username}`,
+    body: 'Token saved (encrypted). Webhooks subscribe automatically once the public URL is configured.',
+    link: '/settings/workspace',
+  });
 
   // TODO: subscribe to webhooks via Graph API once webhook URL is public.
   return NextResponse.redirect(new URL('/dashboard?ig_connected=1', req.url));

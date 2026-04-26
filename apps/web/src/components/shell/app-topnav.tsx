@@ -1,6 +1,7 @@
 'use client';
 
-import { Bell, Moon, Search, Sun } from 'lucide-react';
+import { Moon, Search, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { startTransition } from 'react';
 import { updateUserPreferences } from '@/actions/preferences';
 import { useTheme } from '@/components/theme-provider';
@@ -8,14 +9,17 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { NotificationsBell } from './notifications-bell';
 
 interface AppTopNavProps {
   breadcrumb: { label: string; href?: string }[];
   user?: { name: string | null | undefined; email: string };
+  orgId?: string | null;
 }
 
-export function AppTopNav({ breadcrumb, user }: AppTopNavProps) {
+export function AppTopNav({ breadcrumb, user, orgId }: AppTopNavProps) {
   const { resolved, setTheme } = useTheme();
+  const t = useTranslations('topnav');
 
   function toggleTheme() {
     const next = resolved === 'dark' ? 'light' : 'dark';
@@ -49,7 +53,7 @@ export function AppTopNav({ breadcrumb, user }: AppTopNavProps) {
         <div className="relative w-72">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-mushu-faint)]" />
           <Input
-            placeholder="Search… (⌘/)"
+            placeholder={t('search')}
             className="h-8 pl-8 text-xs"
             disabled
           />
@@ -60,14 +64,12 @@ export function AppTopNav({ breadcrumb, user }: AppTopNavProps) {
           size="icon"
           className="h-8 w-8"
           onClick={toggleTheme}
-          aria-label="Toggle theme"
+          aria-label={t('toggleTheme')}
         >
           {resolved === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
 
-        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Notifications">
-          <Bell className="h-4 w-4" />
-        </Button>
+        <NotificationsBell orgId={orgId ?? null} />
 
         <Separator orientation="vertical" className="h-6" />
 

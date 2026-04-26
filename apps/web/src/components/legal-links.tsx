@@ -1,7 +1,11 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 export function LegalLinks({ className }: { className?: string }) {
+  const t = useTranslations('legal');
   return (
     <nav
       className={cn(
@@ -10,15 +14,15 @@ export function LegalLinks({ className }: { className?: string }) {
       )}
     >
       <Link href="/privacy" className="hover:text-[var(--color-mushu-mute)]">
-        Privacidade
+        {t('privacy')}
       </Link>
       <span aria-hidden>·</span>
       <Link href="/terms" className="hover:text-[var(--color-mushu-mute)]">
-        Termos
+        {t('terms')}
       </Link>
       <span aria-hidden>·</span>
       <Link href="/data-deletion" className="hover:text-[var(--color-mushu-mute)]">
-        Exclusão de dados
+        {t('dataDeletion')}
       </Link>
     </nav>
   );

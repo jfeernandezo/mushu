@@ -1,9 +1,11 @@
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { LoginForm } from '@/components/auth/login-form';
 import { LegalLinks } from '@/components/legal-links';
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const t = await getTranslations('auth.login');
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="flex w-full max-w-sm flex-col gap-6">
@@ -16,16 +18,14 @@ export default function LoginPage() {
             priority
             className="mx-auto mb-2 rounded-xl"
           />
-          <h1 className="text-xl font-semibold">Welcome back to Mushu</h1>
-          <p className="text-sm text-[var(--color-mushu-mute)]">
-            Sign in to manage your Instagram automations.
-          </p>
+          <h1 className="text-xl font-semibold">{t('title')}</h1>
+          <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
         </div>
         <LoginForm />
         <p className="text-center text-xs text-[var(--color-mushu-faint)]">
-          New here?{' '}
+          {t('noAccount')}{' '}
           <Link href="/signup" className="text-[var(--color-mushu-amber)] hover:underline">
-            Create an account
+            {t('createAccount')}
           </Link>
         </p>
         <LegalLinks className="mt-2" />

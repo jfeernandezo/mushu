@@ -1,12 +1,16 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authClient } from '@/lib/auth-client';
 
 export function LoginForm() {
+  const t = useTranslations('auth.login');
+  const tFields = useTranslations('auth.fields');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,9 +24,12 @@ export function LoginForm() {
     const r = await authClient.signIn.email({ email, password });
     setLoading(false);
     if (r.error) {
-      setError(r.error.message ?? 'Invalid credentials');
+      const msg = r.error.message ?? t('invalidCredentials');
+      setError(msg);
+      toast.error(msg);
       return;
     }
+    toast.success(t('welcomeBack'));
     router.push('/dashboard');
     router.refresh();
   }
@@ -33,7 +40,7 @@ export function LoginForm() {
         type="email"
         autoComplete="email"
         required
-        placeholder="you@example.com"
+        placeholder={tFields('emailPlaceholder')}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
@@ -41,13 +48,13 @@ export function LoginForm() {
         type="password"
         autoComplete="current-password"
         required
-        placeholder="Password"
+        placeholder={tFields('passwordPlaceholder')}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
       {error ? <p className="text-xs text-[var(--color-mushu-danger)]">{error}</p> : null}
       <Button type="submit" disabled={loading}>
-        {loading ? 'Signing in…' : 'Sign in'}
+        {loading ? t('submitting') : t('submit')}
       </Button>
     </form>
   );

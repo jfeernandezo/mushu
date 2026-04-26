@@ -12,7 +12,7 @@ export default async function ContactsPage() {
   return (
     <AppShell
       breadcrumb={[{ label: 'Contacts' }]}
-      user={{ name: session.user.name, email: session.user.email }}
+
       showActivitiesPanel={false}
     >
       <div className="flex flex-col gap-6">

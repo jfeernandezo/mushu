@@ -1,8 +1,13 @@
-import { db, instagramAccount, notification } from '@mushu/db';
+import { db, instagramAccount, notification, session as sessionTable } from '@mushu/db';
 import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth, ensureUserOrg } from '@/lib/auth';
 import { encryptToken } from '@/lib/crypto';
+
+function appUrl(path: string): URL {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  return new URL(path, base);
+}
 
 /**
  * OAuth callback for connecting an Instagram Business/Creator account.
@@ -46,22 +51,30 @@ export async function GET(req: NextRequest) {
   const error = req.nextUrl.searchParams.get('error');
 
   if (error || !code) {
-    return NextResponse.redirect(new URL(`/dashboard?ig_error=${error ?? 'no_code'}`, req.url));
+    return NextResponse.redirect(appUrl(`/dashboard?ig_error=${error ?? 'no_code'}`));
   }
 
   // CSRF check: the state must match the cookie set in /start.
   const stateCookie = req.cookies.get('mushu_ig_oauth_state')?.value;
   if (!stateParam || !stateCookie || stateParam !== stateCookie) {
-    return NextResponse.redirect(new URL('/dashboard?ig_error=state_mismatch', req.url));
+    return NextResponse.redirect(appUrl('/dashboard?ig_error=state_mismatch'));
   }
 
   const session = await auth.api.getSession({ headers: req.headers });
   if (!session) {
-    return NextResponse.redirect(new URL('/login', req.url));
+    return NextResponse.redirect(appUrl('/login'));
   }
-  const orgId = session.session.activeOrganizationId;
+
+  // Backfill: an existing user may have signed up before the org auto-create
+  // hook landed and is therefore stuck without an active workspace. Create one
+  // on the fly and patch the session row so subsequent requests see it too.
+  let orgId = session.session.activeOrganizationId;
   if (!orgId) {
-    return NextResponse.redirect(new URL('/dashboard?ig_error=no_org', req.url));
+    orgId = await ensureUserOrg(session.user.id);
+    await db
+      .update(sessionTable)
+      .set({ activeOrganizationId: orgId })
+      .where(eq(sessionTable.id, session.session.id));
   }
 
   const appId = process.env.INSTAGRAM_APP_ID;
@@ -85,7 +98,7 @@ export async function GET(req: NextRequest) {
   if (!shortRes.ok) {
     const body = await shortRes.text();
     console.error('[oauth] short token exchange failed', body);
-    return NextResponse.redirect(new URL('/dashboard?ig_error=token_exchange_failed', req.url));
+    return NextResponse.redirect(appUrl('/dashboard?ig_error=token_exchange_failed'));
   }
   const short = (await shortRes.json()) as ShortTokenResponse;
 
@@ -98,7 +111,7 @@ export async function GET(req: NextRequest) {
   if (!longRes.ok) {
     const body = await longRes.text();
     console.error('[oauth] long token exchange failed', body);
-    return NextResponse.redirect(new URL('/dashboard?ig_error=long_token_failed', req.url));
+    return NextResponse.redirect(appUrl('/dashboard?ig_error=long_token_failed'));
   }
   const long = (await longRes.json()) as LongTokenResponse;
 
@@ -108,7 +121,7 @@ export async function GET(req: NextRequest) {
   meUrl.searchParams.set('access_token', long.access_token);
   const meRes = await fetch(meUrl);
   if (!meRes.ok) {
-    return NextResponse.redirect(new URL('/dashboard?ig_error=me_failed', req.url));
+    return NextResponse.redirect(appUrl('/dashboard?ig_error=me_failed'));
   }
   const me = (await meRes.json()) as IgUser;
 
@@ -161,5 +174,5 @@ export async function GET(req: NextRequest) {
   });
 
   // TODO: subscribe to webhooks via Graph API once webhook URL is public.
-  return NextResponse.redirect(new URL('/dashboard?ig_connected=1', req.url));
+  return NextResponse.redirect(appUrl('/dashboard?ig_connected=1'));
 }

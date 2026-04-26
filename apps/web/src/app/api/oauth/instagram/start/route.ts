@@ -16,7 +16,8 @@ const SCOPES = [
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers });
   if (!session) {
-    return NextResponse.redirect(new URL('/login?next=/api/oauth/instagram/start', req.url));
+    const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    return NextResponse.redirect(new URL('/login?next=/api/oauth/instagram/start', base));
   }
 
   const appId = process.env.INSTAGRAM_APP_ID;

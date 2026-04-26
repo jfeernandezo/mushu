@@ -56,6 +56,15 @@
     "toggleTheme": "Toggle theme",
     "notifications": "Notifications"
   },
+  "userMenu": {
+    "openMenu": "Open account menu",
+    "profile": "Profile",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "signedOut": "Signed out",
+    "couldNotSignOut": "Could not sign out: {error}"
+  },
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all read",

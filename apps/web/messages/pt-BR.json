@@ -56,6 +56,15 @@
     "toggleTheme": "Alternar tema",
     "notifications": "Notificações"
   },
+  "userMenu": {
+    "openMenu": "Abrir menu da conta",
+    "profile": "Perfil",
+    "settings": "Configurações",
+    "signOut": "Sair",
+    "signingOut": "Saindo…",
+    "signedOut": "Você saiu",
+    "couldNotSignOut": "Não foi possível sair: {error}"
+  },
   "notifications": {
     "title": "Notificações",
     "markAllRead": "Marcar todas como lidas",

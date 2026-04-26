@@ -5,11 +5,11 @@ import { useTranslations } from 'next-intl';
 import { startTransition } from 'react';
 import { updateUserPreferences } from '@/actions/preferences';
 import { useTheme } from '@/components/theme-provider';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { NotificationsBell } from './notifications-bell';
+import { UserMenu } from './user-menu';
 
 interface AppTopNavProps {
   breadcrumb: { label: string; href?: string }[];
@@ -73,18 +73,8 @@ export function AppTopNav({ breadcrumb, user, orgId }: AppTopNavProps) {
 
         <Separator orientation="vertical" className="h-6" />
 
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-[var(--color-mushu-scarlet)] text-white">
-            {user ? initials(user.name ?? user.email) : 'U'}
-          </AvatarFallback>
-        </Avatar>
+        <UserMenu user={user} />
       </div>
     </header>
   );
-}
-
-function initials(s: string): string {
-  const parts = s.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }

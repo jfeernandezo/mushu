@@ -3,7 +3,204 @@
     "tagline": "Seu pequeno dragão leal para automação do Instagram. Alternativa open-source ao ManyChat — self-hosted, grátis para sempre.",
     "signIn": "Entrar",
     "github": "GitHub",
-    "preAlpha": "Pré-alfa. Feito por"
+    "preAlpha": "Pré-alfa. Feito por",
+    "nav": {
+      "features": "Recursos",
+      "howItWorks": "Como funciona",
+      "useCases": "Casos de uso",
+      "faq": "FAQ",
+      "github": "GitHub",
+      "signIn": "Entrar",
+      "localeToggleLabel": "Idioma",
+      "localePtLabel": "PT",
+      "localeEnLabel": "EN"
+    },
+    "hero": {
+      "eyebrow": "AUTOMAÇÃO OPEN-SOURCE PRO INSTAGRAM",
+      "titleLine1": "Seu Instagram no piloto automático.",
+      "titleLine2": "Sem mensalidade por contato.",
+      "subtitle": "Mushu responde comentários, captura leads via DM e gerencia conversas 24/7 — open-source, self-hosted, grátis pra sempre. Ou use a versão hospedada se preferir não cuidar da infra.",
+      "ctaPrimary": "Entrar",
+      "ctaSecondary": "Ver no GitHub",
+      "preAlphaNote": "Pré-alfa. Em modo de desenvolvimento do Meta — só usuários adicionados como testadores conseguem conectar Instagram por enquanto."
+    },
+    "benefits": {
+      "eyebrow": "POR QUE MUSHU",
+      "title": "Feito diferente de propósito",
+      "subtitle": "Seis coisas que separam o Mushu de plataformas de chatbot genéricas.",
+      "cards": {
+        "free": {
+          "title": "Grátis pra sempre (self-hosted)",
+          "body": "Rode na sua própria VPS. Sem cobrança por contato, sem taxa por etapa de IA, sem surpresas."
+        },
+        "instagram": {
+          "title": "Foco no Instagram",
+          "body": "A gente faz um canal muito bem em vez de 5 canais mal feitos."
+        },
+        "builder": {
+          "title": "Construtor visual de fluxos",
+          "body": "Arrastar, soltar, conectar. Gatilhos por palavra-chave, condições, variáveis — tudo visual."
+        },
+        "logic": {
+          "title": "Condições e variáveis reais",
+          "body": "Captura um email num fluxo, usa no próximo. Ramifica por tag, valor ou membership."
+        },
+        "openSource": {
+          "title": "Código aberto AGPL",
+          "body": "Lê cada linha. Faz fork. Self-host. Ou usa a versão hospedada — você decide."
+        },
+        "makers": {
+          "title": "Feito pra makers",
+          "body": "Vocabulário em linguagem natural, erros amigáveis, feedback imediato. Sem precisar de engenheiro."
+        }
+      }
+    },
+    "features": {
+      "eyebrow": "RECURSOS",
+      "title": "Tudo o que você precisa pra automatizar conversas no IG",
+      "subtitle": "Gatilhos, ações, lógica, e uma state machine de verdade que não perde execução em meio a um re-deploy.",
+      "cards": {
+        "commentToDm": {
+          "title": "Automação Comentário → DM",
+          "body": "Quando alguém comenta uma palavra no seu post, responde publicamente e manda um DM com o que você quiser — link, formulário de captura, qualquer coisa.",
+          "alt": "Mockup de automação que conecta comentário em post a mensagem direta."
+        },
+        "leadCapture": {
+          "title": "Captura de leads via DM",
+          "body": "O bloco `Perguntar` manda DM, espera a resposta, valida (email/telefone/número) e salva no contato. Usa `{{email}}` em qualquer mensagem depois.",
+          "alt": "Mockup de conversa por DM capturando email em uma variável."
+        },
+        "conditions": {
+          "title": "Condições e ramos de verdade",
+          "body": "Ramifica por `igual`, `contém`, `tem_tag`, `maior_que`, `menor_que` e mais 5 operadores. Agrupamento E/OU. Último ramo é o `senão` implícito.",
+          "alt": "Mockup de canvas com nó de condição e dois ramos."
+        },
+        "templates": {
+          "title": "3 templates iniciais",
+          "body": "Comentário→DM com link, Captura de lead, Boas-vindas. Escolhe um, edita dois campos, clica Publicar. ~60 segundos do signup até automação no ar.",
+          "alt": "Mockup de modal com templates iniciais do Mushu."
+        }
+      }
+    },
+    "process": {
+      "eyebrow": "COMO FUNCIONA",
+      "title": "Do cadastro ao ar em 5 minutos",
+      "steps": {
+        "connect": {
+          "title": "Conecta seu Instagram",
+          "body": "OAuth pelo Meta. Escolhe a conta Instagram Business que você quer automatizar. Token é guardado criptografado (AES-256-GCM)."
+        },
+        "build": {
+          "title": "Escolhe um template ou começa do zero",
+          "body": "3 templates cobrem os casos comuns. Ou arrasta gatilhos e ações no canvas do seu jeito."
+        },
+        "publish": {
+          "title": "Edita, valida, publica",
+          "body": "Validação amigável antes de publicar pega os erros óbvios (sem gatilho, mensagem vazia, etapa solta) antes do fluxo entrar no ar."
+        }
+      }
+    },
+    "useCases": {
+      "eyebrow": "CASOS DE USO",
+      "title": "Feito para fluxos simples que precisam funcionar sempre",
+      "subtitle": "Mushu é melhor quando o Instagram já é seu canal de aquisição, suporte ou comunidade.",
+      "cards": {
+        "launches": {
+          "title": "Lançamentos e drops",
+          "body": "Transforme comentários com palavra-chave em DMs com link, cupom, lista de espera ou checkout."
+        },
+        "creators": {
+          "title": "Criadores e infoprodutos",
+          "body": "Capture emails, qualifique interesse e entregue materiais sem ficar copiando e colando respostas."
+        },
+        "agencies": {
+          "title": "Agências e makers",
+          "body": "Rode uma instância própria, audite o código e entregue automações sem lock-in de plataforma."
+        }
+      }
+    },
+    "ways": {
+      "eyebrow": "DUAS FORMAS DE USAR O MUSHU",
+      "title": "Escolhe seu caminho",
+      "selfHost": {
+        "title": "Self-host (grátis pra sempre)",
+        "price": "Grátis",
+        "features": [
+          "Funcionalidade idêntica à hospedada",
+          "Seu próprio app Meta, sua VPS",
+          "Licença AGPL-3.0",
+          "Suporte comunitário"
+        ],
+        "cta": "Ler o guia de self-hosting"
+      },
+      "hosted": {
+        "title": "Hospedado (lista de espera)",
+        "price": "A definir",
+        "priceNote": "Vem depois da aprovação no Meta App Review",
+        "features": [
+          "Zero infra pra você gerenciar",
+          "Updates automáticos e patches",
+          "Suporte prioritário",
+          "Preço a definir antes do lançamento público"
+        ],
+        "cta": "Entrar na lista de espera"
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Respostas diretas",
+      "items": {
+        "preAlpha": {
+          "q": "Por que o Mushu é pré-alfa?",
+          "a": "É estável o suficiente pra usar, mas o schema e a API ainda mudam sem aviso. Não aposte produção nele ainda. A gente marca `1.0` quando entregar a Fase 5 do roadmap público."
+        },
+        "hosted": {
+          "q": "A versão hospedada está pronta?",
+          "a": "Quase. Estamos em Modo de Desenvolvimento do Meta enquanto o App Review anda. Liberada a revisão, abrimos a hospedada. Até lá só usuários do Instagram que adicionarmos como testadores conseguem conectar."
+        },
+        "channels": {
+          "q": "Funciona com WhatsApp / Messenger / email?",
+          "a": "Não. Mushu é Instagram-only de propósito. Preferimos fazer um canal excelente do que cinco mal feitos."
+        },
+        "metaApi": {
+          "q": "E se o Meta mudar a API do Instagram?",
+          "a": "A gente atualiza o código open-source. Self-hosters fazem pull e re-deploy. Usuários da hospedada pegam o update automaticamente. Licença é AGPL — você nunca fica preso."
+        },
+        "migration": {
+          "q": "Dá pra migrar do ManyChat?",
+          "a": "Automaticamente, ainda não. Os templates iniciais cobrem os padrões mais comuns do ManyChat. Import de migração está no roadmap (Fase 5)."
+        },
+        "data": {
+          "q": "Onde os dados ficam?",
+          "a": "Self-hosted: no *seu* Postgres. Hospedado: nossos servidores no Brasil. Tokens IG ficam criptografados AES-256-GCM em repouso nos dois casos."
+        }
+      }
+    },
+    "cta": {
+      "title": "Pronto pra começar?",
+      "subtitle": "5 minutos do clone ao fluxo no ar.",
+      "button": "Entrar"
+    },
+    "footer": {
+      "tagline": "Automação open-source para Instagram, self-hosted e grátis pra sempre.",
+      "project": {
+        "title": "Projeto",
+        "features": "Recursos",
+        "howItWorks": "Como funciona",
+        "roadmap": "Roadmap",
+        "selfHosting": "Self-hosting"
+      },
+      "legal": {
+        "title": "Legal",
+        "privacy": "Privacidade",
+        "terms": "Termos",
+        "dataDeletion": "Exclusão de dados",
+        "license": "Licença AGPL"
+      },
+      "builtBy": "Feito por",
+      "copyright": "© 2026 Mushu",
+      "strip": "Pré-alfa — Hospedado pela Raya Studio"
+    }
   },
   "auth": {
     "login": {
@@ -218,12 +415,20 @@
     },
     "nodes": {
       "trigger": {
-        "comment_keyword": { "title": "Quando comentarem no seu post" },
-        "dm_keyword": { "title": "Quando mandarem DM com uma palavra" }
+        "comment_keyword": {
+          "title": "Quando comentarem no seu post"
+        },
+        "dm_keyword": {
+          "title": "Quando mandarem DM com uma palavra"
+        }
       },
       "action": {
-        "send_dm": { "title": "Enviar mensagem privada" },
-        "reply_comment": { "title": "Responder o comentário publicamente" },
+        "send_dm": {
+          "title": "Enviar mensagem privada"
+        },
+        "reply_comment": {
+          "title": "Responder o comentário publicamente"
+        },
         "ask_question": {
           "title": "Perguntar e guardar a resposta",
           "empty": "Configure a pergunta…",
@@ -231,11 +436,17 @@
         }
       },
       "logic": {
-        "delay": { "title": "Esperar antes da próxima ação" },
-        "condition": { "title": "Decidir entre dois caminhos" }
+        "delay": {
+          "title": "Esperar antes da próxima ação"
+        },
+        "condition": {
+          "title": "Decidir entre dois caminhos"
+        }
       },
       "control": {
-        "end": { "title": "Finalizar a automação" }
+        "end": {
+          "title": "Finalizar a automação"
+        }
       },
       "block": "Etapa",
       "configureKeywords": "Defina as palavras-chave…",

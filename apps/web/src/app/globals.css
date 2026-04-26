@@ -58,6 +58,11 @@ body {
   color: var(--color-mushu-ink);
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
 * {
   border-color: var(--color-mushu-border);
 }

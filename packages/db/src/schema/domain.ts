@@ -68,6 +68,10 @@ export const contact = pgTable(
 /**
  * Tags applied to a contact. Boolean — present or absent.
  * ManyChat-style: tags for events/states, custom_fields for data.
+ *
+ * organizationId is denormalized from contact.organization_id so RLS policies
+ * can scope by tenant without a JOIN. Inserts must set it explicitly — keep it
+ * in lockstep with the parent contact's org.
  */
 export const contactTag = pgTable(
   'contact_tag',
@@ -75,11 +79,15 @@ export const contactTag = pgTable(
     contactId: text('contact_id')
       .notNull()
       .references(() => contact.id, { onDelete: 'cascade' }),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
     tag: text('tag').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (t) => ({
     pk: uniqueIndex('contact_tag_pk').on(t.contactId, t.tag),
+    orgIdx: index('contact_tag_org_idx').on(t.organizationId),
   }),
 );
 
@@ -100,6 +108,9 @@ export const contactInbox = pgTable(
     instagramAccountId: text('instagram_account_id')
       .notNull()
       .references(() => instagramAccount.id, { onDelete: 'cascade' }),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
     sourceId: text('source_id').notNull(), // IGSID
     igUsername: text('ig_username'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -111,6 +122,7 @@ export const contactInbox = pgTable(
       t.sourceId,
     ),
     contactIdx: index('contact_inbox_contact_idx').on(t.contactId),
+    orgIdx: index('contact_inbox_org_idx').on(t.organizationId),
   }),
 );
 
@@ -189,6 +201,9 @@ export const message = pgTable(
     instagramAccountId: text('instagram_account_id')
       .notNull()
       .references(() => instagramAccount.id, { onDelete: 'cascade' }),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
     senderType: text('sender_type', { enum: ['contact', 'user', 'automation', 'system'] })
       .notNull(),
     senderId: text('sender_id'), // user.id or contact.id or null for automation/system
@@ -212,5 +227,6 @@ export const message = pgTable(
   (t) => ({
     conversationIdx: index('message_conversation_idx').on(t.conversationId),
     sourceUnique: uniqueIndex('message_source_unique').on(t.instagramAccountId, t.sourceId),
+    orgIdx: index('message_org_idx').on(t.organizationId),
   }),
 );

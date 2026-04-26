@@ -1,6 +1,6 @@
 'use server';
 
-import { db, notification } from '@mushu/db';
+import { notification, withOrgTx } from '@mushu/db';
 import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { headers as nextHeaders } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -36,20 +36,22 @@ export async function listNotifications(opts: {
       ? and(eq(notification.organizationId, orgId), isNull(notification.readAt))
       : eq(notification.organizationId, orgId);
 
-    const rows = await db
-      .select({
-        id: notification.id,
-        type: notification.type,
-        title: notification.title,
-        body: notification.body,
-        link: notification.link,
-        readAt: notification.readAt,
-        createdAt: notification.createdAt,
-      })
-      .from(notification)
-      .where(where)
-      .orderBy(desc(notification.createdAt))
-      .limit(limit);
+    const rows = await withOrgTx(orgId, (tx) =>
+      tx
+        .select({
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          body: notification.body,
+          link: notification.link,
+          readAt: notification.readAt,
+          createdAt: notification.createdAt,
+        })
+        .from(notification)
+        .where(where)
+        .orderBy(desc(notification.createdAt))
+        .limit(limit),
+    );
 
     return { ok: true, data: rows };
   } catch (e) {
@@ -62,10 +64,12 @@ export async function unreadCount(): Promise<number> {
     const session = await requireSession();
     const orgId = session.session.activeOrganizationId;
     if (!orgId) return 0;
-    const [row] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(notification)
-      .where(and(eq(notification.organizationId, orgId), isNull(notification.readAt)));
+    const [row] = await withOrgTx(orgId, (tx) =>
+      tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(notification)
+        .where(and(eq(notification.organizationId, orgId), isNull(notification.readAt))),
+    );
     return row?.count ?? 0;
   } catch {
     return 0;
@@ -77,10 +81,12 @@ export async function markAsRead(id: string): Promise<{ ok: boolean }> {
     const session = await requireSession();
     const orgId = session.session.activeOrganizationId;
     if (!orgId) return { ok: false };
-    await db
-      .update(notification)
-      .set({ readAt: new Date() })
-      .where(and(eq(notification.id, id), eq(notification.organizationId, orgId)));
+    await withOrgTx(orgId, (tx) =>
+      tx
+        .update(notification)
+        .set({ readAt: new Date() })
+        .where(and(eq(notification.id, id), eq(notification.organizationId, orgId))),
+    );
     revalidatePath('/notifications');
     return { ok: true };
   } catch {
@@ -93,13 +99,16 @@ export async function markAllAsRead(): Promise<{ ok: boolean }> {
     const session = await requireSession();
     const orgId = session.session.activeOrganizationId;
     if (!orgId) return { ok: false };
-    await db
-      .update(notification)
-      .set({ readAt: new Date() })
-      .where(and(eq(notification.organizationId, orgId), isNull(notification.readAt)));
+    await withOrgTx(orgId, (tx) =>
+      tx
+        .update(notification)
+        .set({ readAt: new Date() })
+        .where(and(eq(notification.organizationId, orgId), isNull(notification.readAt))),
+    );
     revalidatePath('/notifications');
     return { ok: true };
   } catch {
     return { ok: false };
   }
 }
+

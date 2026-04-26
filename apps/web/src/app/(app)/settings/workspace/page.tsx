@@ -1,4 +1,4 @@
-import { db, instagramAccount } from '@mushu/db';
+import { instagramAccount, withOrgTx } from '@mushu/db';
 import { eq } from 'drizzle-orm';
 import { Instagram } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
@@ -18,15 +18,17 @@ export default async function WorkspaceSettingsPage() {
   const formatter = await getFormatter();
 
   const accounts = orgId
-    ? await db
-        .select({
-          id: instagramAccount.id,
-          igUsername: instagramAccount.igUsername,
-          expiresAt: instagramAccount.expiresAt,
-          webhookSubscribed: instagramAccount.webhookSubscribed,
-        })
-        .from(instagramAccount)
-        .where(eq(instagramAccount.organizationId, orgId))
+    ? await withOrgTx(orgId, (tx) =>
+        tx
+          .select({
+            id: instagramAccount.id,
+            igUsername: instagramAccount.igUsername,
+            expiresAt: instagramAccount.expiresAt,
+            webhookSubscribed: instagramAccount.webhookSubscribed,
+          })
+          .from(instagramAccount)
+          .where(eq(instagramAccount.organizationId, orgId)),
+      )
     : [];
 
   return (

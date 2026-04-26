@@ -1,6 +1,6 @@
 'use server';
 
-import { db, instagramAccount } from '@mushu/db';
+import { instagramAccount, withOrgTx } from '@mushu/db';
 import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -47,17 +47,19 @@ export async function listInstagramMedia(limit = 25): Promise<ListMediaResult> {
   const orgId = session.session.activeOrganizationId;
   if (!orgId) return { account: null, media: [], error: 'no_account' };
 
-  const [acc] = await db
-    .select({
-      id: instagramAccount.id,
-      username: instagramAccount.igUsername,
-      ciphertext: instagramAccount.accessTokenEncrypted,
-      iv: instagramAccount.accessTokenIv,
-      authTag: instagramAccount.accessTokenAuthTag,
-    })
-    .from(instagramAccount)
-    .where(eq(instagramAccount.organizationId, orgId))
-    .limit(1);
+  const [acc] = await withOrgTx(orgId, (tx) =>
+    tx
+      .select({
+        id: instagramAccount.id,
+        username: instagramAccount.igUsername,
+        ciphertext: instagramAccount.accessTokenEncrypted,
+        iv: instagramAccount.accessTokenIv,
+        authTag: instagramAccount.accessTokenAuthTag,
+      })
+      .from(instagramAccount)
+      .where(eq(instagramAccount.organizationId, orgId))
+      .limit(1),
+  );
 
   if (!acc) return { account: null, media: [], error: 'no_account' };
 

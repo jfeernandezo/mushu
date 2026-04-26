@@ -3,3 +3,5 @@ export * from './domain.ts';
 export * from './flows.ts';
 export * from './events.ts';
 export * from './notifications.ts';
+export * from './permissions.ts';
+export * from './billing.ts';

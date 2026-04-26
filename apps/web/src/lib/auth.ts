@@ -1,8 +1,15 @@
-import { db, member, organization as orgTable, user as userTable } from '@mushu/db';
+import {
+  db,
+  member,
+  memberPermissionGroup,
+  organization as orgTable,
+  user as userTable,
+} from '@mushu/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { organization } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
+import { ensureSubscription } from './plan';
 
 const baseURL = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000';
 
@@ -33,13 +40,28 @@ export async function ensureUserOrg(userId: string): Promise<string> {
   const trimmedName = u[0]?.name?.trim();
   const name = trimmedName ? `${trimmedName}'s workspace` : 'My workspace';
 
+  const memberId = crypto.randomUUID();
   await db.insert(orgTable).values({ id: orgId, name, slug });
   await db.insert(member).values({
-    id: crypto.randomUUID(),
+    id: memberId,
     organizationId: orgId,
     userId,
     role: 'owner',
   });
+  // Grant the owner's default permission group inline. The granular permissions
+  // system (see migration 0003) keys all access checks off membership in groups,
+  // not the role string itself — without this row, the owner would have the
+  // 'owner' label but zero permissions on first request.
+  await db.insert(memberPermissionGroup).values({
+    memberId,
+    organizationId: orgId,
+    groupCode: 'workspace_owner_group',
+  });
+
+  // Every org needs a subscription row so the plan resolver always has
+  // something to read. New orgs default to Free; upgrades happen via Stripe
+  // checkout (see /api/billing/checkout).
+  await ensureSubscription(orgId);
 
   return orgId;
 }

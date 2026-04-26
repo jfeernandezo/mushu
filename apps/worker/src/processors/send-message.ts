@@ -1,7 +1,7 @@
 import {
   contactInbox,
   conversation,
-  db,
+  dbAdmin as db,
   flow,
   flowExecution,
   instagramAccount,

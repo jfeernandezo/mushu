@@ -3,23 +3,36 @@
 import {
   AlertTriangle,
   Building2,
+  CreditCard,
   KeyRound,
   type LucideIcon,
   MonitorSmartphone,
   Settings as SettingsIcon,
+  Shield,
   User,
+  Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-type NavKey = 'profile' | 'security' | 'sessions' | 'workspace' | 'preferences' | 'danger';
+type NavKey =
+  | 'profile'
+  | 'security'
+  | 'sessions'
+  | 'workspace'
+  | 'members'
+  | 'billing'
+  | 'preferences'
+  | 'privacy'
+  | 'danger';
 
 interface NavItem {
   href: string;
   key: NavKey;
   icon: LucideIcon;
+  hostedOnly?: boolean;
 }
 
 const ITEMS: NavItem[] = [
@@ -27,16 +40,25 @@ const ITEMS: NavItem[] = [
   { href: '/settings/security', key: 'security', icon: KeyRound },
   { href: '/settings/sessions', key: 'sessions', icon: MonitorSmartphone },
   { href: '/settings/workspace', key: 'workspace', icon: Building2 },
+  { href: '/settings/members', key: 'members', icon: Users },
+  { href: '/settings/billing', key: 'billing', icon: CreditCard, hostedOnly: true },
   { href: '/settings/preferences', key: 'preferences', icon: SettingsIcon },
+  { href: '/settings/privacy', key: 'privacy', icon: Shield },
   { href: '/settings/danger', key: 'danger', icon: AlertTriangle },
 ];
 
-export function SettingsNav() {
+interface SettingsNavProps {
+  /** True when MUSHU_MODE=hosted; resolved server-side and passed in. */
+  isHosted: boolean;
+}
+
+export function SettingsNav({ isHosted }: SettingsNavProps) {
   const pathname = usePathname();
   const t = useTranslations('settings.nav');
+  const visibleItems = ITEMS.filter((i) => !i.hostedOnly || isHosted);
   return (
     <nav className="flex flex-col gap-0.5">
-      {ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = item.icon;
         const active = pathname === item.href;
         return (

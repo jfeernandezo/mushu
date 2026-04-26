@@ -1,4 +1,24 @@
 {
+  "pricing": {
+    "title": "Pick the plan that fits",
+    "subtitle": "Free forever up to 1,000 contacts. Upgrade when you outgrow it.",
+    "perMonth": "month",
+    "free": "Free",
+    "limits": {
+      "contacts": "Up to {n} contacts",
+      "igAccounts": "{n, plural, =1 {1 Instagram account} other {# Instagram accounts}}",
+      "operators": "{n, plural, =1 {1 operator} other {# operators}}"
+    },
+    "cta": {
+      "start": "Start free",
+      "upgrade": "Subscribe"
+    },
+    "selfhost": {
+      "title": "Prefer to run it yourself?",
+      "body": "Mushu is open-source (AGPL-3.0). Fork it and self-host for free — every feature unlocked.",
+      "cta": "View on GitHub"
+    }
+  },
   "landing": {
     "tagline": "Your loyal little dragon for Instagram automation. Open-source ManyChat alternative — self-hosted, free forever.",
     "signIn": "Sign in",
@@ -22,6 +42,10 @@
       "subtitle": "Mushu replies to comments, captures leads via DM, and manages conversations 24/7 — open-source, self-hosted, free forever. Or use the hosted version if you'd rather skip the infra.",
       "ctaPrimary": "Sign in",
       "ctaSecondary": "View on GitHub",
+      "ctaStartFree": "Start free",
+      "ctaSeePricing": "See pricing",
+      "ctaSelfHost": "Self-host (open-source)",
+      "hostedHint": "Free forever up to 1,000 contacts · No credit card · Cancel anytime",
       "preAlphaNote": "Pre-alpha. In Meta Development Mode — only users added as testers can connect Instagram for now."
     },
     "benefits": {
@@ -144,7 +168,8 @@
           "Pricing TBD before public launch"
         ],
         "cta": "Join waitlist"
-      }
+      },
+      "hostedNote": "Don't want to manage infra? Use the official hosted version at"
     },
     "faq": {
       "eyebrow": "FAQ",
@@ -228,6 +253,13 @@
       "passwordPlaceholder": "Password",
       "passwordSignupPlaceholder": "Password (8+ characters)",
       "namePlaceholder": "Your name"
+    },
+    "consent": {
+      "iAm18AndAcceptPrefix": "I am 18 or older and I have read and accept the",
+      "terms": "Terms of Use",
+      "and": "and the",
+      "privacy": "Privacy Policy",
+      "mustAccept": "You must accept the Terms and Privacy Policy to continue."
     }
   },
   "legal": {
@@ -367,6 +399,7 @@
     "publish": "Publish",
     "publishing": "Publishing…",
     "publishedVersion": "Published v{version}",
+    "publishedToast": "Flow published (v{version})",
     "live": "Live",
     "draft": "Draft",
     "publishFailed": "Publish failed: {error}",
@@ -555,8 +588,73 @@
       "security": "Security",
       "sessions": "Sessions",
       "workspace": "Workspace",
+      "members": "Members",
+      "billing": "Plan and billing",
       "preferences": "Preferences",
+      "privacy": "Privacy",
       "danger": "Danger zone"
+    },
+    "billing": {
+      "title": "Plan and billing",
+      "subtitle": "Manage your plan and payment method.",
+      "currentPlan": "Current plan",
+      "perMonth": "month",
+      "renewsOn": "Renews on {date}",
+      "cancelsOn": "Cancels on {date}",
+      "readOnlyHint": "You don't have permission to manage billing. Ask the workspace owner.",
+      "couldNotLoad": "Could not load subscription: {error}",
+      "changePlan": "Change plan",
+      "managePayment": "Payment",
+      "portalDescription": "Update card, download invoices, or cancel the subscription in Stripe's secure portal.",
+      "openPortal": "Open Stripe portal",
+      "loading": "Loading…",
+      "checkoutFailed": "Could not start checkout: {error}",
+      "portalFailed": "Could not open portal: {error}",
+      "upgradeTo": "Upgrade to {plan}",
+      "switchTo": "Switch to {plan}",
+      "status": {
+        "active": "Active",
+        "trialing": "Trialing",
+        "past_due": "Past due",
+        "canceled": "Canceled",
+        "incomplete": "Incomplete",
+        "unpaid": "Unpaid"
+      }
+    },
+    "members": {
+      "title": "Members",
+      "subtitle": "Who has access to this workspace and what role they hold.",
+      "card": "{count, plural, =1 {1 member} other {# members}}",
+      "youBadge": "You",
+      "joined": "Joined on {date}",
+      "remove": "Remove member",
+      "removeConfirm": "Are you sure you want to remove {name} from this workspace?",
+      "removed": "Member removed.",
+      "removeFailed": "Could not remove: {error}",
+      "roleChanged": "Role updated.",
+      "roleChangeFailed": "Could not update role: {error}",
+      "inviteComingSoon": "Inviting new members: coming soon (requires SMTP).",
+      "roleLabel": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "editor": "Editor",
+        "viewer": "Viewer"
+      }
+    },
+    "privacy": {
+      "title": "Privacy",
+      "subtitle": "Exercise your rights over the personal data we hold.",
+      "exportTitle": "Export my data",
+      "exportBody": "Download a JSON file with everything we store about you: profile, sessions, organizations, and — for workspaces you own — connected Instagram accounts (without tokens), contacts, conversations, messages, and flows. Fulfils the LGPD right to data portability (art. 18, V). Limited to 1 export per hour.",
+      "exportButton": "Export data (JSON)",
+      "exporting": "Preparing…",
+      "exported": "Export ready — download started.",
+      "rateLimited": "You exported recently. Please try again within 1 hour.",
+      "couldNotExport": "Could not export: {error}",
+      "docsTitle": "Documents",
+      "privacyLink": "Privacy Policy",
+      "termsLink": "Terms of Use",
+      "dataDeletionLink": "How to delete my data"
     },
     "profile": {
       "title": "Profile",

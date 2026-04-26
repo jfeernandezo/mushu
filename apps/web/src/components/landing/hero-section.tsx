@@ -2,9 +2,11 @@ import { Github } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { isHosted } from '@/lib/mode';
 
 export async function HeroSection() {
   const t = await getTranslations('landing.hero');
+  const hosted = isHosted();
 
   return (
     <section className="relative isolate min-h-[calc(100vh-4rem)] overflow-hidden">
@@ -32,24 +34,52 @@ export async function HeroSection() {
             {t('subtitle')}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center rounded-md bg-gradient-to-b from-[var(--color-mushu-scarlet)] to-[var(--color-mushu-scarlet-soft)] px-6 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_8px_24px_-8px_rgba(199,62,29,0.5)] transition hover:brightness-110"
-            >
-              {t('ctaPrimary')}
-            </Link>
-            <a
-              href="https://github.com/jfeernandezo/mushu"
-              target="_blank"
-              rel="noopener"
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--color-mushu-border)] bg-[color-mix(in_srgb,var(--color-mushu-surface)_70%,transparent)] px-6 py-3 text-sm font-semibold text-[var(--color-mushu-ink)] backdrop-blur-md transition hover:bg-[var(--color-mushu-surface-hover)]"
-            >
-              <Github className="h-4 w-4" />
-              {t('ctaSecondary')}
-            </a>
+            {hosted ? (
+              <>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center justify-center rounded-md bg-gradient-to-b from-[var(--color-mushu-scarlet)] to-[var(--color-mushu-scarlet-soft)] px-6 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_8px_24px_-8px_rgba(199,62,29,0.5)] transition hover:brightness-110"
+                >
+                  {t('ctaStartFree')}
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center justify-center rounded-md border border-[var(--color-mushu-border)] bg-[color-mix(in_srgb,var(--color-mushu-surface)_70%,transparent)] px-6 py-3 text-sm font-semibold text-[var(--color-mushu-ink)] backdrop-blur-md transition hover:bg-[var(--color-mushu-surface-hover)]"
+                >
+                  {t('ctaSeePricing')}
+                </Link>
+                <a
+                  href="https://github.com/jfeernandezo/mushu"
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--color-mushu-border-subtle)] bg-transparent px-6 py-3 text-sm font-semibold text-[var(--color-mushu-mute)] transition hover:bg-[var(--color-mushu-surface-hover)] hover:text-[var(--color-mushu-ink)]"
+                >
+                  <Github className="h-4 w-4" />
+                  {t('ctaSelfHost')}
+                </a>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center rounded-md bg-gradient-to-b from-[var(--color-mushu-scarlet)] to-[var(--color-mushu-scarlet-soft)] px-6 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_8px_24px_-8px_rgba(199,62,29,0.5)] transition hover:brightness-110"
+                >
+                  {t('ctaPrimary')}
+                </Link>
+                <a
+                  href="https://github.com/jfeernandezo/mushu"
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-[var(--color-mushu-border)] bg-[color-mix(in_srgb,var(--color-mushu-surface)_70%,transparent)] px-6 py-3 text-sm font-semibold text-[var(--color-mushu-ink)] backdrop-blur-md transition hover:bg-[var(--color-mushu-surface-hover)]"
+                >
+                  <Github className="h-4 w-4" />
+                  {t('ctaSecondary')}
+                </a>
+              </>
+            )}
           </div>
           <p className="mt-5 max-w-2xl text-xs leading-6 text-[var(--color-mushu-faint)]">
-            {t('preAlphaNote')}
+            {hosted ? t('hostedHint') : t('preAlphaNote')}
           </p>
         </div>
       </div>

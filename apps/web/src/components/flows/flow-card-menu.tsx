@@ -3,7 +3,7 @@
 import { MoreVertical, Power, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { deleteFlow, setFlowEnabled } from '@/actions/flows';
 import {
@@ -33,35 +33,39 @@ export function FlowCardMenu({ flowId, isEnabled }: FlowCardMenuProps) {
   const t = useTranslations('flows.actions');
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
+  // Plain useState — useTransition was leaving `pending` stuck on true when
+  // the Server Action's revalidatePath ran on a route the user was viewing.
+  const [pending, setPending] = useState(false);
 
-  function onToggle(e: Event) {
+  async function onToggle(e: Event) {
     e.preventDefault();
     if (pending) return;
-    startTransition(async () => {
-      try {
-        const next = !isEnabled;
-        await setFlowEnabled(flowId, next);
-        toast.success(next ? t('enabled') : t('disabled'));
-        router.refresh();
-      } catch {
-        toast.error(t('couldNotToggle'));
-      }
-    });
+    setPending(true);
+    try {
+      const next = !isEnabled;
+      await setFlowEnabled(flowId, next);
+      toast.success(next ? t('enabled') : t('disabled'));
+      router.refresh();
+    } catch {
+      toast.error(t('couldNotToggle'));
+    } finally {
+      setPending(false);
+    }
   }
 
-  function onConfirmDelete() {
+  async function onConfirmDelete() {
     if (pending) return;
-    startTransition(async () => {
-      try {
-        await deleteFlow(flowId);
-        toast.success(t('deleted'));
-        setConfirmOpen(false);
-        router.refresh();
-      } catch {
-        toast.error(t('couldNotDelete'));
-      }
-    });
+    setPending(true);
+    try {
+      await deleteFlow(flowId);
+      toast.success(t('deleted'));
+      setConfirmOpen(false);
+      router.refresh();
+    } catch {
+      toast.error(t('couldNotDelete'));
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

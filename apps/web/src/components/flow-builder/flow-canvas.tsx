@@ -5,20 +5,20 @@ import {
   BackgroundVariant,
   Controls,
   type Edge,
+  type EdgeChange,
   type Node,
+  type NodeChange,
   type NodeTypes,
+  type OnConnect,
   ReactFlow,
   ReactFlowProvider,
-  addEdge,
-  useEdgesState,
-  useNodesState,
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { type DragEvent, useCallback, useEffect, useRef, useState } from 'react';
-import type { FlowGraph, FlowNodeType } from '@mushu/shared/flow';
+import { type DragEvent, useCallback } from 'react';
+import type { FlowNodeType } from '@mushu/shared/flow';
 import { useTheme } from '@/components/theme-provider';
 import { THEME_COLORS } from '@/lib/theme-colors';
 import {
@@ -44,8 +44,14 @@ const nodeTypes: NodeTypes = {
 };
 
 interface FlowCanvasProps {
-  initialGraph: FlowGraph;
-  onChange: (graph: FlowGraph) => void;
+  /** Controlled — owned by FlowBuilder. */
+  nodes: Node[];
+  edges: Edge[];
+  onNodesChange: (changes: NodeChange[]) => void;
+  onEdgesChange: (changes: EdgeChange[]) => void;
+  onConnect: OnConnect;
+  /** Called when the user drops a new block from the palette. */
+  onAddNode: (node: Node) => void;
   onSelect: (node: Node | null) => void;
   selectedId: string | null;
 }
@@ -58,46 +64,19 @@ export function FlowCanvasShell(props: FlowCanvasProps) {
   );
 }
 
-function FlowCanvas({ initialGraph, onChange, onSelect, selectedId }: FlowCanvasProps) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(graphToNodes(initialGraph));
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(graphToEdges(initialGraph));
-  const [hasInitialized, setHasInitialized] = useState(false);
+function FlowCanvas({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  onConnect,
+  onAddNode,
+  onSelect,
+  selectedId,
+}: FlowCanvasProps) {
   const reactFlow = useReactFlow();
   const { resolved } = useTheme();
   const palette = THEME_COLORS[resolved];
-
-  // Push canvas changes upward (debounced).
-  useEffect(() => {
-    if (!hasInitialized) {
-      setHasInitialized(true);
-      return;
-    }
-    const t = setTimeout(() => {
-      onChange({
-        nodes: nodes.map((n) => ({
-          id: n.id,
-          type: (n.type ?? 'control.end') as FlowNodeType,
-          position: n.position,
-          data: (n.data ?? {}) as never,
-        })) as never,
-        edges: edges.map((e) => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          sourceHandle: e.sourceHandle ?? null,
-          targetHandle: e.targetHandle ?? null,
-        })),
-      });
-    }, 400);
-    return () => clearTimeout(t);
-  }, [nodes, edges, onChange, hasInitialized]);
-
-  const onConnect = useCallback(
-    (params: Parameters<typeof addEdge<Edge>>[0]) =>
-      setEdges((eds) => addEdge({ ...params, id: cryptoRandomId() }, eds)),
-    [setEdges],
-  );
 
   const onDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -116,15 +95,14 @@ function FlowCanvas({ initialGraph, onChange, onSelect, selectedId }: FlowCanvas
         position,
         data: defaultDataForType(type) as never,
       };
-      setNodes((ns) => ns.concat(node));
+      onAddNode(node);
     },
-    [reactFlow, setNodes],
+    [reactFlow, onAddNode],
   );
 
   return (
     <div
       className="relative h-full flex-1"
-      ref={wrapperRef}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
@@ -160,25 +138,6 @@ function EmptyCanvasOverlay() {
       </div>
     </div>
   );
-}
-
-function graphToNodes(g: FlowGraph): Node[] {
-  return g.nodes.map((n) => ({
-    id: n.id,
-    type: n.type,
-    position: n.position,
-    data: n.data as Record<string, unknown>,
-  }));
-}
-
-function graphToEdges(g: FlowGraph): Edge[] {
-  return g.edges.map((e) => ({
-    id: e.id,
-    source: e.source,
-    target: e.target,
-    sourceHandle: e.sourceHandle ?? null,
-    targetHandle: e.targetHandle ?? null,
-  }));
 }
 
 function cryptoRandomId(): string {

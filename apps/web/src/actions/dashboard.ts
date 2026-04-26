@@ -1,6 +1,6 @@
 'use server';
 
-import { conversation, db, flow, message } from '@mushu/db';
+import { conversation, flow, message, withOrgTx } from '@mushu/db';
 import { and, eq, gte, sql } from 'drizzle-orm';
 
 export interface DashboardStats {
@@ -14,44 +14,50 @@ export async function getDashboardStats(orgId: string): Promise<DashboardStats> 
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [commentsRow] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(message)
-    .where(
-      and(
-        eq(message.messageType, 'activity'),
-        eq(message.status, 'sent'),
-        gte(message.createdAt, dayAgo),
-      ),
-    );
+  return withOrgTx(orgId, async (tx) => {
+    const [commentsRow] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(message)
+      .where(
+        and(
+          eq(message.organizationId, orgId),
+          eq(message.messageType, 'activity'),
+          eq(message.status, 'sent'),
+          gte(message.createdAt, dayAgo),
+        ),
+      );
 
-  const [dmsRow] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(message)
-    .where(
-      and(
-        eq(message.messageType, 'outgoing'),
-        eq(message.status, 'sent'),
-        gte(message.createdAt, dayAgo),
-      ),
-    );
+    const [dmsRow] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(message)
+      .where(
+        and(
+          eq(message.organizationId, orgId),
+          eq(message.messageType, 'outgoing'),
+          eq(message.status, 'sent'),
+          gte(message.createdAt, dayAgo),
+        ),
+      );
 
-  const [activeRow] = await db
-    .select({ n: sql<number>`count(distinct ${conversation.contactId})::int` })
-    .from(conversation)
-    .where(and(eq(conversation.organizationId, orgId), gte(conversation.lastActivityAt, weekAgo)));
+    const [activeRow] = await tx
+      .select({ n: sql<number>`count(distinct ${conversation.contactId})::int` })
+      .from(conversation)
+      .where(
+        and(eq(conversation.organizationId, orgId), gte(conversation.lastActivityAt, weekAgo)),
+      );
 
-  const [flowsRow] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(flow)
-    .where(and(eq(flow.organizationId, orgId), eq(flow.isEnabled, true)));
+    const [flowsRow] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(flow)
+      .where(and(eq(flow.organizationId, orgId), eq(flow.isEnabled, true)));
 
-  return {
-    commentsRespondedDay: commentsRow?.n ?? 0,
-    dmsSentDay: dmsRow?.n ?? 0,
-    activeContactsWeek: activeRow?.n ?? 0,
-    liveFlows: flowsRow?.n ?? 0,
-  };
+    return {
+      commentsRespondedDay: commentsRow?.n ?? 0,
+      dmsSentDay: dmsRow?.n ?? 0,
+      activeContactsWeek: activeRow?.n ?? 0,
+      liveFlows: flowsRow?.n ?? 0,
+    };
+  });
 }
 
 export interface ChartPoint {

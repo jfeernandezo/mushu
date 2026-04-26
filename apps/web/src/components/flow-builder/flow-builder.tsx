@@ -1,12 +1,21 @@
 'use client';
 
-import type { Node } from '@xyflow/react';
+import {
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+  type Connection,
+  type Edge,
+  type EdgeChange,
+  type Node,
+  type NodeChange,
+} from '@xyflow/react';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import type { FlowGraph } from '@mushu/shared/flow';
+import type { FlowGraph, FlowNodeType } from '@mushu/shared/flow';
 import { publishFlow, saveFlowDraft } from '@/actions/flows';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,15 +41,63 @@ export function FlowBuilder({
   fromTemplate,
 }: FlowBuilderProps) {
   const t = useTranslations('flowBuilder');
-  const [graph, setGraph] = useState<FlowGraph>(initialGraph);
+  const tErrors = useTranslations('flowBuilder.publishErrors');
+
+  // Single source of truth for the canvas. The React Flow canvas is rendered
+  // in *controlled* mode (see flow-canvas.tsx) so external mutations from the
+  // inspector — `onUpdateNodeData`, `onDeleteNode` — flow back into the canvas
+  // immediately. Previously the canvas had its own `useNodesState`, which
+  // ignored external changes and made the UI feel frozen.
+  const [nodes, setNodes] = useState<Node[]>(() => graphToNodes(initialGraph));
+  const [edges, setEdges] = useState<Edge[]>(() => graphToEdges(initialGraph));
   const [selected, setSelected] = useState<Node | null>(null);
+
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [isPublishing, startPublish] = useTransition();
+  const [isPublishing, setIsPublishing] = useState(false);
   const [publishedVersion, setPublishedVersion] = useState<number | null>(null);
 
-  const onChange = useCallback(
-    async (next: FlowGraph) => {
-      setGraph(next);
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setNodes((nds) => applyNodeChanges(changes, nds));
+  }, []);
+
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setEdges((eds) => applyEdgeChanges(changes, eds));
+  }, []);
+
+  const onConnect = useCallback((params: Connection) => {
+    setEdges((eds) => addEdge({ ...params, id: crypto.randomUUID() }, eds));
+  }, []);
+
+  const onAddNode = useCallback((node: Node) => {
+    setNodes((ns) => ns.concat(node));
+  }, []);
+
+  const onUpdateNodeData = useCallback((id: string, data: Record<string, unknown>) => {
+    setNodes((ns) =>
+      ns.map((n) => (n.id === id ? { ...n, data: data as never } : n)),
+    );
+    setSelected((s) => (s && s.id === id ? { ...s, data } : s));
+  }, []);
+
+  const onDeleteNode = useCallback((id: string) => {
+    setNodes((ns) => ns.filter((n) => n.id !== id));
+    setEdges((es) => es.filter((e) => e.source !== id && e.target !== id));
+    setSelected(null);
+  }, []);
+
+  // Persist to backend whenever nodes/edges change. Debounced 400ms so a fast
+  // drag of a node doesn't hammer the server.
+  //
+  // We skip the very first effect run — that fires on mount with the
+  // unchanged initial graph and would just write back what we just loaded.
+  const isFirstSave = useRef(true);
+  useEffect(() => {
+    if (isFirstSave.current) {
+      isFirstSave.current = false;
+      return;
+    }
+    const handle = setTimeout(async () => {
+      const next = nodesEdgesToGraph(nodes, edges);
       setSaveStatus('saving');
       try {
         await saveFlowDraft(flowId, next);
@@ -49,52 +106,33 @@ export function FlowBuilder({
         console.error(err);
         setSaveStatus('error');
       }
-    },
-    [flowId],
-  );
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [nodes, edges, flowId]);
 
-  const onUpdateNodeData = useCallback(
-    (id: string, data: Record<string, unknown>) => {
-      const next: FlowGraph = {
-        ...graph,
-        nodes: graph.nodes.map((n) => (n.id === id ? { ...n, data: data as never } : n)) as never,
-      };
-      void onChange(next);
-      setSelected((s) => (s && s.id === id ? { ...s, data } : s));
-    },
-    [graph, onChange],
-  );
+  // Derived for validation + (future) preview features.
+  const graph = useMemo<FlowGraph>(() => nodesEdgesToGraph(nodes, edges), [nodes, edges]);
 
-  const onDeleteNode = useCallback(
-    (id: string) => {
-      const next: FlowGraph = {
-        ...graph,
-        nodes: graph.nodes.filter((n) => n.id !== id),
-        edges: graph.edges.filter((e) => e.source !== id && e.target !== id),
-      };
-      void onChange(next);
-      setSelected(null);
-    },
-    [graph, onChange],
-  );
-
-  const tErrors = useTranslations('flowBuilder.publishErrors');
-
-  function onPublish() {
+  async function onPublish() {
+    if (isPublishing) return;
     const validationError = validateFlowForPublish(graph);
     if (validationError) {
       toast.error(tErrors(validationError.kind));
       return;
     }
-    startPublish(async () => {
-      try {
-        const r = await publishFlow(flowId);
-        setPublishedVersion(r.version);
-      } catch (err) {
-        console.error(err);
-        toast.error(t('publishFailed', { error: (err as Error).message }));
-      }
-    });
+    setIsPublishing(true);
+    try {
+      const r = await publishFlow(flowId);
+      setPublishedVersion(r.version);
+      toast.success(t('publishedToast', { version: r.version }));
+    } catch (err) {
+      console.error(err);
+      toast.error(t('publishFailed', { error: (err as Error).message }));
+    } finally {
+      // Always release the spinner — `useTransition` was leaving us stuck on
+      // pending forever when revalidatePath ran on the same route.
+      setIsPublishing(false);
+    }
   }
 
   return (
@@ -132,8 +170,12 @@ export function FlowBuilder({
       <div className="flex flex-1 overflow-hidden">
         <NodePalette />
         <FlowCanvasShell
-          initialGraph={graph}
-          onChange={onChange}
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onAddNode={onAddNode}
           onSelect={setSelected}
           selectedId={selected?.id ?? null}
         />
@@ -154,4 +196,41 @@ function SaveStatus({ status }: { status: 'idle' | 'saving' | 'saved' | 'error' 
   if (status === 'saved') return <span>{t('saved')}</span>;
   if (status === 'error') return <span className="text-[var(--color-mushu-danger)]">{t('error')}</span>;
   return <span>{t('draft')}</span>;
+}
+
+function graphToNodes(g: FlowGraph): Node[] {
+  return g.nodes.map((n) => ({
+    id: n.id,
+    type: n.type,
+    position: n.position,
+    data: n.data as Record<string, unknown>,
+  }));
+}
+
+function graphToEdges(g: FlowGraph): Edge[] {
+  return g.edges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    sourceHandle: e.sourceHandle ?? null,
+    targetHandle: e.targetHandle ?? null,
+  }));
+}
+
+function nodesEdgesToGraph(nodes: Node[], edges: Edge[]): FlowGraph {
+  return {
+    nodes: nodes.map((n) => ({
+      id: n.id,
+      type: (n.type ?? 'control.end') as FlowNodeType,
+      position: n.position,
+      data: (n.data ?? {}) as never,
+    })) as never,
+    edges: edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle ?? null,
+      targetHandle: e.targetHandle ?? null,
+    })),
+  };
 }

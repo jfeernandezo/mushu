@@ -6,6 +6,7 @@ import { SettingsNav } from '@/components/settings/settings-nav';
 import { AppShell } from '@/components/shell/app-shell';
 import { SignOutButton } from '@/components/shell/sign-out-button';
 import { auth } from '@/lib/auth';
+import { isHosted } from '@/lib/mode';
 
 export default async function SettingsLayout({ children }: { children: ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -21,7 +22,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
           <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-[var(--color-mushu-faint)]">
             {tSettings('section')}
           </p>
-          <SettingsNav />
+          <SettingsNav isHosted={isHosted()} />
           <div className="mt-6 border-t border-[var(--color-mushu-border)] pt-3">
             <SignOutButton />
           </div>

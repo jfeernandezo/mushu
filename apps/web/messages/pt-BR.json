@@ -1,4 +1,24 @@
 {
+  "pricing": {
+    "title": "Escolha o plano que faz sentido pra você",
+    "subtitle": "Free pra sempre até 1.000 contatos. Upgrade quando precisar de mais.",
+    "perMonth": "mês",
+    "free": "Grátis",
+    "limits": {
+      "contacts": "Até {n} contatos",
+      "igAccounts": "{n, plural, =1 {1 conta Instagram} other {# contas Instagram}}",
+      "operators": "{n, plural, =1 {1 operador} other {# operadores}}"
+    },
+    "cta": {
+      "start": "Começar grátis",
+      "upgrade": "Assinar agora"
+    },
+    "selfhost": {
+      "title": "Prefere rodar na sua infra?",
+      "body": "O Mushu é open-source (AGPL-3.0). Você pode dar fork e self-hostar sem pagar nada — todas as features ficam liberadas.",
+      "cta": "Ver no GitHub"
+    }
+  },
   "landing": {
     "tagline": "Seu pequeno dragão leal para automação do Instagram. Alternativa open-source ao ManyChat — self-hosted, grátis para sempre.",
     "signIn": "Entrar",
@@ -22,6 +42,10 @@
       "subtitle": "Mushu responde comentários, captura leads via DM e gerencia conversas 24/7 — open-source, self-hosted, grátis pra sempre. Ou use a versão hospedada se preferir não cuidar da infra.",
       "ctaPrimary": "Entrar",
       "ctaSecondary": "Ver no GitHub",
+      "ctaStartFree": "Começar grátis",
+      "ctaSeePricing": "Ver planos",
+      "ctaSelfHost": "Self-host (open-source)",
+      "hostedHint": "Free pra sempre até 1.000 contatos · Sem cartão de crédito · Cancele quando quiser",
       "preAlphaNote": "Pré-alfa. Em modo de desenvolvimento do Meta — só usuários adicionados como testadores conseguem conectar Instagram por enquanto."
     },
     "benefits": {
@@ -144,7 +168,8 @@
           "Preço a definir antes do lançamento público"
         ],
         "cta": "Entrar na lista de espera"
-      }
+      },
+      "hostedNote": "Não quer cuidar de infra? Use a versão hospedada oficial em"
     },
     "faq": {
       "eyebrow": "FAQ",
@@ -228,6 +253,13 @@
       "passwordPlaceholder": "Senha",
       "passwordSignupPlaceholder": "Senha (mínimo 8 caracteres)",
       "namePlaceholder": "Seu nome"
+    },
+    "consent": {
+      "iAm18AndAcceptPrefix": "Tenho 18 anos ou mais e li e aceito os",
+      "terms": "Termos de Uso",
+      "and": "e a",
+      "privacy": "Política de Privacidade",
+      "mustAccept": "Você precisa aceitar os Termos e a Política de Privacidade para continuar."
     }
   },
   "legal": {
@@ -367,6 +399,7 @@
     "publish": "Publicar",
     "publishing": "Publicando…",
     "publishedVersion": "Publicado v{version}",
+    "publishedToast": "Fluxo publicado (v{version})",
     "live": "Ativo",
     "draft": "Rascunho",
     "publishFailed": "Falha ao publicar: {error}",
@@ -555,8 +588,73 @@
       "security": "Segurança",
       "sessions": "Sessões",
       "workspace": "Workspace",
+      "members": "Membros",
+      "billing": "Plano e cobrança",
       "preferences": "Preferências",
+      "privacy": "Privacidade",
       "danger": "Zona de risco"
+    },
+    "billing": {
+      "title": "Plano e cobrança",
+      "subtitle": "Gerencie seu plano e método de pagamento.",
+      "currentPlan": "Plano atual",
+      "perMonth": "mês",
+      "renewsOn": "Renova em {date}",
+      "cancelsOn": "Cancela em {date}",
+      "readOnlyHint": "Você não tem permissão para gerenciar billing. Peça ao proprietário do workspace.",
+      "couldNotLoad": "Não foi possível carregar a assinatura: {error}",
+      "changePlan": "Trocar de plano",
+      "managePayment": "Pagamento",
+      "portalDescription": "Atualize cartão, baixe faturas ou cancele a assinatura no portal seguro do Stripe.",
+      "openPortal": "Abrir portal Stripe",
+      "loading": "Carregando…",
+      "checkoutFailed": "Falha ao iniciar checkout: {error}",
+      "portalFailed": "Falha ao abrir portal: {error}",
+      "upgradeTo": "Fazer upgrade para {plan}",
+      "switchTo": "Trocar para {plan}",
+      "status": {
+        "active": "Ativo",
+        "trialing": "Em trial",
+        "past_due": "Pagamento atrasado",
+        "canceled": "Cancelado",
+        "incomplete": "Incompleto",
+        "unpaid": "Não pago"
+      }
+    },
+    "members": {
+      "title": "Membros",
+      "subtitle": "Quem tem acesso a este workspace e que role ocupam.",
+      "card": "{count, plural, =1 {1 membro} other {# membros}}",
+      "youBadge": "Você",
+      "joined": "Entrou em {date}",
+      "remove": "Remover membro",
+      "removeConfirm": "Tem certeza que quer remover {name} deste workspace?",
+      "removed": "Membro removido.",
+      "removeFailed": "Não foi possível remover: {error}",
+      "roleChanged": "Role atualizado.",
+      "roleChangeFailed": "Não foi possível alterar role: {error}",
+      "inviteComingSoon": "Convidar novos membros: em breve (precisa de SMTP configurado).",
+      "roleLabel": {
+        "owner": "Proprietário",
+        "admin": "Admin",
+        "editor": "Editor",
+        "viewer": "Visualizador"
+      }
+    },
+    "privacy": {
+      "title": "Privacidade",
+      "subtitle": "Exerça seus direitos sobre os dados pessoais que tratamos.",
+      "exportTitle": "Exportar meus dados",
+      "exportBody": "Baixe um arquivo JSON com tudo que armazenamos sobre você: perfil, sessões, organizações, e — se você for proprietário — contas Instagram conectadas (sem tokens), contatos, conversas, mensagens e fluxos. Garante o direito à portabilidade da LGPD (art. 18, V). Limite de 1 exportação por hora.",
+      "exportButton": "Exportar dados (JSON)",
+      "exporting": "Preparando…",
+      "exported": "Exportação pronta — download iniciado.",
+      "rateLimited": "Você já exportou recentemente. Tente novamente em até 1 hora.",
+      "couldNotExport": "Não foi possível exportar: {error}",
+      "docsTitle": "Documentos",
+      "privacyLink": "Política de Privacidade",
+      "termsLink": "Termos de Uso",
+      "dataDeletionLink": "Como excluir meus dados"
     },
     "profile": {
       "title": "Perfil",

@@ -1,4 +1,4 @@
-import { db, flow } from '@mushu/db';
+import { flow, withOrgTx } from '@mushu/db';
 import { type FlowGraph, flowGraphSchema } from '@mushu/shared/flow';
 import { and, eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
@@ -22,16 +22,18 @@ export default async function FlowEditorPage({
   const orgId = session.session.activeOrganizationId;
   if (!orgId) redirect('/dashboard');
 
-  const [row] = await db
-    .select({
-      id: flow.id,
-      name: flow.name,
-      draftGraph: flow.draftGraph,
-      isEnabled: flow.isEnabled,
-    })
-    .from(flow)
-    .where(and(eq(flow.id, id), eq(flow.organizationId, orgId)))
-    .limit(1);
+  const [row] = await withOrgTx(orgId, (tx) =>
+    tx
+      .select({
+        id: flow.id,
+        name: flow.name,
+        draftGraph: flow.draftGraph,
+        isEnabled: flow.isEnabled,
+      })
+      .from(flow)
+      .where(and(eq(flow.id, id), eq(flow.organizationId, orgId)))
+      .limit(1),
+  );
 
   if (!row) notFound();
 

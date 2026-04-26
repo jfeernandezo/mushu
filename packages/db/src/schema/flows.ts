@@ -72,6 +72,9 @@ export const trigger = pgTable(
     instagramAccountId: text('instagram_account_id')
       .notNull()
       .references(() => instagramAccount.id, { onDelete: 'cascade' }),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
     type: text('type', {
       enum: [
         'comment_keyword',
@@ -96,6 +99,7 @@ export const trigger = pgTable(
       t.instagramAccountId,
       t.instagramPostId,
     ),
+    orgIdx: index('trigger_org_idx').on(t.organizationId),
   }),
 );
 

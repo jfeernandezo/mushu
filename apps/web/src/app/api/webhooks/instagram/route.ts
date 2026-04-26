@@ -1,4 +1,4 @@
-import { db, incomingEvent, instagramAccount } from '@mushu/db';
+import { dbAdmin as db, incomingEvent, instagramAccount } from '@mushu/db';
 import { type WebhookPayload, webhookPayloadSchema } from '@mushu/shared/instagram';
 import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';

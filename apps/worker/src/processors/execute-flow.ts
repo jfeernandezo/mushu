@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { contact, contactTag, db, flowExecution, message } from '@mushu/db';
+import { contact, contactTag, dbAdmin as db, flowExecution, message } from '@mushu/db';
 import {
   type FlowGraph,
   type FlowNode,
@@ -107,7 +107,7 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
 
     // ---- Side-effect nodes (synchronous) ----
     if (node.type === 'action.set_tag') {
-      await applySetTag(exec.contactId, node.data.tag, node.data.operation);
+      await applySetTag(exec.contactId, exec.organizationId, node.data.tag, node.data.operation);
       currentNodeId = findNextNodeId(graph, currentNodeId);
       continue;
     }
@@ -252,7 +252,13 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
 }
 
 async function persistOutgoingMessage(
-  exec: { id: string; instagramAccountId: string; conversationId: string | null; contactId: string },
+  exec: {
+    id: string;
+    instagramAccountId: string;
+    conversationId: string | null;
+    contactId: string;
+    organizationId: string;
+  },
   node: Extract<FlowNode, { type: 'action.send_dm' | 'action.reply_comment' }>,
   state: Record<string, unknown>,
 ): Promise<string> {
@@ -265,7 +271,12 @@ async function persistOutgoingMessage(
 }
 
 async function persistOutgoingTextMessage(
-  exec: { id: string; instagramAccountId: string; conversationId: string | null },
+  exec: {
+    id: string;
+    instagramAccountId: string;
+    conversationId: string | null;
+    organizationId: string;
+  },
   text: string,
   nodeId: string,
   nodeType: 'action.send_dm' | 'action.reply_comment',
@@ -278,6 +289,7 @@ async function persistOutgoingTextMessage(
     id,
     conversationId: exec.conversationId,
     instagramAccountId: exec.instagramAccountId,
+    organizationId: exec.organizationId,
     senderType: 'automation',
     senderId: null,
     messageType: nodeType === 'action.reply_comment' ? 'activity' : 'outgoing',
@@ -304,11 +316,15 @@ async function fetchContactCustomFields(contactId: string): Promise<Record<strin
 
 async function applySetTag(
   contactId: string,
+  organizationId: string,
   tag: string,
   operation: 'add' | 'remove',
 ): Promise<void> {
   if (operation === 'add') {
-    await db.insert(contactTag).values({ contactId, tag }).onConflictDoNothing();
+    await db
+      .insert(contactTag)
+      .values({ contactId, organizationId, tag })
+      .onConflictDoNothing();
   } else {
     await db
       .delete(contactTag)

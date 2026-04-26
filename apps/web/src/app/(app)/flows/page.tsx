@@ -1,4 +1,4 @@
-import { db, flow } from '@mushu/db';
+import { flow, withOrgTx } from '@mushu/db';
 import { desc, eq } from 'drizzle-orm';
 import { Workflow } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
@@ -22,18 +22,20 @@ export default async function FlowsPage() {
   const tNav = await getTranslations('nav');
   const formatter = await getFormatter();
 
-  const flows = await db
-    .select({
-      id: flow.id,
-      name: flow.name,
-      description: flow.description,
-      isEnabled: flow.isEnabled,
-      publishVersion: flow.publishVersion,
-      updatedAt: flow.updatedAt,
-    })
-    .from(flow)
-    .where(eq(flow.organizationId, orgId))
-    .orderBy(desc(flow.updatedAt));
+  const flows = await withOrgTx(orgId, (tx) =>
+    tx
+      .select({
+        id: flow.id,
+        name: flow.name,
+        description: flow.description,
+        isEnabled: flow.isEnabled,
+        publishVersion: flow.publishVersion,
+        updatedAt: flow.updatedAt,
+      })
+      .from(flow)
+      .where(eq(flow.organizationId, orgId))
+      .orderBy(desc(flow.updatedAt)),
+  );
 
   return (
     <AppShell breadcrumb={[{ label: tNav('flows') }]}>

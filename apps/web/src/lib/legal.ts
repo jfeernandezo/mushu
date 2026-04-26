@@ -36,3 +36,10 @@ export const LEGAL = {
   termsUrl: `${APP.url}/terms`,
   dataDeletionUrl: `${APP.url}/data-deletion`,
 } as const;
+
+// Bump these when the user-facing legal text materially changes. Stored on
+// every signup-consent audit_log row so we can later prove which version
+// the user accepted (LGPD art. 8 §2). On bump, also surface a "review the
+// updated terms" prompt to existing users on next login (TODO).
+export const TERMS_VERSION = '2026-04-25';
+export const PRIVACY_VERSION = '2026-04-25';

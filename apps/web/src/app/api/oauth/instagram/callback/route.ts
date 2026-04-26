@@ -11,7 +11,7 @@ import { encryptToken } from '@/lib/crypto';
  * Server Action — TODO):
  *
  *   https://www.instagram.com/oauth/authorize
- *     ?client_id=<META_APP_ID>
+ *     ?client_id=<INSTAGRAM_APP_ID>
  *     &redirect_uri=<INSTAGRAM_OAUTH_REDIRECT_URI>
  *     &scope=instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments
  *     &response_type=code
@@ -64,8 +64,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard?ig_error=no_org', req.url));
   }
 
-  const appId = process.env.META_APP_ID;
-  const appSecret = process.env.META_APP_SECRET;
+  const appId = process.env.INSTAGRAM_APP_ID;
+  const appSecret = process.env.INSTAGRAM_APP_SECRET;
   const redirectUri = process.env.INSTAGRAM_OAUTH_REDIRECT_URI;
   if (!appId || !appSecret || !redirectUri) {
     return NextResponse.json({ error: 'app_not_configured' }, { status: 500 });

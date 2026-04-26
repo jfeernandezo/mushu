@@ -46,7 +46,7 @@ pnpm install
 
 # 3. Set up env
 cp .env.example .env
-# edit .env — at minimum set META_APP_ID, META_APP_SECRET, ngrok URL for webhook
+# edit .env — at minimum: META_APP_ID, META_APP_SECRET, INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET, ngrok URL for webhook
 
 # 4. Start infra (postgres, redis, minio)
 docker compose up -d postgres redis minio

@@ -78,11 +78,13 @@ because the redirect URI must point to your domain.
   Redirect URIs**.
 - Set the env vars on your deploy:
 
-| Variable                       | Source                                 |
-| ------------------------------ | -------------------------------------- |
-| `META_APP_ID`                  | App ID from the Meta dashboard         |
-| `META_APP_SECRET`              | App Secret (rotate if exposed)         |
-| `META_WEBHOOK_VERIFY_TOKEN`    | Random string you choose               |
+| Variable                       | Source |
+| ------------------------------ | ------ |
+| `META_APP_ID`                  | Facebook App ID (top of dashboard) — used for webhook signature verification |
+| `META_APP_SECRET`              | Facebook App Secret (rotate if exposed) |
+| `INSTAGRAM_APP_ID`             | Instagram App ID — Dashboard → Instagram → "API setup with Instagram login". **Different** from `META_APP_ID`. |
+| `INSTAGRAM_APP_SECRET`         | Instagram App Secret from the same screen |
+| `META_WEBHOOK_VERIFY_TOKEN`    | Random string you choose |
 | `INSTAGRAM_OAUTH_REDIRECT_URI` | `https://.../api/oauth/instagram/callback` |
 
 While the app is in **Development mode**, only Facebook users you add as

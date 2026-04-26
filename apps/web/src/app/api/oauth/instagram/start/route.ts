@@ -5,7 +5,6 @@ const SCOPES = [
   'instagram_business_basic',
   'instagram_business_manage_messages',
   'instagram_business_manage_comments',
-  'instagram_business_content_publish',
 ];
 
 /**
@@ -20,7 +19,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/login?next=/api/oauth/instagram/start', req.url));
   }
 
-  const appId = process.env.META_APP_ID;
+  const appId = process.env.INSTAGRAM_APP_ID;
   const redirectUri = process.env.INSTAGRAM_OAUTH_REDIRECT_URI;
   if (!appId || !redirectUri) {
     return NextResponse.json({ error: 'app_not_configured' }, { status: 500 });

@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface TopTrigger {
@@ -10,32 +11,31 @@ interface TopTriggersListProps {
   items: TopTrigger[];
 }
 
-export function TopTriggersList({ items }: TopTriggersListProps) {
+export async function TopTriggersList({ items }: TopTriggersListProps) {
+  const t = await getTranslations('dashboard.topTriggers');
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top triggers</CardTitle>
+        <CardTitle>{t('title')}</CardTitle>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (
-          <p className="text-xs text-[var(--color-mushu-faint)]">
-            No triggers fired yet. They'll show up here once your flows are live.
-          </p>
+          <p className="text-xs text-[var(--color-mushu-faint)]">{t('empty')}</p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {items.map((t) => (
-              <li key={t.label} className="flex items-center gap-3">
+            {items.map((item) => (
+              <li key={item.label} className="flex items-center gap-3">
                 <span className="w-32 truncate text-sm text-[var(--color-mushu-mute)]">
-                  {t.label}
+                  {item.label}
                 </span>
                 <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-mushu-surface-hover)]">
                   <div
                     className="h-full rounded-full bg-[var(--color-mushu-scarlet)]"
-                    style={{ width: `${Math.max(0, Math.min(1, t.pct)) * 100}%` }}
+                    style={{ width: `${Math.max(0, Math.min(1, item.pct)) * 100}%` }}
                   />
                 </div>
                 <span className="w-10 text-right text-xs tabular-nums text-[var(--color-mushu-faint)]">
-                  {t.fires}
+                  {item.fires}
                 </span>
               </li>
             ))}

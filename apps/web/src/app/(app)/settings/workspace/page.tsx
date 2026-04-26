@@ -1,6 +1,7 @@
 import { db, instagramAccount } from '@mushu/db';
 import { eq } from 'drizzle-orm';
 import { Instagram } from 'lucide-react';
+import { getFormatter, getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,9 @@ export default async function WorkspaceSettingsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/login');
   const orgId = session.session.activeOrganizationId;
+
+  const t = await getTranslations('settings.workspace');
+  const formatter = await getFormatter();
 
   const accounts = orgId
     ? await db
@@ -28,21 +32,17 @@ export default async function WorkspaceSettingsPage() {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Workspace</h1>
-        <p className="text-sm text-[var(--color-mushu-mute)]">
-          Instagram accounts and integrations for this organization.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
+        <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Instagram accounts</CardTitle>
+          <CardTitle className="text-sm">{t('card')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {accounts.length === 0 ? (
-            <p className="text-sm text-[var(--color-mushu-mute)]">
-              No Instagram accounts connected yet.
-            </p>
+            <p className="text-sm text-[var(--color-mushu-mute)]">{t('empty')}</p>
           ) : (
             accounts.map((a) => (
               <div
@@ -55,12 +55,16 @@ export default async function WorkspaceSettingsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {a.webhookSubscribed ? (
-                    <Badge variant="success">Active</Badge>
+                    <Badge variant="success">{t('active')}</Badge>
                   ) : (
-                    <Badge variant="outline">Webhook pending</Badge>
+                    <Badge variant="outline">{t('webhookPending')}</Badge>
                   )}
                   <span className="text-xs text-[var(--color-mushu-faint)]">
-                    Expires {a.expiresAt?.toLocaleDateString() ?? '—'}
+                    {a.expiresAt
+                      ? t('expiresOn', {
+                          date: formatter.dateTime(a.expiresAt, { dateStyle: 'short' }),
+                        })
+                      : t('neverExpires')}
                   </span>
                 </div>
               </div>
@@ -69,7 +73,7 @@ export default async function WorkspaceSettingsPage() {
           <Button asChild variant="default" className="w-fit">
             <a href="/api/oauth/instagram/start">
               <Instagram className="h-4 w-4" />
-              Connect Instagram account
+              {t('connect')}
             </a>
           </Button>
         </CardContent>

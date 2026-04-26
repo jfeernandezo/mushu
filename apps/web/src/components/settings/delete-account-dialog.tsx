@@ -1,6 +1,7 @@
 'use client';
 
 import { Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
@@ -13,6 +14,7 @@ interface DeleteAccountDialogProps {
 }
 
 export function DeleteAccountDialog({ email }: DeleteAccountDialogProps) {
+  const t = useTranslations('settings.danger');
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState('');
@@ -25,14 +27,14 @@ export function DeleteAccountDialog({ email }: DeleteAccountDialogProps) {
     const r = await deleteAccount({ confirmEmail, password });
     setLoading(false);
     if (r.ok) {
-      toast.success('Account deleted. Goodbye 🐲');
+      toast.success(t('success'));
       router.push('/');
     } else if (r.error === 'email_mismatch') {
-      toast.error("Email doesn't match");
+      toast.error(t('emailMismatch'));
     } else if (r.error === 'invalid_input') {
-      toast.error('Fill in your email and password');
+      toast.error(t('fillFields'));
     } else {
-      toast.error(`Could not delete account: ${r.error}`);
+      toast.error(t('couldNotDelete', { error: r.error }));
     }
   }
 
@@ -40,7 +42,7 @@ export function DeleteAccountDialog({ email }: DeleteAccountDialogProps) {
     return (
       <Button variant="destructive" onClick={() => setOpen(true)} className="w-fit">
         <Trash2 className="h-4 w-4" />
-        Delete my account
+        {t('openButton')}
       </Button>
     );
   }
@@ -52,18 +54,15 @@ export function DeleteAccountDialog({ email }: DeleteAccountDialogProps) {
     >
       <div>
         <h3 className="text-sm font-medium text-[var(--color-mushu-ink)]">
-          Confirm account deletion
+          {t('confirmTitle')}
         </h3>
         <p className="mt-1 text-xs text-[var(--color-mushu-mute)]">
-          Type your email <strong className="text-[var(--color-mushu-ink)]">{email}</strong>{' '}
-          and your current password. This will delete your account, sessions, organization
-          memberships, connected Instagram tokens, flows and contacts. The action cannot be
-          undone.
+          {t('confirmBody', { email })}
         </p>
       </div>
 
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-[var(--color-mushu-mute)]">Email confirmation</span>
+        <span className="text-[var(--color-mushu-mute)]">{t('emailField')}</span>
         <Input
           type="email"
           required
@@ -75,7 +74,7 @@ export function DeleteAccountDialog({ email }: DeleteAccountDialogProps) {
       </label>
 
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-[var(--color-mushu-mute)]">Current password</span>
+        <span className="text-[var(--color-mushu-mute)]">{t('passwordField')}</span>
         <Input
           type="password"
           required
@@ -96,10 +95,10 @@ export function DeleteAccountDialog({ email }: DeleteAccountDialogProps) {
           }}
           disabled={loading}
         >
-          Cancel
+          {t('cancel')}
         </Button>
         <Button type="submit" variant="destructive" disabled={loading}>
-          {loading ? 'Deleting…' : 'Permanently delete'}
+          {loading ? t('deleting') : t('delete')}
         </Button>
       </div>
     </form>

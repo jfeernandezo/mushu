@@ -1,6 +1,7 @@
 import { db, flow } from '@mushu/db';
 import { desc, eq } from 'drizzle-orm';
-import { Plus, Workflow } from 'lucide-react';
+import { Workflow } from 'lucide-react';
+import { getFormatter, getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -16,6 +17,10 @@ export default async function FlowsPage() {
   const orgId = session.session.activeOrganizationId;
   if (!orgId) redirect('/dashboard');
 
+  const t = await getTranslations('flows');
+  const tNav = await getTranslations('nav');
+  const formatter = await getFormatter();
+
   const flows = await db
     .select({
       id: flow.id,
@@ -30,24 +35,18 @@ export default async function FlowsPage() {
     .orderBy(desc(flow.updatedAt));
 
   return (
-    <AppShell
-      breadcrumb={[{ label: 'Flows' }]}
-
-      showActivitiesPanel={false}
-    >
+    <AppShell breadcrumb={[{ label: tNav('flows') }]} showActivitiesPanel={false}>
       <div className="flex flex-col gap-6">
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Flows</h1>
-            <p className="text-sm text-[var(--color-mushu-mute)]">
-              Visual automations triggered by Instagram events.
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
+            <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
           </div>
           <CreateFlowButton />
         </div>
 
         {flows.length === 0 ? (
-          <EmptyState />
+          <EmptyState title={t('emptyTitle')} body={t('emptyBody')} />
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {flows.map((f) => (
@@ -57,14 +56,17 @@ export default async function FlowsPage() {
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-medium text-[var(--color-mushu-ink)]">{f.name}</h3>
                       <Badge variant={f.isEnabled ? 'success' : 'outline'}>
-                        {f.isEnabled ? 'Live' : 'Draft'}
+                        {f.isEnabled ? t('live') : t('draft')}
                       </Badge>
                     </div>
                     <p className="line-clamp-2 text-sm text-[var(--color-mushu-mute)]">
-                      {f.description ?? 'No description'}
+                      {f.description ?? t('noDescription')}
                     </p>
                     <p className="mt-2 text-xs text-[var(--color-mushu-faint)]">
-                      v{f.publishVersion} · updated {f.updatedAt.toLocaleDateString()}
+                      {t('versionUpdated', {
+                        version: f.publishVersion,
+                        date: formatter.dateTime(f.updatedAt, { dateStyle: 'short' }),
+                      })}
                     </p>
                   </CardContent>
                 </Card>
@@ -77,21 +79,17 @@ export default async function FlowsPage() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
         <Workflow className="h-10 w-10 text-[var(--color-mushu-faint)]" />
         <div>
-          <h3 className="font-medium">No flows yet</h3>
-          <p className="mt-1 text-sm text-[var(--color-mushu-mute)]">
-            Create your first flow to start automating comment replies and DM sequences.
-          </p>
+          <h3 className="font-medium">{title}</h3>
+          <p className="mt-1 text-sm text-[var(--color-mushu-mute)]">{body}</p>
         </div>
         <CreateFlowButton />
       </CardContent>
     </Card>
   );
 }
-
-void Plus;

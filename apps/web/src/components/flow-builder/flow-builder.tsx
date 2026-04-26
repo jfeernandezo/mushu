@@ -2,8 +2,10 @@
 
 import type { Node } from '@xyflow/react';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useCallback, useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import type { FlowGraph } from '@mushu/shared/flow';
 import { publishFlow, saveFlowDraft } from '@/actions/flows';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +22,7 @@ interface FlowBuilderProps {
 }
 
 export function FlowBuilder({ flowId, flowName, initialGraph, isEnabled }: FlowBuilderProps) {
+  const t = useTranslations('flowBuilder');
   const [graph, setGraph] = useState<FlowGraph>(initialGraph);
   const [selected, setSelected] = useState<Node | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -73,7 +76,7 @@ export function FlowBuilder({ flowId, flowName, initialGraph, isEnabled }: FlowB
         setPublishedVersion(r.version);
       } catch (err) {
         console.error(err);
-        alert(`Publish failed: ${(err as Error).message}`);
+        toast.error(t('publishFailed', { error: (err as Error).message }));
       }
     });
   }
@@ -84,7 +87,7 @@ export function FlowBuilder({ flowId, flowName, initialGraph, isEnabled }: FlowB
         <Button asChild variant="ghost" size="sm">
           <Link href="/flows">
             <ArrowLeft className="h-4 w-4" />
-            Flows
+            {t('back')}
           </Link>
         </Button>
         <div className="flex flex-col">
@@ -95,15 +98,15 @@ export function FlowBuilder({ flowId, flowName, initialGraph, isEnabled }: FlowB
         </div>
         <div className="ml-auto flex items-center gap-3">
           {publishedVersion !== null ? (
-            <Badge variant="success">Published v{publishedVersion}</Badge>
+            <Badge variant="success">{t('publishedVersion', { version: publishedVersion })}</Badge>
           ) : isEnabled ? (
-            <Badge variant="success">Live</Badge>
+            <Badge variant="success">{t('live')}</Badge>
           ) : (
-            <Badge variant="outline">Draft</Badge>
+            <Badge variant="outline">{t('draft')}</Badge>
           )}
           <Button onClick={onPublish} disabled={isPublishing}>
             {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            {isPublishing ? 'Publishing…' : 'Publish'}
+            {isPublishing ? t('publishing') : t('publish')}
           </Button>
         </div>
       </header>
@@ -128,8 +131,9 @@ export function FlowBuilder({ flowId, flowName, initialGraph, isEnabled }: FlowB
 }
 
 function SaveStatus({ status }: { status: 'idle' | 'saving' | 'saved' | 'error' }) {
-  if (status === 'saving') return <span>Saving…</span>;
-  if (status === 'saved') return <span>All changes saved</span>;
-  if (status === 'error') return <span className="text-[var(--color-mushu-danger)]">Save failed</span>;
-  return <span>Draft</span>;
+  const t = useTranslations('flowBuilder.save');
+  if (status === 'saving') return <span>{t('saving')}</span>;
+  if (status === 'saved') return <span>{t('saved')}</span>;
+  if (status === 'error') return <span className="text-[var(--color-mushu-danger)]">{t('error')}</span>;
+  return <span>{t('draft')}</span>;
 }

@@ -1,4 +1,5 @@
 import { MessageCircle, Send, Users, Zap } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
@@ -17,14 +18,14 @@ export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/login');
 
+  const t = await getTranslations('dashboard');
+  const tNav = await getTranslations('nav');
+
   const orgId = session.session.activeOrganizationId;
   if (!orgId) {
     return (
-      <AppShell
-        breadcrumb={[{ label: 'Dashboard' }]}
-
-      >
-        <NoOrgState />
+      <AppShell breadcrumb={[{ label: tNav('dashboard') }]}>
+        <NoOrgState title={t('noOrgTitle')} body={t('noOrgBody')} />
       </AppShell>
     );
   }
@@ -36,49 +37,44 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <AppShell
-      breadcrumb={[{ label: 'Dashboard' }]}
-
-    >
+    <AppShell breadcrumb={[{ label: tNav('dashboard') }]}>
       <div className="flex flex-col gap-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
-          <p className="text-sm text-[var(--color-mushu-mute)]">
-            Snapshot of your Instagram automations.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('today')}</h1>
+          <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Comments answered"
+            label={t('stats.commentsAnswered')}
             value={stats.commentsRespondedDay}
             icon={MessageCircle}
-            hint="Last 24h"
+            hint={t('stats.last24h')}
           />
           <StatCard
-            label="DMs sent"
+            label={t('stats.dmsSent')}
             value={stats.dmsSentDay}
             icon={Send}
-            hint="Last 24h"
+            hint={t('stats.last24h')}
           />
           <StatCard
-            label="Active contacts"
+            label={t('stats.activeContacts')}
             value={stats.activeContactsWeek}
             icon={Users}
-            hint="Last 7 days"
+            hint={t('stats.last7days')}
           />
           <StatCard
-            label="Live flows"
+            label={t('stats.liveFlows')}
             value={stats.liveFlows}
             icon={Zap}
-            hint="Currently enabled"
+            hint={t('stats.currentlyEnabled')}
           />
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Messages — last 7 days</CardTitle>
+              <CardTitle>{t('messagesLast7Days')}</CardTitle>
             </CardHeader>
             <CardContent>
               <MessagesChart data={chartData} />
@@ -91,20 +87,15 @@ export default async function DashboardPage() {
   );
 }
 
-function NoOrgState() {
+function NoOrgState({ title, body }: { title: string; body: string }) {
   return (
     <div className="flex h-[60vh] items-center justify-center">
       <Card className="max-w-md">
         <CardHeader>
-          <CardTitle className="text-base text-[var(--color-mushu-ink)]">
-            No active workspace
-          </CardTitle>
+          <CardTitle className="text-base text-[var(--color-mushu-ink)]">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-[var(--color-mushu-mute)]">
-            Create or pick a workspace to see your dashboard. Workspaces let you isolate
-            multiple clients or brands inside a single Mushu instance.
-          </p>
+          <p className="text-sm text-[var(--color-mushu-mute)]">{body}</p>
         </CardContent>
       </Card>
     </div>

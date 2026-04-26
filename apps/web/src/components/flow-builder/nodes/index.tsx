@@ -2,9 +2,11 @@
 
 import type { NodeProps } from '@xyflow/react';
 import { Clock, GitBranch, MessageCircle, MessageSquare, Send, Square, Zap } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { BaseNode } from './base-node';
 
 export function TriggerCommentNode({ data, selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
   const d = (data ?? {}) as {
     instagramPostId?: string;
     keywords?: string[];
@@ -13,106 +15,119 @@ export function TriggerCommentNode({ data, selected }: NodeProps) {
     <BaseNode
       icon={MessageCircle}
       iconColor="var(--color-mushu-amber)"
-      title="Comment trigger"
+      title={t('trigger.comment_keyword')}
       category="trigger"
       selected={selected}
       hasInput={false}
     >
       {d.keywords?.length ? (
-        <span>Matches: <span className="text-[var(--color-mushu-ink)]">{d.keywords.join(', ')}</span></span>
+        <span>
+          {t('matches')}{' '}
+          <span className="text-[var(--color-mushu-ink)]">{d.keywords.join(', ')}</span>
+        </span>
       ) : (
-        <span className="italic">Configure keywords…</span>
+        <span className="italic">{t('configureKeywords')}</span>
       )}
     </BaseNode>
   );
 }
 
 export function TriggerDmNode({ data, selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
   const d = (data ?? {}) as { keywords?: string[] };
   return (
     <BaseNode
       icon={MessageSquare}
       iconColor="var(--color-mushu-amber)"
-      title="DM keyword trigger"
+      title={t('trigger.dm_keyword')}
       category="trigger"
       selected={selected}
       hasInput={false}
     >
       {d.keywords?.length ? (
-        <span>Matches: <span className="text-[var(--color-mushu-ink)]">{d.keywords.join(', ')}</span></span>
+        <span>
+          {t('matches')}{' '}
+          <span className="text-[var(--color-mushu-ink)]">{d.keywords.join(', ')}</span>
+        </span>
       ) : (
-        <span className="italic">Configure keywords…</span>
+        <span className="italic">{t('configureKeywords')}</span>
       )}
     </BaseNode>
   );
 }
 
 export function SendDmNode({ data, selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
   const d = (data ?? {}) as { text?: string };
   return (
     <BaseNode
       icon={Send}
       iconColor="var(--color-mushu-scarlet-soft)"
-      title="Send DM"
+      title={t('action.send_dm')}
       category="action"
       selected={selected}
     >
       {d.text ? (
         <p className="line-clamp-2">{d.text}</p>
       ) : (
-        <span className="italic">Empty message…</span>
+        <span className="italic">{t('emptyMessage')}</span>
       )}
     </BaseNode>
   );
 }
 
 export function ReplyCommentNode({ data, selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
   const d = (data ?? {}) as { text?: string };
   return (
     <BaseNode
       icon={MessageCircle}
       iconColor="var(--color-mushu-scarlet-soft)"
-      title="Reply to comment"
+      title={t('action.reply_comment')}
       category="action"
       selected={selected}
     >
       {d.text ? (
         <p className="line-clamp-2">{d.text}</p>
       ) : (
-        <span className="italic">Empty reply…</span>
+        <span className="italic">{t('emptyReply')}</span>
       )}
     </BaseNode>
   );
 }
 
 export function DelayNode({ data, selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
   const d = (data ?? {}) as { durationSeconds?: number };
   const seconds = d.durationSeconds ?? 0;
   return (
-    <BaseNode icon={Clock} title="Delay" category="logic" selected={selected}>
-      Wait <span className="text-[var(--color-mushu-ink)]">{formatDuration(seconds)}</span>
+    <BaseNode icon={Clock} title={t('logic.delay')} category="logic" selected={selected}>
+      {t('wait')}{' '}
+      <span className="text-[var(--color-mushu-ink)]">{formatDuration(seconds)}</span>
     </BaseNode>
   );
 }
 
 export function ConditionNode({ selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
   return (
-    <BaseNode icon={GitBranch} title="Condition" category="logic" selected={selected}>
-      <span className="italic">Branches will land in v0.2</span>
+    <BaseNode icon={GitBranch} title={t('logic.condition')} category="logic" selected={selected}>
+      <span className="italic">{t('branchesV2')}</span>
     </BaseNode>
   );
 }
 
 export function EndNode({ selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
   return (
     <BaseNode
       icon={Square}
-      title="End"
+      title={t('control.end')}
       category="control"
       selected={selected}
       hasOutput={false}
     >
-      Stop the execution.
+      {t('stopExecution')}
     </BaseNode>
   );
 }

@@ -1,6 +1,7 @@
 import { AlertCircle, CheckCheck } from 'lucide-react';
-import Link from 'next/link';
+import { getFormatter, getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { listNotifications } from '@/actions/notifications';
 import { MarkAllReadButton } from '@/components/notifications/mark-all-read-button';
@@ -12,19 +13,21 @@ export default async function NotificationsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/login');
 
+  const t = await getTranslations('notificationsPage');
+  const tNotif = await getTranslations('notifications');
+  const formatter = await getFormatter();
+
   const result = await listNotifications({ limit: 100 });
   const items = result.ok ? result.data : [];
   const hasUnread = items.some((n) => n.readAt === null);
 
   return (
-    <AppShell breadcrumb={[{ label: 'Notifications' }]} showActivitiesPanel={false}>
+    <AppShell breadcrumb={[{ label: tNotif('title') }]} showActivitiesPanel={false}>
       <div className="flex max-w-3xl flex-col gap-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
-            <p className="text-sm text-[var(--color-mushu-mute)]">
-              Recent events from your workspace.
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
+            <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
           </div>
           {hasUnread ? <MarkAllReadButton /> : null}
         </div>
@@ -35,14 +38,16 @@ export default async function NotificationsPage() {
               <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
                 <CheckCheck className="h-6 w-6 text-[var(--color-mushu-faint)]" />
                 <p className="text-sm text-[var(--color-mushu-mute)]">
-                  Nothing here yet — connect an Instagram account in{' '}
-                  <Link
-                    href="/settings/workspace"
-                    className="text-[var(--color-mushu-amber)] hover:underline"
-                  >
-                    Workspace
-                  </Link>{' '}
-                  to start receiving events.
+                  {t.rich('emptyBody', {
+                    workspaceLink: (chunks) => (
+                      <Link
+                        href="/settings/workspace"
+                        className="text-[var(--color-mushu-amber)] hover:underline"
+                      >
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
                 </p>
               </div>
             ) : (
@@ -71,7 +76,10 @@ export default async function NotificationsPage() {
                           </p>
                         ) : null}
                         <p className="mt-1 text-[10px] uppercase tracking-wider text-[var(--color-mushu-faint)]">
-                          {n.createdAt.toLocaleString()}
+                          {formatter.dateTime(n.createdAt, {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
                         </p>
                       </div>
                     </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
 import { changePassword } from '@/actions/user';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 export function ChangePasswordForm() {
+  const t = useTranslations('settings.security');
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -16,7 +18,7 @@ export function ChangePasswordForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (next !== confirm) {
-      toast.error("New passwords don't match");
+      toast.error(t('passwordsDontMatch'));
       return;
     }
     setLoading(true);
@@ -27,22 +29,18 @@ export function ChangePasswordForm() {
     });
     setLoading(false);
     if (r.ok) {
-      toast.success(
-        revokeOthers
-          ? 'Password changed. Other sessions were signed out.'
-          : 'Password changed.',
-      );
+      toast.success(revokeOthers ? t('changedWithRevoke') : t('changed'));
       setCurrent('');
       setNext('');
       setConfirm('');
     } else {
-      toast.error(`Could not change password: ${humanize(r.error)}`);
+      toast.error(t('couldNotChange', { error: humanize(r.error, t) }));
     }
   }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <Field label="Current password">
+      <Field label={t('current')}>
         <Input
           type="password"
           autoComplete="current-password"
@@ -51,7 +49,7 @@ export function ChangePasswordForm() {
           onChange={(e) => setCurrent(e.target.value)}
         />
       </Field>
-      <Field label="New password" hint="At least 8 characters.">
+      <Field label={t('new')} hint={t('newHint')}>
         <Input
           type="password"
           autoComplete="new-password"
@@ -61,7 +59,7 @@ export function ChangePasswordForm() {
           onChange={(e) => setNext(e.target.value)}
         />
       </Field>
-      <Field label="Confirm new password">
+      <Field label={t('confirm')}>
         <Input
           type="password"
           autoComplete="new-password"
@@ -77,20 +75,19 @@ export function ChangePasswordForm() {
           checked={revokeOthers}
           onChange={(e) => setRevokeOthers(e.target.checked)}
         />
-        Sign me out of other sessions
+        {t('revokeOthers')}
       </label>
       <div className="flex justify-end">
         <Button type="submit" disabled={loading} className="w-fit">
-          {loading ? 'Updating…' : 'Update password'}
+          {loading ? t('submitting') : t('submit')}
         </Button>
       </div>
     </form>
   );
 }
 
-function humanize(error: string): string {
-  if (error.toLowerCase().includes('password')) return 'check your current password';
-  if (error === 'invalid_input') return 'invalid input';
+function humanize(error: string, t: (key: string) => string): string {
+  if (error.toLowerCase().includes('password')) return t('wrongCurrent');
   return error;
 }
 

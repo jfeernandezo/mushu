@@ -2,6 +2,7 @@
 
 import type { Node } from '@xyflow/react';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -13,10 +14,13 @@ interface NodeInspectorProps {
 }
 
 export function NodeInspector({ node, onChange, onClose, onDelete }: NodeInspectorProps) {
+  const tInspector = useTranslations('flowBuilder.inspector');
+  const tNodes = useTranslations('flowBuilder.nodes');
+
   if (!node) {
     return (
       <aside className="flex h-full w-72 flex-col items-center justify-center border-l border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] p-6 text-center text-xs text-[var(--color-mushu-faint)]">
-        Select a block to edit its settings.
+        {tInspector('selectBlock')}
       </aside>
     );
   }
@@ -32,14 +36,16 @@ export function NodeInspector({ node, onChange, onClose, onDelete }: NodeInspect
     <aside className="flex h-full w-72 flex-col gap-4 border-l border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--color-mushu-faint)]">
-          {nodeTitle(node.type)}
+          {nodeTitle(node.type, tNodes)}
         </h3>
         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={onClose}>
           <X className="h-3 w-3" />
         </Button>
       </div>
 
-      <div className="flex flex-col gap-3">{renderForm(node.type, data, update)}</div>
+      <div className="flex flex-col gap-3">
+        <Form type={node.type} data={data} update={update} />
+      </div>
 
       <Button
         variant="outline"
@@ -47,49 +53,51 @@ export function NodeInspector({ node, onChange, onClose, onDelete }: NodeInspect
         className="mt-auto text-xs text-[var(--color-mushu-danger)]"
         onClick={() => onDelete(node.id)}
       >
-        Delete block
+        {tInspector('deleteBlock')}
       </Button>
     </aside>
   );
 }
 
-function nodeTitle(type: string | undefined): string {
+function nodeTitle(type: string | undefined, tNodes: (key: string) => string): string {
   switch (type) {
     case 'trigger.comment_keyword':
-      return 'Comment trigger';
     case 'trigger.dm_keyword':
-      return 'DM keyword trigger';
     case 'action.send_dm':
-      return 'Send DM';
     case 'action.reply_comment':
-      return 'Reply comment';
     case 'logic.delay':
-      return 'Delay';
     case 'logic.condition':
-      return 'Condition';
     case 'control.end':
-      return 'End';
+      return tNodes(type);
     default:
-      return 'Block';
+      return tNodes('block');
   }
 }
 
-function renderForm(
-  type: string | undefined,
-  data: Record<string, unknown>,
-  update: (key: string, value: unknown) => void,
-) {
+function Form({
+  type,
+  data,
+  update,
+}: {
+  type: string | undefined;
+  data: Record<string, unknown>;
+  update: (key: string, value: unknown) => void;
+}) {
+  const tFields = useTranslations('flowBuilder.inspector.fields');
+  const tPh = useTranslations('flowBuilder.inspector.placeholders');
+  const tInspector = useTranslations('flowBuilder.inspector');
+
   if (type === 'trigger.comment_keyword') {
     return (
       <>
-        <Field label="Instagram post ID">
+        <Field label={tFields('instagramPostId')}>
           <Input
             value={(data.instagramPostId as string) ?? ''}
             onChange={(e) => update('instagramPostId', e.target.value)}
             placeholder="18069466016328562"
           />
         </Field>
-        <Field label="Keywords (comma-separated)">
+        <Field label={tFields('keywordsCommaSeparated')}>
           <Input
             value={Array.isArray(data.keywords) ? (data.keywords as string[]).join(', ') : ''}
             onChange={(e) =>
@@ -110,7 +118,7 @@ function renderForm(
 
   if (type === 'trigger.dm_keyword') {
     return (
-      <Field label="Keywords (comma-separated)">
+      <Field label={tFields('keywordsCommaSeparated')}>
         <Input
           value={Array.isArray(data.keywords) ? (data.keywords as string[]).join(', ') : ''}
           onChange={(e) =>
@@ -130,13 +138,13 @@ function renderForm(
 
   if (type === 'action.send_dm' || type === 'action.reply_comment') {
     return (
-      <Field label="Message text">
+      <Field label={tFields('messageText')}>
         <textarea
           value={(data.text as string) ?? ''}
           onChange={(e) => update('text', e.target.value)}
           rows={5}
           className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
-          placeholder="Hey! Here's the link…"
+          placeholder={tPh('messageText')}
         />
       </Field>
     );
@@ -144,12 +152,12 @@ function renderForm(
 
   if (type === 'logic.delay') {
     return (
-      <Field label="Duration (seconds)">
+      <Field label={tFields('durationSeconds')}>
         <Input
           type="number"
           value={String(data.durationSeconds ?? 30)}
           onChange={(e) => update('durationSeconds', Number.parseInt(e.target.value, 10) || 0)}
-          placeholder="30"
+          placeholder={tPh('delaySeconds')}
         />
       </Field>
     );
@@ -157,9 +165,7 @@ function renderForm(
 
   if (type === 'logic.condition') {
     return (
-      <p className="text-xs text-[var(--color-mushu-faint)]">
-        Condition editor lands in v0.2. For now, this block always takes the first branch.
-      </p>
+      <p className="text-xs text-[var(--color-mushu-faint)]">{tInspector('conditionV2')}</p>
     );
   }
 

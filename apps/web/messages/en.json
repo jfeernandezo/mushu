@@ -74,5 +74,222 @@
     "recentContacts": "Recent contacts",
     "recentContactsEmpty": "No contacts yet — they'll appear here as people interact with your IG.",
     "unnamed": "Unnamed"
+  },
+  "dashboard": {
+    "today": "Today",
+    "subtitle": "Snapshot of your Instagram automations.",
+    "noOrgTitle": "No active workspace",
+    "noOrgBody": "Create or pick a workspace to see your dashboard. Workspaces let you isolate multiple clients or brands inside a single Mushu instance.",
+    "messagesLast7Days": "Messages — last 7 days",
+    "stats": {
+      "commentsAnswered": "Comments answered",
+      "dmsSent": "DMs sent",
+      "activeContacts": "Active contacts",
+      "liveFlows": "Live flows",
+      "last24h": "Last 24h",
+      "last7days": "Last 7 days",
+      "currentlyEnabled": "Currently enabled"
+    },
+    "topTriggers": {
+      "title": "Top triggers",
+      "empty": "No triggers fired yet. They'll show up here once your flows are live."
+    }
+  },
+  "flows": {
+    "title": "Flows",
+    "subtitle": "Visual automations triggered by Instagram events.",
+    "newFlow": "New flow",
+    "creating": "Creating…",
+    "untitled": "Untitled flow",
+    "noDescription": "No description",
+    "live": "Live",
+    "draft": "Draft",
+    "versionUpdated": "v{version} · updated {date}",
+    "emptyTitle": "No flows yet",
+    "emptyBody": "Create your first flow to start automating comment replies and DM sequences."
+  },
+  "flowBuilder": {
+    "back": "Flows",
+    "publish": "Publish",
+    "publishing": "Publishing…",
+    "publishedVersion": "Published v{version}",
+    "live": "Live",
+    "draft": "Draft",
+    "publishFailed": "Publish failed: {error}",
+    "save": {
+      "saving": "Saving…",
+      "saved": "All changes saved",
+      "error": "Save failed",
+      "draft": "Draft"
+    },
+    "palette": {
+      "title": "Blocks",
+      "categoryTriggers": "Triggers",
+      "categoryActions": "Actions",
+      "categoryLogic": "Logic",
+      "categoryControl": "Control",
+      "hint": "Drag a block onto the canvas to add it. Connect blocks by dragging from the bottom dot to the next block's top dot."
+    },
+    "inspector": {
+      "selectBlock": "Select a block to edit its settings.",
+      "deleteBlock": "Delete block",
+      "fields": {
+        "instagramPostId": "Instagram post ID",
+        "keywordsCommaSeparated": "Keywords (comma-separated)",
+        "messageText": "Message text",
+        "durationSeconds": "Duration (seconds)"
+      },
+      "placeholders": {
+        "messageText": "Hey! Here's the link…",
+        "delaySeconds": "30"
+      },
+      "conditionV2": "Condition editor lands in v0.2. For now, this block always takes the first branch."
+    },
+    "nodes": {
+      "trigger.comment_keyword": "Comment trigger",
+      "trigger.dm_keyword": "DM keyword trigger",
+      "action.send_dm": "Send DM",
+      "action.reply_comment": "Reply to comment",
+      "logic.delay": "Delay",
+      "logic.condition": "Condition",
+      "control.end": "End",
+      "block": "Block",
+      "configureKeywords": "Configure keywords…",
+      "matches": "Matches:",
+      "emptyMessage": "Empty message…",
+      "emptyReply": "Empty reply…",
+      "wait": "Wait",
+      "branchesV2": "Branches will land in v0.2",
+      "stopExecution": "Stop the execution."
+    }
+  },
+  "contacts": {
+    "title": "Contacts",
+    "subtitle": "Everyone who interacted with your Instagram via Mushu.",
+    "empty": "No contacts yet. They'll show up here as people comment or DM your IG."
+  },
+  "triggers": {
+    "title": "Triggers",
+    "subtitle": "All trigger nodes from your published flows, in one list.",
+    "empty": "No triggers yet — publish a flow with a trigger block to populate this list."
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Deeper performance breakdowns for your flows. Coming in v0.2.",
+    "roadmap": "Conversion funnels, A/B testing, contact LTV — all on the v0.2 roadmap."
+  },
+  "settings": {
+    "section": "Settings",
+    "nav": {
+      "profile": "Profile",
+      "security": "Security",
+      "sessions": "Sessions",
+      "workspace": "Workspace",
+      "preferences": "Preferences",
+      "danger": "Danger zone"
+    },
+    "profile": {
+      "title": "Profile",
+      "subtitle": "How you appear inside Mushu.",
+      "card": "Personal info",
+      "name": "Name",
+      "email": "Email",
+      "emailHint": "To change your email, contact support.",
+      "avatar": "Avatar URL",
+      "avatarHint": "External URL only for now — file upload comes later.",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "updated": "Profile updated",
+      "couldNotUpdate": "Could not update profile: {error}"
+    },
+    "security": {
+      "title": "Security",
+      "subtitle": "Change your password.",
+      "card": "Password",
+      "current": "Current password",
+      "new": "New password",
+      "newHint": "At least 8 characters.",
+      "confirm": "Confirm new password",
+      "revokeOthers": "Sign me out of other sessions",
+      "submit": "Update password",
+      "submitting": "Updating…",
+      "changedWithRevoke": "Password changed. Other sessions were signed out.",
+      "changed": "Password changed.",
+      "couldNotChange": "Could not change password: {error}",
+      "passwordsDontMatch": "New passwords don't match",
+      "wrongCurrent": "check your current password"
+    },
+    "sessions": {
+      "title": "Sessions",
+      "subtitle": "Devices and browsers signed in to your account.",
+      "card": "Active sessions",
+      "thisSession": "This session",
+      "revoke": "Revoke",
+      "revokeAllOthers": "Revoke all others",
+      "revokeAllOthersConfirm": "Sign out of all other sessions?",
+      "revoked": "Session revoked",
+      "couldNotRevoke": "Could not revoke: {error}",
+      "othersRevoked": "Other sessions signed out",
+      "unknownIp": "Unknown IP",
+      "unknownDevice": "Unknown device",
+      "lastActive": "last active {when}",
+      "expires": "expires {date}",
+      "browserOn": "{browser} on {os}",
+      "browserGeneric": "Browser",
+      "deviceGeneric": "Device"
+    },
+    "workspace": {
+      "title": "Workspace",
+      "subtitle": "Instagram accounts and integrations for this organization.",
+      "card": "Instagram accounts",
+      "empty": "No Instagram accounts connected yet.",
+      "active": "Active",
+      "webhookPending": "Webhook pending",
+      "expiresOn": "Expires {date}",
+      "neverExpires": "—",
+      "connect": "Connect Instagram account"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "subtitle": "Theme and language for this account.",
+      "card": "Appearance & locale",
+      "themeLabel": "Theme",
+      "themeHint": "\"System\" follows your operating system preference.",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeSystem": "System",
+      "languageLabel": "Language",
+      "languageHint": "The interface will reload to apply the new language.",
+      "languageUpdated": "Language updated",
+      "couldNotSaveTheme": "Could not save theme preference",
+      "couldNotSaveLanguage": "Could not save language preference"
+    },
+    "danger": {
+      "title": "Danger zone",
+      "subtitle": "Irreversible actions. Proceed with care.",
+      "card": "Delete account",
+      "explanation": "Permanently deletes your user, sessions, organization memberships, connected Instagram tokens, flows, contacts and history. This cannot be undone. See <dataDeletionLink>the data deletion page</dataDeletionLink> for the full scope and retention policy.",
+      "openButton": "Delete my account",
+      "confirmTitle": "Confirm account deletion",
+      "confirmBody": "Type your email {email} and your current password. This will delete your account, sessions, organization memberships, connected Instagram tokens, flows and contacts. The action cannot be undone.",
+      "emailField": "Email confirmation",
+      "passwordField": "Current password",
+      "cancel": "Cancel",
+      "deleting": "Deleting…",
+      "delete": "Permanently delete",
+      "success": "Account deleted. Goodbye 🐲",
+      "emailMismatch": "Email doesn't match",
+      "fillFields": "Fill in your email and password",
+      "couldNotDelete": "Could not delete account: {error}"
+    }
+  },
+  "notificationsPage": {
+    "title": "Notifications",
+    "subtitle": "Recent events from your workspace.",
+    "emptyTitle": "Nothing here yet",
+    "emptyBody": "Connect an Instagram account in <workspaceLink>Workspace</workspaceLink> to start receiving events.",
+    "markAllRead": "Mark all read",
+    "marked": "All notifications marked as read",
+    "couldNotMarkAll": "Could not mark all as read"
   }
 }

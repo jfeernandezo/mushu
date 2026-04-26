@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
 import { updateProfile } from '@/actions/user';
@@ -13,6 +14,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ initialName, initialImage, email }: ProfileFormProps) {
+  const t = useTranslations('settings.profile');
   const [name, setName] = useState(initialName);
   const [image, setImage] = useState(initialImage ?? '');
   const [loading, setLoading] = useState(false);
@@ -23,15 +25,15 @@ export function ProfileForm({ initialName, initialImage, email }: ProfileFormPro
     const r = await updateProfile({ name, image });
     setLoading(false);
     if (r.ok) {
-      toast.success('Profile updated');
+      toast.success(t('updated'));
     } else {
-      toast.error(`Could not update profile: ${r.error}`);
+      toast.error(t('couldNotUpdate', { error: r.error }));
     }
   }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <Field label="Name">
+      <Field label={t('name')}>
         <Input
           required
           value={name}
@@ -40,14 +42,11 @@ export function ProfileForm({ initialName, initialImage, email }: ProfileFormPro
         />
       </Field>
 
-      <Field label="Email" hint="To change your email, contact support.">
+      <Field label={t('email')} hint={t('emailHint')}>
         <Input value={email} disabled readOnly />
       </Field>
 
-      <Field
-        label="Avatar URL"
-        hint="External URL only for now — file upload comes later."
-      >
+      <Field label={t('avatar')} hint={t('avatarHint')}>
         <Input
           type="url"
           placeholder="https://…"
@@ -58,7 +57,7 @@ export function ProfileForm({ initialName, initialImage, email }: ProfileFormPro
 
       <div className="flex justify-end">
         <Button type="submit" disabled={loading} className="w-fit">
-          {loading ? 'Saving…' : 'Save changes'}
+          {loading ? t('saving') : t('save')}
         </Button>
       </div>
     </form>

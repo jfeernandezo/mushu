@@ -74,5 +74,222 @@
     "recentContacts": "Contatos recentes",
     "recentContactsEmpty": "Sem contatos ainda — eles aparecem aqui conforme pessoas interagem com seu IG.",
     "unnamed": "Sem nome"
+  },
+  "dashboard": {
+    "today": "Hoje",
+    "subtitle": "Resumo das suas automações do Instagram.",
+    "noOrgTitle": "Nenhum workspace ativo",
+    "noOrgBody": "Crie ou escolha um workspace para ver seu dashboard. Workspaces permitem isolar múltiplos clientes ou marcas dentro de uma única instância do Mushu.",
+    "messagesLast7Days": "Mensagens — últimos 7 dias",
+    "stats": {
+      "commentsAnswered": "Comentários respondidos",
+      "dmsSent": "DMs enviadas",
+      "activeContacts": "Contatos ativos",
+      "liveFlows": "Fluxos ativos",
+      "last24h": "Últimas 24h",
+      "last7days": "Últimos 7 dias",
+      "currentlyEnabled": "Atualmente ativos"
+    },
+    "topTriggers": {
+      "title": "Gatilhos mais usados",
+      "empty": "Nenhum gatilho disparado ainda. Eles aparecem aqui assim que seus fluxos forem publicados."
+    }
+  },
+  "flows": {
+    "title": "Fluxos",
+    "subtitle": "Automações visuais disparadas por eventos do Instagram.",
+    "newFlow": "Novo fluxo",
+    "creating": "Criando…",
+    "untitled": "Fluxo sem título",
+    "noDescription": "Sem descrição",
+    "live": "Ativo",
+    "draft": "Rascunho",
+    "versionUpdated": "v{version} · atualizado em {date}",
+    "emptyTitle": "Nenhum fluxo ainda",
+    "emptyBody": "Crie seu primeiro fluxo para começar a automatizar respostas em comentários e sequências de DM."
+  },
+  "flowBuilder": {
+    "back": "Fluxos",
+    "publish": "Publicar",
+    "publishing": "Publicando…",
+    "publishedVersion": "Publicado v{version}",
+    "live": "Ativo",
+    "draft": "Rascunho",
+    "publishFailed": "Falha ao publicar: {error}",
+    "save": {
+      "saving": "Salvando…",
+      "saved": "Todas as alterações salvas",
+      "error": "Falha ao salvar",
+      "draft": "Rascunho"
+    },
+    "palette": {
+      "title": "Blocos",
+      "categoryTriggers": "Gatilhos",
+      "categoryActions": "Ações",
+      "categoryLogic": "Lógica",
+      "categoryControl": "Controle",
+      "hint": "Arraste um bloco para o canvas para adicioná-lo. Conecte blocos arrastando do ponto inferior até o ponto superior do próximo bloco."
+    },
+    "inspector": {
+      "selectBlock": "Selecione um bloco para editar suas configurações.",
+      "deleteBlock": "Excluir bloco",
+      "fields": {
+        "instagramPostId": "ID do post do Instagram",
+        "keywordsCommaSeparated": "Palavras-chave (separadas por vírgula)",
+        "messageText": "Texto da mensagem",
+        "durationSeconds": "Duração (segundos)"
+      },
+      "placeholders": {
+        "messageText": "Olá! Aqui está o link…",
+        "delaySeconds": "30"
+      },
+      "conditionV2": "O editor de condições chega na v0.2. Por enquanto, este bloco sempre segue o primeiro caminho."
+    },
+    "nodes": {
+      "trigger.comment_keyword": "Gatilho de comentário",
+      "trigger.dm_keyword": "Gatilho de DM por palavra-chave",
+      "action.send_dm": "Enviar DM",
+      "action.reply_comment": "Responder comentário",
+      "logic.delay": "Atraso",
+      "logic.condition": "Condição",
+      "control.end": "Fim",
+      "block": "Bloco",
+      "configureKeywords": "Configure as palavras-chave…",
+      "matches": "Captura:",
+      "emptyMessage": "Mensagem vazia…",
+      "emptyReply": "Resposta vazia…",
+      "wait": "Aguardar",
+      "branchesV2": "Ramificações chegam na v0.2",
+      "stopExecution": "Encerra a execução."
+    }
+  },
+  "contacts": {
+    "title": "Contatos",
+    "subtitle": "Todos que interagiram com seu Instagram via Mushu.",
+    "empty": "Sem contatos ainda. Eles aparecem aqui conforme pessoas comentarem ou enviarem DM no seu IG."
+  },
+  "triggers": {
+    "title": "Gatilhos",
+    "subtitle": "Todos os gatilhos dos seus fluxos publicados, em uma única lista.",
+    "empty": "Sem gatilhos ainda — publique um fluxo com um bloco de gatilho para popular essa lista."
+  },
+  "analytics": {
+    "title": "Análises",
+    "subtitle": "Análises detalhadas de desempenho dos seus fluxos. Em breve, na v0.2.",
+    "roadmap": "Funis de conversão, testes A/B, LTV de contato — todos no roadmap da v0.2."
+  },
+  "settings": {
+    "section": "Configurações",
+    "nav": {
+      "profile": "Perfil",
+      "security": "Segurança",
+      "sessions": "Sessões",
+      "workspace": "Workspace",
+      "preferences": "Preferências",
+      "danger": "Zona de risco"
+    },
+    "profile": {
+      "title": "Perfil",
+      "subtitle": "Como você aparece dentro do Mushu.",
+      "card": "Informações pessoais",
+      "name": "Nome",
+      "email": "E-mail",
+      "emailHint": "Para trocar o e-mail, fale com o suporte.",
+      "avatar": "URL do avatar",
+      "avatarHint": "Apenas URL externa por enquanto — upload de arquivo vem depois.",
+      "save": "Salvar alterações",
+      "saving": "Salvando…",
+      "updated": "Perfil atualizado",
+      "couldNotUpdate": "Não foi possível atualizar o perfil: {error}"
+    },
+    "security": {
+      "title": "Segurança",
+      "subtitle": "Trocar sua senha.",
+      "card": "Senha",
+      "current": "Senha atual",
+      "new": "Nova senha",
+      "newHint": "Mínimo de 8 caracteres.",
+      "confirm": "Confirmar nova senha",
+      "revokeOthers": "Sair das outras sessões",
+      "submit": "Atualizar senha",
+      "submitting": "Atualizando…",
+      "changedWithRevoke": "Senha alterada. Outras sessões foram desconectadas.",
+      "changed": "Senha alterada.",
+      "couldNotChange": "Não foi possível trocar a senha: {error}",
+      "passwordsDontMatch": "As senhas não conferem",
+      "wrongCurrent": "verifique sua senha atual"
+    },
+    "sessions": {
+      "title": "Sessões",
+      "subtitle": "Dispositivos e navegadores conectados à sua conta.",
+      "card": "Sessões ativas",
+      "thisSession": "Esta sessão",
+      "revoke": "Revogar",
+      "revokeAllOthers": "Revogar todas as outras",
+      "revokeAllOthersConfirm": "Sair de todas as outras sessões?",
+      "revoked": "Sessão revogada",
+      "couldNotRevoke": "Não foi possível revogar: {error}",
+      "othersRevoked": "Outras sessões desconectadas",
+      "unknownIp": "IP desconhecido",
+      "unknownDevice": "Dispositivo desconhecido",
+      "lastActive": "última atividade {when}",
+      "expires": "expira {date}",
+      "browserOn": "{browser} em {os}",
+      "browserGeneric": "Navegador",
+      "deviceGeneric": "Dispositivo"
+    },
+    "workspace": {
+      "title": "Workspace",
+      "subtitle": "Contas do Instagram e integrações desta organização.",
+      "card": "Contas do Instagram",
+      "empty": "Nenhuma conta do Instagram conectada ainda.",
+      "active": "Ativa",
+      "webhookPending": "Webhook pendente",
+      "expiresOn": "Expira {date}",
+      "neverExpires": "—",
+      "connect": "Conectar conta do Instagram"
+    },
+    "preferences": {
+      "title": "Preferências",
+      "subtitle": "Tema e idioma desta conta.",
+      "card": "Aparência e idioma",
+      "themeLabel": "Tema",
+      "themeHint": "\"Sistema\" segue a preferência do seu sistema operacional.",
+      "themeLight": "Claro",
+      "themeDark": "Escuro",
+      "themeSystem": "Sistema",
+      "languageLabel": "Idioma",
+      "languageHint": "A interface vai recarregar para aplicar o novo idioma.",
+      "languageUpdated": "Idioma atualizado",
+      "couldNotSaveTheme": "Não foi possível salvar a preferência de tema",
+      "couldNotSaveLanguage": "Não foi possível salvar a preferência de idioma"
+    },
+    "danger": {
+      "title": "Zona de risco",
+      "subtitle": "Ações irreversíveis. Prossiga com cuidado.",
+      "card": "Excluir conta",
+      "explanation": "Apaga permanentemente seu usuário, sessões, vínculos com workspaces, tokens conectados do Instagram, fluxos, contatos e histórico. Isso não pode ser desfeito. Veja a <dataDeletionLink>página de exclusão de dados</dataDeletionLink> para escopo completo e política de retenção.",
+      "openButton": "Excluir minha conta",
+      "confirmTitle": "Confirmar exclusão de conta",
+      "confirmBody": "Digite seu e-mail {email} e sua senha atual. Isso vai excluir sua conta, sessões, vínculos com workspaces, tokens conectados do Instagram, fluxos e contatos. A ação não pode ser desfeita.",
+      "emailField": "Confirmação de e-mail",
+      "passwordField": "Senha atual",
+      "cancel": "Cancelar",
+      "deleting": "Excluindo…",
+      "delete": "Excluir permanentemente",
+      "success": "Conta excluída. Até mais 🐲",
+      "emailMismatch": "O e-mail não confere",
+      "fillFields": "Preencha seu e-mail e senha",
+      "couldNotDelete": "Não foi possível excluir a conta: {error}"
+    }
+  },
+  "notificationsPage": {
+    "title": "Notificações",
+    "subtitle": "Eventos recentes do seu workspace.",
+    "emptyTitle": "Nada por aqui ainda",
+    "emptyBody": "Conecte uma conta do Instagram em <workspaceLink>Workspace</workspaceLink> para começar a receber eventos.",
+    "markAllRead": "Marcar todas como lidas",
+    "marked": "Todas as notificações marcadas como lidas",
+    "couldNotMarkAll": "Não foi possível marcar todas como lidas"
   }
 }

@@ -1,7 +1,9 @@
 'use client';
 
 import { Bell, Moon, Search, Sun } from 'lucide-react';
-import { useState } from 'react';
+import { startTransition } from 'react';
+import { updateUserPreferences } from '@/actions/preferences';
+import { useTheme } from '@/components/theme-provider';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +15,15 @@ interface AppTopNavProps {
 }
 
 export function AppTopNav({ breadcrumb, user }: AppTopNavProps) {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const { resolved, setTheme } = useTheme();
+
+  function toggleTheme() {
+    const next = resolved === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    startTransition(() => {
+      void updateUserPreferences({ theme: next });
+    });
+  }
 
   return (
     <header className="flex h-14 items-center gap-4 border-b border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] px-6">
@@ -49,10 +59,10 @@ export function AppTopNav({ breadcrumb, user }: AppTopNavProps) {
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onClick={toggleTheme}
           aria-label="Toggle theme"
         >
-          {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          {resolved === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
 
         <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Notifications">

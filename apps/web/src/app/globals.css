@@ -1,6 +1,15 @@
 @import 'tailwindcss';
 
 @theme {
+  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Theme tokens are runtime-switchable via [data-theme] on <html>.
+   Components reference them as bg-[var(--color-mushu-*)] etc., which read
+   whichever value is active for the current theme. Default (no attr) = dark. */
+
+:root,
+:root[data-theme='dark'] {
   --color-mushu-scarlet: #c73e1d;
   --color-mushu-scarlet-soft: #e15a3a;
   --color-mushu-amber: #ffc107;
@@ -18,7 +27,28 @@
   --color-mushu-success: #4ade80;
   --color-mushu-danger: #f87171;
 
-  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --color-mushu-scarlet: #c73e1d;
+  --color-mushu-scarlet-soft: #e15a3a;
+  --color-mushu-amber: #f59e0b;
+  --color-mushu-amber-soft: #fbbf24;
+
+  --color-mushu-bg: #ffffff;
+  --color-mushu-surface: #f8f8f7;
+  --color-mushu-surface-hover: #efefee;
+  --color-mushu-border: #e4e4e7;
+  --color-mushu-border-subtle: #ededee;
+  --color-mushu-ink: #18181b;
+  --color-mushu-mute: #52525b;
+  --color-mushu-faint: #a1a1aa;
+
+  --color-mushu-success: #16a34a;
+  --color-mushu-danger: #dc2626;
+
+  color-scheme: light;
 }
 
 html,
@@ -34,5 +64,5 @@ body {
 
 ::selection {
   background-color: var(--color-mushu-scarlet);
-  color: var(--color-mushu-ink);
+  color: #ffffff;
 }

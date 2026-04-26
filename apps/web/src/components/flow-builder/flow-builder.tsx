@@ -10,6 +10,7 @@ import type { FlowGraph } from '@mushu/shared/flow';
 import { publishFlow, saveFlowDraft } from '@/actions/flows';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { validateFlowForPublish } from '@/lib/validate-flow';
 import { FlowCanvasShell } from './flow-canvas';
 import { NodeInspector } from './node-inspector';
 import { NodePalette } from './node-palette';
@@ -69,7 +70,14 @@ export function FlowBuilder({ flowId, flowName, initialGraph, isEnabled }: FlowB
     [graph, onChange],
   );
 
+  const tErrors = useTranslations('flowBuilder.publishErrors');
+
   function onPublish() {
+    const validationError = validateFlowForPublish(graph);
+    if (validationError) {
+      toast.error(tErrors(validationError.kind));
+      return;
+    }
     startPublish(async () => {
       try {
         const r = await publishFlow(flowId);

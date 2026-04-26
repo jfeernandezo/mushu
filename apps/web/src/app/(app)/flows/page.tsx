@@ -6,6 +6,7 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CreateFlowButton } from '@/components/flows/create-flow-button';
+import { FlowCardMenu } from '@/components/flows/flow-card-menu';
 import { AppShell } from '@/components/shell/app-shell';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,7 +36,7 @@ export default async function FlowsPage() {
     .orderBy(desc(flow.updatedAt));
 
   return (
-    <AppShell breadcrumb={[{ label: tNav('flows') }]} showActivitiesPanel={false}>
+    <AppShell breadcrumb={[{ label: tNav('flows') }]}>
       <div className="flex flex-col gap-6">
         <div className="flex items-end justify-between">
           <div>
@@ -50,27 +51,36 @@ export default async function FlowsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {flows.map((f) => (
-              <Link key={f.id} href={`/flows/${f.id}`}>
-                <Card className="transition-colors hover:border-[var(--color-mushu-scarlet)]">
-                  <CardContent className="flex flex-col gap-2 p-5">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-medium text-[var(--color-mushu-ink)]">{f.name}</h3>
+              <Card
+                key={f.id}
+                className="relative transition-colors hover:border-[var(--color-mushu-scarlet)]"
+              >
+                <Link
+                  href={`/flows/${f.id}`}
+                  className="absolute inset-0 z-0"
+                  aria-label={f.name}
+                />
+                <CardContent className="relative z-10 flex flex-col gap-2 p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-medium text-[var(--color-mushu-ink)]">{f.name}</h3>
+                    <div className="flex items-center gap-1.5">
                       <Badge variant={f.isEnabled ? 'success' : 'outline'}>
                         {f.isEnabled ? t('live') : t('draft')}
                       </Badge>
+                      <FlowCardMenu flowId={f.id} isEnabled={f.isEnabled} />
                     </div>
-                    <p className="line-clamp-2 text-sm text-[var(--color-mushu-mute)]">
-                      {f.description ?? t('noDescription')}
-                    </p>
-                    <p className="mt-2 text-xs text-[var(--color-mushu-faint)]">
-                      {t('versionUpdated', {
-                        version: f.publishVersion,
-                        date: formatter.dateTime(f.updatedAt, { dateStyle: 'short' }),
-                      })}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
+                  </div>
+                  <p className="line-clamp-2 text-sm text-[var(--color-mushu-mute)]">
+                    {f.description ?? t('noDescription')}
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--color-mushu-faint)]">
+                    {t('versionUpdated', {
+                      version: f.publishVersion,
+                      date: formatter.dateTime(f.updatedAt, { dateStyle: 'short' }),
+                    })}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}

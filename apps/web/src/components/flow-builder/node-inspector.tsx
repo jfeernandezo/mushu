@@ -68,7 +68,7 @@ function nodeTitle(type: string | undefined, tNodes: (key: string) => string): s
     case 'logic.delay':
     case 'logic.condition':
     case 'control.end':
-      return tNodes(type);
+      return tNodes(`${type}.title`);
     default:
       return tNodes('block');
   }

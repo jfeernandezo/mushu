@@ -115,7 +115,55 @@
     "draft": "Rascunho",
     "versionUpdated": "v{version} · atualizado em {date}",
     "emptyTitle": "Nenhum fluxo ainda",
-    "emptyBody": "Crie seu primeiro fluxo para começar a automatizar respostas em comentários e sequências de DM."
+    "emptyBody": "Crie seu primeiro fluxo para começar a automatizar respostas em comentários e sequências de DM.",
+    "actions": {
+      "menuLabel": "Mais ações",
+      "enable": "Ativar",
+      "disable": "Desativar",
+      "delete": "Excluir",
+      "enabled": "Fluxo ativado",
+      "disabled": "Fluxo desativado",
+      "couldNotToggle": "Não foi possível alterar o status",
+      "deleted": "Fluxo excluído",
+      "couldNotDelete": "Não foi possível excluir o fluxo",
+      "confirmDeleteTitle": "Excluir este fluxo?",
+      "confirmDeleteBody": "Essa ação não pode ser desfeita. O fluxo, suas configurações e gatilhos serão removidos permanentemente.",
+      "cancel": "Cancelar",
+      "confirmDelete": "Sim, excluir"
+    }
+  },
+  "flowTemplates": {
+    "dialogTitle": "Como você quer começar?",
+    "dialogDescription": "Escolha um modelo pronto pra editar ou comece do zero.",
+    "fromScratch": {
+      "name": "Começar do zero",
+      "description": "Canvas em branco. Você arrasta as etapas como quiser."
+    },
+    "commentToDm": {
+      "name": "Responder comentário com link no DM",
+      "description": "Quando alguém comentar uma palavra-chave num post, o Mushu responde publicamente e envia um DM com o link.",
+      "defaults": {
+        "triggerKeywords": "link, info, quero",
+        "replyMessage": "Te mandei no privado! 📩",
+        "dmMessage": "Aqui tá o link que você pediu: https://exemplo.com"
+      }
+    },
+    "leadFromDm": {
+      "name": "Capturar lead via DM",
+      "description": "Quando alguém mandar DM perguntando preço, o Mushu responde pedindo informações.",
+      "defaults": {
+        "triggerKeywords": "preço, valor, comprar, quanto",
+        "dmMessage": "Boa! Pra te passar o valor preciso saber: você é pessoa física ou empresa?"
+      }
+    },
+    "welcomeDm": {
+      "name": "Boas-vindas a quem dá DM",
+      "description": "Quando alguém te mandar uma saudação no DM, o Mushu manda uma mensagem de boas-vindas.",
+      "defaults": {
+        "triggerKeywords": "oi, olá, hey, hi",
+        "dmMessage": "Oi! 👋 Tudo bem? Sou a Mushu, agente de atendimento. Em que posso te ajudar?"
+      }
+    }
   },
   "flowBuilder": {
     "back": "Fluxos",
@@ -132,12 +180,12 @@
       "draft": "Rascunho"
     },
     "palette": {
-      "title": "Blocos",
+      "title": "Etapas disponíveis",
       "categoryTriggers": "Gatilhos",
       "categoryActions": "Ações",
       "categoryLogic": "Lógica",
       "categoryControl": "Controle",
-      "hint": "Arraste um bloco para o canvas para adicioná-lo. Conecte blocos arrastando do ponto inferior até o ponto superior do próximo bloco."
+      "hint": "Arraste uma etapa para o canvas para adicioná-la. Conecte etapas arrastando do ponto inferior até o ponto superior da próxima etapa."
     },
     "inspector": {
       "selectBlock": "Selecione um bloco para editar suas configurações.",
@@ -152,24 +200,43 @@
         "messageText": "Olá! Aqui está o link…",
         "delaySeconds": "30"
       },
-      "conditionV2": "O editor de condições chega na v0.2. Por enquanto, este bloco sempre segue o primeiro caminho."
+      "conditionV2": "O editor de condições ainda está em desenvolvimento. Por enquanto, esta etapa sempre segue o primeiro caminho."
     },
     "nodes": {
-      "trigger.comment_keyword": "Gatilho de comentário",
-      "trigger.dm_keyword": "Gatilho de DM por palavra-chave",
-      "action.send_dm": "Enviar DM",
-      "action.reply_comment": "Responder comentário",
-      "logic.delay": "Atraso",
-      "logic.condition": "Condição",
-      "control.end": "Fim",
-      "block": "Bloco",
-      "configureKeywords": "Configure as palavras-chave…",
-      "matches": "Captura:",
-      "emptyMessage": "Mensagem vazia…",
-      "emptyReply": "Resposta vazia…",
-      "wait": "Aguardar",
-      "branchesV2": "Ramificações chegam na v0.2",
-      "stopExecution": "Encerra a execução."
+      "trigger": {
+        "comment_keyword": { "title": "Quando comentarem no seu post" },
+        "dm_keyword": { "title": "Quando mandarem DM com uma palavra" }
+      },
+      "action": {
+        "send_dm": { "title": "Enviar mensagem privada" },
+        "reply_comment": { "title": "Responder o comentário publicamente" }
+      },
+      "logic": {
+        "delay": { "title": "Esperar antes da próxima ação" },
+        "condition": { "title": "Decidir entre dois caminhos" }
+      },
+      "control": {
+        "end": { "title": "Finalizar a automação" }
+      },
+      "block": "Etapa",
+      "configureKeywords": "Defina as palavras-chave…",
+      "matches": "Reage a:",
+      "emptyMessage": "Mensagem em branco…",
+      "emptyReply": "Resposta em branco…",
+      "wait": "Esperar",
+      "branchesV2": "Os dois caminhos serão liberados em breve",
+      "stopExecution": "Encerra esse caminho da automação."
+    },
+    "emptyCanvas": {
+      "title": "Comece arrastando um gatilho daqui",
+      "body": "Pegue uma das etapas da coluna da esquerda e solte no canvas pra começar."
+    },
+    "publishErrors": {
+      "noTrigger": "Adicione pelo menos um gatilho (bloco \"Quando…\") antes de publicar.",
+      "noAction": "Adicione pelo menos uma ação (Enviar mensagem ou Responder comentário) antes de publicar.",
+      "triggerWithoutKeywords": "Tem um gatilho sem palavra-chave. Clique no bloco e preencha as palavras que devem disparar a automação.",
+      "actionWithoutText": "Tem uma ação com mensagem em branco. Clique no bloco e escreva o que enviar.",
+      "triggerHasNoPath": "Tem um gatilho desconectado. Ligue ele a uma ação arrastando do ponto inferior pro próximo bloco."
     }
   },
   "contacts": {
@@ -180,12 +247,12 @@
   "triggers": {
     "title": "Gatilhos",
     "subtitle": "Todos os gatilhos dos seus fluxos publicados, em uma única lista.",
-    "empty": "Sem gatilhos ainda — publique um fluxo com um bloco de gatilho para popular essa lista."
+    "empty": "Sem gatilhos ainda — publique um fluxo com uma etapa de gatilho para popular essa lista."
   },
   "analytics": {
     "title": "Análises",
-    "subtitle": "Análises detalhadas de desempenho dos seus fluxos. Em breve, na v0.2.",
-    "roadmap": "Funis de conversão, testes A/B, LTV de contato — todos no roadmap da v0.2."
+    "subtitle": "Análises detalhadas de desempenho dos seus fluxos. Em breve.",
+    "roadmap": "Funis de conversão, testes A/B, LTV de contato — em breve."
   },
   "settings": {
     "section": "Configurações",
@@ -253,7 +320,7 @@
       "card": "Contas do Instagram",
       "empty": "Nenhuma conta do Instagram conectada ainda.",
       "active": "Ativa",
-      "webhookPending": "Webhook pendente",
+      "webhookPending": "Conectando ao Instagram…",
       "expiresOn": "Expira {date}",
       "neverExpires": "—",
       "connect": "Conectar conta do Instagram"

@@ -15,7 +15,7 @@ export function TriggerCommentNode({ data, selected }: NodeProps) {
     <BaseNode
       icon={MessageCircle}
       iconColor="var(--color-mushu-amber)"
-      title={t('trigger.comment_keyword')}
+      title={t('trigger.comment_keyword.title')}
       category="trigger"
       selected={selected}
       hasInput={false}
@@ -39,7 +39,7 @@ export function TriggerDmNode({ data, selected }: NodeProps) {
     <BaseNode
       icon={MessageSquare}
       iconColor="var(--color-mushu-amber)"
-      title={t('trigger.dm_keyword')}
+      title={t('trigger.dm_keyword.title')}
       category="trigger"
       selected={selected}
       hasInput={false}
@@ -63,7 +63,7 @@ export function SendDmNode({ data, selected }: NodeProps) {
     <BaseNode
       icon={Send}
       iconColor="var(--color-mushu-scarlet-soft)"
-      title={t('action.send_dm')}
+      title={t('action.send_dm.title')}
       category="action"
       selected={selected}
     >
@@ -83,7 +83,7 @@ export function ReplyCommentNode({ data, selected }: NodeProps) {
     <BaseNode
       icon={MessageCircle}
       iconColor="var(--color-mushu-scarlet-soft)"
-      title={t('action.reply_comment')}
+      title={t('action.reply_comment.title')}
       category="action"
       selected={selected}
     >
@@ -101,7 +101,7 @@ export function DelayNode({ data, selected }: NodeProps) {
   const d = (data ?? {}) as { durationSeconds?: number };
   const seconds = d.durationSeconds ?? 0;
   return (
-    <BaseNode icon={Clock} title={t('logic.delay')} category="logic" selected={selected}>
+    <BaseNode icon={Clock} title={t('logic.delay.title')} category="logic" selected={selected}>
       {t('wait')}{' '}
       <span className="text-[var(--color-mushu-ink)]">{formatDuration(seconds)}</span>
     </BaseNode>
@@ -111,7 +111,7 @@ export function DelayNode({ data, selected }: NodeProps) {
 export function ConditionNode({ selected }: NodeProps) {
   const t = useTranslations('flowBuilder.nodes');
   return (
-    <BaseNode icon={GitBranch} title={t('logic.condition')} category="logic" selected={selected}>
+    <BaseNode icon={GitBranch} title={t('logic.condition.title')} category="logic" selected={selected}>
       <span className="italic">{t('branchesV2')}</span>
     </BaseNode>
   );
@@ -122,7 +122,7 @@ export function EndNode({ selected }: NodeProps) {
   return (
     <BaseNode
       icon={Square}
-      title={t('control.end')}
+      title={t('control.end.title')}
       category="control"
       selected={selected}
       hasOutput={false}

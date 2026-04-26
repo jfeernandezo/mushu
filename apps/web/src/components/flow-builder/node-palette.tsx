@@ -78,7 +78,7 @@ export function NodePalette() {
                     className="flex cursor-grab items-center gap-2 rounded-md border border-transparent bg-[var(--color-mushu-surface)] px-2.5 py-2 text-xs text-[var(--color-mushu-ink)] transition-colors hover:border-[var(--color-mushu-border)] active:cursor-grabbing"
                   >
                     <Icon className="h-3.5 w-3.5 text-[var(--color-mushu-mute)]" />
-                    <span>{tNodes(item.type)}</span>
+                    <span>{tNodes(`${item.type}.title`)}</span>
                   </div>
                 );
               })}

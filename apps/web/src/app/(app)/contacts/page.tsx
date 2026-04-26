@@ -14,7 +14,7 @@ export default async function ContactsPage() {
   const tNav = await getTranslations('nav');
 
   return (
-    <AppShell breadcrumb={[{ label: tNav('contacts') }]} showActivitiesPanel={false}>
+    <AppShell breadcrumb={[{ label: tNav('contacts') }]}>
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>

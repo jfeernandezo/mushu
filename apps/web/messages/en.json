@@ -115,7 +115,55 @@
     "draft": "Draft",
     "versionUpdated": "v{version} · updated {date}",
     "emptyTitle": "No flows yet",
-    "emptyBody": "Create your first flow to start automating comment replies and DM sequences."
+    "emptyBody": "Create your first flow to start automating comment replies and DM sequences.",
+    "actions": {
+      "menuLabel": "More actions",
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete",
+      "enabled": "Flow enabled",
+      "disabled": "Flow disabled",
+      "couldNotToggle": "Could not change status",
+      "deleted": "Flow deleted",
+      "couldNotDelete": "Could not delete flow",
+      "confirmDeleteTitle": "Delete this flow?",
+      "confirmDeleteBody": "This action can't be undone. The flow, its settings and triggers will be permanently removed.",
+      "cancel": "Cancel",
+      "confirmDelete": "Yes, delete"
+    }
+  },
+  "flowTemplates": {
+    "dialogTitle": "How do you want to start?",
+    "dialogDescription": "Pick a ready-made template to edit or start from scratch.",
+    "fromScratch": {
+      "name": "Start from scratch",
+      "description": "Blank canvas. Drag the steps you want."
+    },
+    "commentToDm": {
+      "name": "Reply to a comment and DM a link",
+      "description": "When someone comments a keyword on your post, Mushu replies publicly and sends them a DM with a link.",
+      "defaults": {
+        "triggerKeywords": "link, info, want",
+        "replyMessage": "Just sent it to your DM! 📩",
+        "dmMessage": "Here's the link you asked for: https://example.com"
+      }
+    },
+    "leadFromDm": {
+      "name": "Capture a lead via DM",
+      "description": "When someone DMs asking about price, Mushu replies asking for the info you need.",
+      "defaults": {
+        "triggerKeywords": "price, cost, buy, how much",
+        "dmMessage": "Great! To send you the price I need to know: are you an individual or a company?"
+      }
+    },
+    "welcomeDm": {
+      "name": "Welcome new DMs",
+      "description": "When someone sends you a greeting via DM, Mushu replies with a welcome message.",
+      "defaults": {
+        "triggerKeywords": "hi, hello, hey",
+        "dmMessage": "Hi! 👋 I'm Mushu, your support agent. How can I help?"
+      }
+    }
   },
   "flowBuilder": {
     "back": "Flows",
@@ -132,12 +180,12 @@
       "draft": "Draft"
     },
     "palette": {
-      "title": "Blocks",
+      "title": "Available steps",
       "categoryTriggers": "Triggers",
       "categoryActions": "Actions",
       "categoryLogic": "Logic",
       "categoryControl": "Control",
-      "hint": "Drag a block onto the canvas to add it. Connect blocks by dragging from the bottom dot to the next block's top dot."
+      "hint": "Drag a step onto the canvas to add it. Connect steps by dragging from the bottom dot to the next step's top dot."
     },
     "inspector": {
       "selectBlock": "Select a block to edit its settings.",
@@ -152,24 +200,43 @@
         "messageText": "Hey! Here's the link…",
         "delaySeconds": "30"
       },
-      "conditionV2": "Condition editor lands in v0.2. For now, this block always takes the first branch."
+      "conditionV2": "Condition editor is still being built. For now, this step always takes the first path."
     },
     "nodes": {
-      "trigger.comment_keyword": "Comment trigger",
-      "trigger.dm_keyword": "DM keyword trigger",
-      "action.send_dm": "Send DM",
-      "action.reply_comment": "Reply to comment",
-      "logic.delay": "Delay",
-      "logic.condition": "Condition",
-      "control.end": "End",
-      "block": "Block",
-      "configureKeywords": "Configure keywords…",
-      "matches": "Matches:",
+      "trigger": {
+        "comment_keyword": { "title": "When someone comments on your post" },
+        "dm_keyword": { "title": "When someone DMs a keyword" }
+      },
+      "action": {
+        "send_dm": { "title": "Send a private message" },
+        "reply_comment": { "title": "Reply to the comment publicly" }
+      },
+      "logic": {
+        "delay": { "title": "Wait before the next step" },
+        "condition": { "title": "Choose between two paths" }
+      },
+      "control": {
+        "end": { "title": "End the automation" }
+      },
+      "block": "Step",
+      "configureKeywords": "Set up keywords…",
+      "matches": "Reacts to:",
       "emptyMessage": "Empty message…",
       "emptyReply": "Empty reply…",
       "wait": "Wait",
-      "branchesV2": "Branches will land in v0.2",
-      "stopExecution": "Stop the execution."
+      "branchesV2": "Both paths are coming soon",
+      "stopExecution": "Ends this branch of the automation."
+    },
+    "emptyCanvas": {
+      "title": "Start by dragging a trigger from the left",
+      "body": "Pick a step from the left column and drop it on the canvas to begin."
+    },
+    "publishErrors": {
+      "noTrigger": "Add at least one trigger (a \"When…\" step) before publishing.",
+      "noAction": "Add at least one action (Send a private message or Reply to comment) before publishing.",
+      "triggerWithoutKeywords": "There's a trigger with no keywords. Click the step and fill in the words that should fire the automation.",
+      "actionWithoutText": "There's an action with an empty message. Click the step and write what to send.",
+      "triggerHasNoPath": "There's a trigger that goes nowhere. Connect it to an action by dragging from its bottom dot to the next step."
     }
   },
   "contacts": {
@@ -179,13 +246,13 @@
   },
   "triggers": {
     "title": "Triggers",
-    "subtitle": "All trigger nodes from your published flows, in one list.",
-    "empty": "No triggers yet — publish a flow with a trigger block to populate this list."
+    "subtitle": "All trigger steps from your published flows, in one list.",
+    "empty": "No triggers yet — publish a flow with a trigger step to populate this list."
   },
   "analytics": {
     "title": "Analytics",
-    "subtitle": "Deeper performance breakdowns for your flows. Coming in v0.2.",
-    "roadmap": "Conversion funnels, A/B testing, contact LTV — all on the v0.2 roadmap."
+    "subtitle": "Deeper performance breakdowns for your flows. Coming soon.",
+    "roadmap": "Conversion funnels, A/B testing, contact LTV — all coming soon."
   },
   "settings": {
     "section": "Settings",
@@ -253,7 +320,7 @@
       "card": "Instagram accounts",
       "empty": "No Instagram accounts connected yet.",
       "active": "Active",
-      "webhookPending": "Webhook pending",
+      "webhookPending": "Connecting to Instagram…",
       "expiresOn": "Expires {date}",
       "neverExpires": "—",
       "connect": "Connect Instagram account"

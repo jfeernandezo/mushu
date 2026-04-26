@@ -15,10 +15,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
   const tSettings = await getTranslations('settings');
 
   return (
-    <AppShell
-      breadcrumb={[{ label: tNav('settings'), href: '/settings' }]}
-      showActivitiesPanel={false}
-    >
+    <AppShell breadcrumb={[{ label: tNav('settings'), href: '/settings' }]}>
       <div className="flex gap-8">
         <aside className="flex w-56 shrink-0 flex-col">
           <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-[var(--color-mushu-faint)]">

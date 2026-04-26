@@ -8,6 +8,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
+import { getTemplate, type TemplateTexts } from '@/lib/flow-templates';
 
 async function requireOrgId(): Promise<string> {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -17,16 +18,38 @@ async function requireOrgId(): Promise<string> {
   return orgId;
 }
 
-export async function createFlow(name: string): Promise<{ id: string }> {
+export async function createFlow(
+  name: string,
+  options?: { templateId?: string; templateTexts?: TemplateTexts },
+): Promise<{ id: string }> {
   const orgId = await requireOrgId();
   const id = randomUUID();
+
+  let draftGraph: FlowGraph | null = null;
+  if (options?.templateId && options.templateTexts) {
+    const template = getTemplate(options.templateId);
+    if (template) {
+      draftGraph = template.build(options.templateTexts);
+    }
+  }
+
   await db.insert(flow).values({
     id,
     organizationId: orgId,
     name: name.trim() || 'Untitled flow',
+    ...(draftGraph ? { draftGraph } : {}),
   });
   revalidatePath('/flows');
   return { id };
+}
+
+export async function deleteFlow(flowId: string): Promise<void> {
+  const orgId = await requireOrgId();
+  // Triggers reference flow via FK; delete them first since the schema may not
+  // declare ON DELETE CASCADE on every relation.
+  await db.delete(trigger).where(eq(trigger.flowId, flowId));
+  await db.delete(flow).where(and(eq(flow.id, flowId), eq(flow.organizationId, orgId)));
+  revalidatePath('/flows');
 }
 
 export async function saveFlowDraft(flowId: string, graphJson: unknown): Promise<void> {

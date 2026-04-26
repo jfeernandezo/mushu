@@ -22,7 +22,7 @@ export default async function NotificationsPage() {
   const hasUnread = items.some((n) => n.readAt === null);
 
   return (
-    <AppShell breadcrumb={[{ label: tNotif('title') }]} showActivitiesPanel={false}>
+    <AppShell breadcrumb={[{ label: tNotif('title') }]}>
       <div className="flex max-w-3xl flex-col gap-6">
         <div className="flex items-end justify-between gap-4">
           <div>

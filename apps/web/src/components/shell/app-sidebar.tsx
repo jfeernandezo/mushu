@@ -71,6 +71,17 @@ export function AppSidebar() {
             <SidebarLink key={item.href} item={item} active={pathname === item.href} />
           ))}
         </nav>
+        <div className="mt-3 flex flex-wrap gap-x-2 gap-y-1 px-2 text-[10px] text-[var(--color-mushu-faint)]">
+          <Link href="/privacy" className="hover:text-[var(--color-mushu-mute)]">
+            Privacidade
+          </Link>
+          <Link href="/terms" className="hover:text-[var(--color-mushu-mute)]">
+            Termos
+          </Link>
+          <Link href="/data-deletion" className="hover:text-[var(--color-mushu-mute)]">
+            Exclusão
+          </Link>
+        </div>
       </div>
     </aside>
   );

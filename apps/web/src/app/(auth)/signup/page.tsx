@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { SignupForm } from '@/components/auth/signup-form';
+import { LegalLinks } from '@/components/legal-links';
 
 export default function SignupPage() {
   return (
@@ -27,6 +28,7 @@ export default function SignupPage() {
             Sign in
           </Link>
         </p>
+        <LegalLinks className="mt-2" />
       </div>
     </main>
   );

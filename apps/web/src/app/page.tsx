@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import { LegalLinks } from '@/components/legal-links';
 import { auth } from '@/lib/auth';
 
 export default async function HomePage() {
@@ -44,6 +45,7 @@ export default async function HomePage() {
           </a>
           .
         </p>
+        <LegalLinks className="mt-6" />
       </div>
     </main>
   );

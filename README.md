@@ -62,7 +62,7 @@ Web at <http://localhost:3000>, worker logs in the same terminal.
 
 ## Architecture
 
-```
+```text
 Meta Webhook ──▶ /api/webhooks/instagram ──▶ Postgres (incoming_events)
                                               │
                                               ▼
@@ -77,6 +77,15 @@ Meta Webhook ──▶ /api/webhooks/instagram ──▶ Postgres (incoming_even
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) (TODO).
+
+## Self-hosting
+
+Running your own instance? Read [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md)
+**before exposing it to users**. In particular: the legal pages
+(`/privacy`, `/terms`, `/data-deletion`) read company identity from env vars
+at runtime — never ship with the upstream's CNPJ or with the placeholder
+values. Each fork also needs its own Meta app, encryption keys, and Better
+Auth secret.
 
 ## License
 

@@ -55,7 +55,9 @@ export const FLOW_TEMPLATES: FlowTemplate[] = [
           type: 'trigger.comment_keyword',
           position: POS_TRIGGER,
           data: {
-            instagramPostId: 'EDITAR_COM_ID_DO_POST',
+            // null = react to any post by default; user can pin to a specific
+            // post via the post selector in the inspector.
+            instagramPostId: null,
             keywords: splitKeywords(texts.triggerKeywords),
             matchMode: 'contains',
             caseSensitive: false,

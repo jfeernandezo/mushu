@@ -12,8 +12,15 @@ import {
   trigger,
 } from '@mushu/db';
 import { type FlowGraph, flowGraphSchema } from '@mushu/shared/flow';
-import { and, eq, sql } from 'drizzle-orm';
-import { type ExecuteFlowJob, executionQueue } from '../queues.ts';
+import { and, desc, eq, sql } from 'drizzle-orm';
+import { findNextNodeId } from '../lib/trigger-matcher.ts';
+import { validateUserInput } from '../lib/validate-user-input.ts';
+import {
+  type ExecuteFlowJob,
+  type SendMessageJob,
+  executionQueue,
+  messageQueue,
+} from '../queues.ts';
 import { matchKeywords } from '../lib/trigger-matcher.ts';
 
 interface ProcessEventArgs {
@@ -71,6 +78,18 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
   if (matchContext.actorIgsid === account.igUserId) {
     await markProcessed(incomingEventId, 'echo from own account');
     return;
+  }
+
+  // If this is a DM and the contact has an in-flight flow waiting on a reply
+  // (ask_question), resume that flow with the user's input — don't try to
+  // match new triggers. This handles the conversational data-collection case.
+  if (matchContext.kind === 'dm') {
+    const resumed = await tryResumeAwaitingFlow({
+      account,
+      matchContext,
+      incomingEventId,
+    });
+    if (resumed) return;
   }
 
   // Load eligible triggers via index (account + type + maybe post_id).
@@ -335,10 +354,209 @@ async function ensureContactContext(args: {
   return { contactId, contactInboxId, conversationId };
 }
 
+/**
+ * If a flow is currently `awaiting_input` for this contact, treat the inbound
+ * DM as the answer: validate, store the variable, advance the cursor, and
+ * re-enqueue execution. Returns true if it handled the event (caller should
+ * skip normal trigger matching).
+ *
+ * On invalid input, sends the fallback prompt and bumps the attempt counter
+ * — only gives up after maxAttempts.
+ */
+async function tryResumeAwaitingFlow(args: {
+  account: { id: string; organizationId: string };
+  matchContext: MatchContext;
+  incomingEventId: string;
+}): Promise<boolean> {
+  const { account, matchContext, incomingEventId } = args;
+
+  const [inbox] = await db
+    .select({ contactId: contactInbox.contactId, conversationId: conversation.id })
+    .from(contactInbox)
+    .leftJoin(conversation, eq(conversation.contactInboxId, contactInbox.id))
+    .where(
+      and(
+        eq(contactInbox.instagramAccountId, account.id),
+        eq(contactInbox.sourceId, matchContext.actorIgsid),
+      ),
+    )
+    .limit(1);
+
+  if (!inbox) return false;
+
+  const [exec] = await db
+    .select()
+    .from(flowExecution)
+    .where(
+      and(
+        eq(flowExecution.contactId, inbox.contactId),
+        eq(flowExecution.status, 'awaiting_input'),
+      ),
+    )
+    .orderBy(desc(flowExecution.updatedAt))
+    .limit(1);
+
+  if (!exec) return false;
+
+  const state = (exec.state as Record<string, unknown>) ?? {};
+  const awaitingFor = state.awaitingFor as
+    | {
+        variableName: string;
+        inputType: 'text' | 'email' | 'number' | 'phone';
+        fallbackText: string | null;
+        maxAttempts: number;
+        attempts: number;
+      }
+    | undefined;
+
+  if (!awaitingFor) {
+    // Inconsistent state — clear the wait flag and fall through to triggers.
+    await db
+      .update(flowExecution)
+      .set({ status: 'cancelled', errorMessage: 'awaiting_input without awaitingFor' })
+      .where(eq(flowExecution.id, exec.id));
+    return false;
+  }
+
+  // Persist the inbound message in the conversation either way.
+  if (inbox.conversationId) {
+    await db
+      .insert(message)
+      .values({
+        id: randomUUID(),
+        conversationId: inbox.conversationId,
+        instagramAccountId: account.id,
+        senderType: 'contact',
+        senderId: inbox.contactId,
+        messageType: 'incoming',
+        contentType: 'text',
+        content: matchContext.text,
+        sourceId: matchContext.sourceId,
+      })
+      .onConflictDoNothing();
+  }
+
+  const parsed = validateUserInput(matchContext.text, awaitingFor.inputType);
+
+  if (parsed === null) {
+    // Invalid: bump attempts, resend fallback if still allowed, else cancel.
+    const nextAttempts = awaitingFor.attempts + 1;
+    if (nextAttempts >= awaitingFor.maxAttempts) {
+      await db
+        .update(flowExecution)
+        .set({
+          status: 'cancelled',
+          errorMessage: 'max_invalid_attempts',
+          finishedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(flowExecution.id, exec.id));
+    } else {
+      const fallback =
+        awaitingFor.fallbackText ?? defaultFallback(awaitingFor.inputType);
+      if (inbox.conversationId) {
+        const outId = randomUUID();
+        await db.insert(message).values({
+          id: outId,
+          conversationId: inbox.conversationId,
+          instagramAccountId: account.id,
+          senderType: 'automation',
+          senderId: null,
+          messageType: 'outgoing',
+          contentType: 'text',
+          status: 'queued',
+          content: fallback,
+          contentAttributes: { reason: 'ask_question_fallback' },
+          createdByAutomationId: exec.id,
+        });
+        const sendJob: SendMessageJob = {
+          outgoingMessageId: outId,
+          flowExecutionId: exec.id,
+        };
+        await messageQueue.add('send', sendJob, {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 3000 },
+          removeOnComplete: 100,
+        });
+      }
+      const newState = {
+        ...state,
+        awaitingFor: { ...awaitingFor, attempts: nextAttempts },
+      };
+      await db
+        .update(flowExecution)
+        .set({ state: newState, updatedAt: new Date() })
+        .where(eq(flowExecution.id, exec.id));
+    }
+    await markProcessed(incomingEventId, null);
+    return true;
+  }
+
+  // Valid: persist into both transient state and the contact's customFields,
+  // then advance the cursor and resume execution.
+  const variables = (state.variables as Record<string, unknown>) ?? {};
+  variables[awaitingFor.variableName] = parsed;
+
+  await db
+    .update(contact)
+    .set({
+      customFields: sql`${contact.customFields} || ${JSON.stringify({ [awaitingFor.variableName]: parsed })}::jsonb`,
+      updatedAt: new Date(),
+    })
+    .where(eq(contact.id, inbox.contactId));
+
+  const parsedGraph = flowGraphSchema.safeParse(exec.graphSnapshot);
+  let nextNodeId: string | null = null;
+  if (parsedGraph.success && exec.currentNodeId) {
+    nextNodeId = findNextNodeId(parsedGraph.data, exec.currentNodeId);
+  }
+
+  const newState: Record<string, unknown> = {
+    ...state,
+    variables,
+  };
+  delete (newState as { awaitingFor?: unknown }).awaitingFor;
+
+  await db
+    .update(flowExecution)
+    .set({
+      status: 'active',
+      currentNodeId: nextNodeId,
+      state: newState,
+      updatedAt: new Date(),
+    })
+    .where(eq(flowExecution.id, exec.id));
+
+  const job: ExecuteFlowJob = { flowExecutionId: exec.id };
+  await executionQueue.add('execute', job, {
+    attempts: 5,
+    backoff: { type: 'exponential', delay: 2000 },
+    removeOnComplete: 100,
+    removeOnFail: 1000,
+  });
+
+  await markProcessed(incomingEventId, null);
+  return true;
+}
+
+function defaultFallback(inputType: 'text' | 'email' | 'number' | 'phone'): string {
+  switch (inputType) {
+    case 'email':
+      return 'Hmm, isso não parece um e-mail. Pode mandar de novo no formato nome@dominio.com?';
+    case 'number':
+      return 'Não entendi o número. Pode escrever só dígitos? (ex: 30)';
+    case 'phone':
+      return 'Não consegui ler o telefone. Manda só os números, com DDD (ex: 11999999999)';
+    default:
+      return 'Pode escrever de outro jeito?';
+  }
+}
+
 function findStartNodeForTrigger(graph: FlowGraph, ctx: MatchContext) {
   return graph.nodes.find((n) => {
     if (ctx.kind === 'comment' && n.type === 'trigger.comment_keyword') {
-      return n.data.instagramPostId === ctx.postId;
+      // null postId = wildcard (any post).
+      return n.data.instagramPostId === null || n.data.instagramPostId === ctx.postId;
     }
     if (ctx.kind === 'dm' && n.type === 'trigger.dm_keyword') {
       return true;

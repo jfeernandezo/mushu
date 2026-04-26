@@ -56,7 +56,10 @@ export function TemplatePickerDialog({ trigger }: TemplatePickerDialogProps) {
           result = await createFlow(t('flows.untitled'));
         }
         setOpen(false);
-        router.push(`/flows/${result.id}`);
+        const dest = templateId
+          ? `/flows/${result.id}?from=${templateId}`
+          : `/flows/${result.id}`;
+        router.push(dest);
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'unknown_error';
         toast.error(msg);

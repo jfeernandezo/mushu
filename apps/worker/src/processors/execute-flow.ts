@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { contactTag, db, flowExecution, message } from '@mushu/db';
-import { type FlowGraph, type FlowNode, flowGraphSchema } from '@mushu/shared/flow';
+import { contact, contactTag, db, flowExecution, message } from '@mushu/db';
+import {
+  type FlowGraph,
+  type FlowNode,
+  flowGraphSchema,
+  renderTemplate,
+} from '@mushu/shared/flow';
 import { and, eq, sql } from 'drizzle-orm';
 import { type ExecuteFlowJob, type SendMessageJob, executionQueue, messageQueue } from '../queues.ts';
 import { findNextNodeId, getNodeById } from '../lib/trigger-matcher.ts';
@@ -108,16 +113,64 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
     }
 
     if (node.type === 'action.set_custom_field') {
-      // Stored on contact.custom_fields jsonb. We mutate in app for simplicity.
-      // (For MVP we skip the actual mutation — it's a v0.2 feature.)
+      await applySetCustomField(exec.contactId, node.data.field, node.data.value);
+      // Mirror into in-flight state so subsequent {{var}} substitutions in
+      // the same execution see the new value without a re-fetch.
+      const variables = (state.variables as Record<string, unknown>) ?? {};
+      variables[node.data.field] = node.data.value;
+      state.variables = variables;
       currentNodeId = findNextNodeId(graph, currentNodeId);
       continue;
     }
 
     if (node.type === 'logic.condition') {
-      const handle = evaluateCondition(node, state);
+      const handle = await evaluateCondition(node, state, exec.contactId);
       currentNodeId = findNextNodeId(graph, currentNodeId, handle);
       continue;
+    }
+
+    if (node.type === 'action.ask_question') {
+      // Send the question DM, then pause execution awaiting the user's reply.
+      // process-event picks the reply up via flowExecution.status='awaiting_input'.
+      const renderedQuestion = renderTemplate(node.data.questionText, {
+        variables: (state.variables as Record<string, unknown>) ?? {},
+        customFields: await fetchContactCustomFields(exec.contactId),
+      });
+      const outgoingId = await persistOutgoingTextMessage(
+        exec,
+        renderedQuestion,
+        node.id,
+        'action.send_dm',
+      );
+      const sendJob: SendMessageJob = { outgoingMessageId: outgoingId, flowExecutionId };
+      await messageQueue.add('send', sendJob, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 3000 },
+        removeOnComplete: 100,
+      });
+
+      const newState = {
+        ...state,
+        awaitingFor: {
+          variableName: node.data.variableName,
+          inputType: node.data.inputType,
+          fallbackText: node.data.fallbackText ?? null,
+          maxAttempts: node.data.maxAttempts,
+          attempts: 0,
+        },
+      };
+      await db
+        .update(flowExecution)
+        .set({
+          status: 'awaiting_input',
+          isReplying: false,
+          currentNodeId,
+          visitedNodes: [...visited],
+          state: newState,
+          updatedAt: new Date(),
+        })
+        .where(eq(flowExecution.id, flowExecutionId));
+      return;
     }
 
     // ---- Blocking steps: enqueue work and save state ----
@@ -199,9 +252,23 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
 }
 
 async function persistOutgoingMessage(
-  exec: { id: string; instagramAccountId: string; conversationId: string | null },
+  exec: { id: string; instagramAccountId: string; conversationId: string | null; contactId: string },
   node: Extract<FlowNode, { type: 'action.send_dm' | 'action.reply_comment' }>,
-  _state: Record<string, unknown>,
+  state: Record<string, unknown>,
+): Promise<string> {
+  const customFields = await fetchContactCustomFields(exec.contactId);
+  const rendered = renderTemplate(node.data.text, {
+    variables: (state.variables as Record<string, unknown>) ?? {},
+    customFields,
+  });
+  return persistOutgoingTextMessage(exec, rendered, node.id, node.type);
+}
+
+async function persistOutgoingTextMessage(
+  exec: { id: string; instagramAccountId: string; conversationId: string | null },
+  text: string,
+  nodeId: string,
+  nodeType: 'action.send_dm' | 'action.reply_comment',
 ): Promise<string> {
   const id = randomUUID();
   if (!exec.conversationId) {
@@ -213,17 +280,26 @@ async function persistOutgoingMessage(
     instagramAccountId: exec.instagramAccountId,
     senderType: 'automation',
     senderId: null,
-    messageType: node.type === 'action.reply_comment' ? 'activity' : 'outgoing',
+    messageType: nodeType === 'action.reply_comment' ? 'activity' : 'outgoing',
     contentType: 'text',
     status: 'queued',
-    content: node.data.text,
+    content: text,
     contentAttributes: {
-      nodeType: node.type,
-      nodeId: node.id,
+      nodeType,
+      nodeId,
     },
     createdByAutomationId: exec.id,
   });
   return id;
+}
+
+async function fetchContactCustomFields(contactId: string): Promise<Record<string, unknown>> {
+  const [row] = await db
+    .select({ customFields: contact.customFields })
+    .from(contact)
+    .where(eq(contact.id, contactId))
+    .limit(1);
+  return ((row?.customFields as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
 }
 
 async function applySetTag(
@@ -240,13 +316,94 @@ async function applySetTag(
   }
 }
 
-function evaluateCondition(
-  _node: Extract<FlowNode, { type: 'logic.condition' }>,
-  _state: Record<string, unknown>,
-): string | undefined {
-  // MVP: condition evaluation is stubbed — always takes the first branch.
-  // Full implementation lands in v0.2 with custom field comparisons.
-  return 'branch-0';
+async function applySetCustomField(
+  contactId: string,
+  field: string,
+  value: string | number | boolean,
+): Promise<void> {
+  // Merge into the existing jsonb. `||` on jsonb in Postgres is a shallow merge.
+  await db
+    .update(contact)
+    .set({
+      customFields: sql`${contact.customFields} || ${JSON.stringify({ [field]: value })}::jsonb`,
+      updatedAt: new Date(),
+    })
+    .where(eq(contact.id, contactId));
+}
+
+type ConditionNode = Extract<FlowNode, { type: 'logic.condition' }>;
+type ConditionLeaf = ConditionNode['data']['branches'][number]['conditions'][number];
+
+/**
+ * Walks each branch in order; returns 'branch-N' for the first branch whose
+ * conditions all (AND) or any (OR) match. Falls back to the LAST branch if
+ * nothing matches — that's the "default/else" by convention.
+ */
+async function evaluateCondition(
+  node: ConditionNode,
+  state: Record<string, unknown>,
+  contactId: string,
+): Promise<string> {
+  const variables = (state.variables as Record<string, unknown> | undefined) ?? {};
+  const customFields = await fetchContactCustomFields(contactId);
+  const tagSet = await fetchContactTags(contactId);
+
+  for (let i = 0; i < node.data.branches.length; i++) {
+    const branch = node.data.branches[i]!;
+    const results = await Promise.all(
+      branch.conditions.map((c) => evalLeaf(c, variables, customFields, tagSet)),
+    );
+    if (results.length === 0) continue;
+    const passes = branch.logical === 'or' ? results.some(Boolean) : results.every(Boolean);
+    if (passes) return `branch-${i}`;
+  }
+  return `branch-${node.data.branches.length - 1}`;
+}
+
+async function fetchContactTags(contactId: string): Promise<Set<string>> {
+  const rows = await db
+    .select({ tag: contactTag.tag })
+    .from(contactTag)
+    .where(eq(contactTag.contactId, contactId));
+  return new Set(rows.map((r) => r.tag));
+}
+
+function evalLeaf(
+  c: ConditionLeaf,
+  variables: Record<string, unknown>,
+  customFields: Record<string, unknown>,
+  tagSet: Set<string>,
+): boolean {
+  if (c.operator === 'has_tag') return tagSet.has(String(c.value ?? ''));
+  if (c.operator === 'not_has_tag') return !tagSet.has(String(c.value ?? ''));
+
+  // Resolve field from variables first, falling back to persistent custom fields.
+  const fieldValue =
+    variables[c.field] !== undefined ? variables[c.field] : customFields[c.field];
+
+  if (c.operator === 'is_set') {
+    return fieldValue !== undefined && fieldValue !== null && fieldValue !== '';
+  }
+  if (c.operator === 'is_empty') {
+    return fieldValue === undefined || fieldValue === null || fieldValue === '';
+  }
+
+  const expected = c.value;
+  if (c.operator === 'equals') return String(fieldValue) === String(expected);
+  if (c.operator === 'not_equals') return String(fieldValue) !== String(expected);
+  if (c.operator === 'contains') {
+    return String(fieldValue ?? '')
+      .toLowerCase()
+      .includes(String(expected ?? '').toLowerCase());
+  }
+  if (c.operator === 'starts_with') {
+    return String(fieldValue ?? '')
+      .toLowerCase()
+      .startsWith(String(expected ?? '').toLowerCase());
+  }
+  if (c.operator === 'gt') return Number(fieldValue) > Number(expected);
+  if (c.operator === 'lt') return Number(fieldValue) < Number(expected);
+  return false;
 }
 
 async function releaseLock(executionId: string): Promise<void> {

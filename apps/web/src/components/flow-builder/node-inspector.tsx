@@ -5,6 +5,8 @@ import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { KeywordChipsInput } from './keyword-chips-input';
+import { PostSelector } from './post-selector';
 
 interface NodeInspectorProps {
   node: Node | null;
@@ -65,6 +67,7 @@ function nodeTitle(type: string | undefined, tNodes: (key: string) => string): s
     case 'trigger.dm_keyword':
     case 'action.send_dm':
     case 'action.reply_comment':
+    case 'action.ask_question':
     case 'logic.delay':
     case 'logic.condition':
     case 'control.end':
@@ -88,28 +91,19 @@ function Form({
   const tInspector = useTranslations('flowBuilder.inspector');
 
   if (type === 'trigger.comment_keyword') {
+    const postId = typeof data.instagramPostId === 'string' ? data.instagramPostId : null;
     return (
       <>
         <Field label={tFields('instagramPostId')}>
-          <Input
-            value={(data.instagramPostId as string) ?? ''}
-            onChange={(e) => update('instagramPostId', e.target.value)}
-            placeholder="18069466016328562"
+          <PostSelector
+            value={postId}
+            onChange={(id) => update('instagramPostId', id)}
           />
         </Field>
         <Field label={tFields('keywordsCommaSeparated')}>
-          <Input
-            value={Array.isArray(data.keywords) ? (data.keywords as string[]).join(', ') : ''}
-            onChange={(e) =>
-              update(
-                'keywords',
-                e.target.value
-                  .split(',')
-                  .map((k) => k.trim())
-                  .filter(Boolean),
-              )
-            }
-            placeholder="fluxo, n8n"
+          <KeywordChipsInput
+            value={Array.isArray(data.keywords) ? (data.keywords as string[]) : []}
+            onChange={(next) => update('keywords', next)}
           />
         </Field>
       </>
@@ -119,18 +113,9 @@ function Form({
   if (type === 'trigger.dm_keyword') {
     return (
       <Field label={tFields('keywordsCommaSeparated')}>
-        <Input
-          value={Array.isArray(data.keywords) ? (data.keywords as string[]).join(', ') : ''}
-          onChange={(e) =>
-            update(
-              'keywords',
-              e.target.value
-                .split(',')
-                .map((k) => k.trim())
-                .filter(Boolean),
-            )
-          }
-          placeholder="agenda, template"
+        <KeywordChipsInput
+          value={Array.isArray(data.keywords) ? (data.keywords as string[]) : []}
+          onChange={(next) => update('keywords', next)}
         />
       </Field>
     );
@@ -150,6 +135,72 @@ function Form({
     );
   }
 
+  if (type === 'action.ask_question') {
+    const questionText = (data.questionText as string) ?? '';
+    const variableName = (data.variableName as string) ?? '';
+    const inputType = (data.inputType as 'text' | 'email' | 'number' | 'phone') ?? 'text';
+    const fallbackText = (data.fallbackText as string) ?? '';
+    const maxAttempts = (data.maxAttempts as number) ?? 3;
+    return (
+      <>
+        <Field label={tFields('questionText')}>
+          <textarea
+            value={questionText}
+            onChange={(e) => update('questionText', e.target.value)}
+            rows={3}
+            className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
+            placeholder={tPh('questionText')}
+          />
+        </Field>
+        <Field label={tFields('variableName')}>
+          <Input
+            value={variableName}
+            onChange={(e) =>
+              update(
+                'variableName',
+                e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 40),
+              )
+            }
+            placeholder="email"
+          />
+          <p className="text-[10px] text-[var(--color-mushu-faint)]">
+            {tInspector('variableHint', { example: `{{${variableName || 'email'}}}` })}
+          </p>
+        </Field>
+        <Field label={tFields('inputType')}>
+          <select
+            value={inputType}
+            onChange={(e) => update('inputType', e.target.value)}
+            className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
+          >
+            <option value="text">{tInspector('inputTypes.text')}</option>
+            <option value="email">{tInspector('inputTypes.email')}</option>
+            <option value="number">{tInspector('inputTypes.number')}</option>
+            <option value="phone">{tInspector('inputTypes.phone')}</option>
+          </select>
+        </Field>
+        <Field label={tFields('fallbackText')}>
+          <Input
+            value={fallbackText}
+            onChange={(e) => update('fallbackText', e.target.value)}
+            placeholder={tPh('fallbackText')}
+          />
+        </Field>
+        <Field label={tFields('maxAttempts')}>
+          <Input
+            type="number"
+            min={1}
+            max={5}
+            value={String(maxAttempts)}
+            onChange={(e) =>
+              update('maxAttempts', Math.max(1, Math.min(5, Number.parseInt(e.target.value, 10) || 3)))
+            }
+          />
+        </Field>
+      </>
+    );
+  }
+
   if (type === 'logic.delay') {
     return (
       <Field label={tFields('durationSeconds')}>
@@ -164,9 +215,7 @@ function Form({
   }
 
   if (type === 'logic.condition') {
-    return (
-      <p className="text-xs text-[var(--color-mushu-faint)]">{tInspector('conditionV2')}</p>
-    );
+    return <ConditionForm data={data} update={update} />;
   }
 
   return null;
@@ -178,5 +227,233 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-xs text-[var(--color-mushu-mute)]">{label}</span>
       {children}
     </label>
+  );
+}
+
+interface ConditionLeaf {
+  field: string;
+  operator:
+    | 'equals'
+    | 'not_equals'
+    | 'contains'
+    | 'starts_with'
+    | 'has_tag'
+    | 'not_has_tag'
+    | 'is_set'
+    | 'is_empty'
+    | 'gt'
+    | 'lt';
+  value?: string | number | boolean;
+}
+
+interface ConditionBranch {
+  name: string;
+  conditions: ConditionLeaf[];
+  logical: 'and' | 'or';
+}
+
+const OPERATORS: ConditionLeaf['operator'][] = [
+  'equals',
+  'not_equals',
+  'contains',
+  'starts_with',
+  'gt',
+  'lt',
+  'is_set',
+  'is_empty',
+  'has_tag',
+  'not_has_tag',
+];
+
+const VALUELESS_OPS: ConditionLeaf['operator'][] = ['is_set', 'is_empty'];
+
+function ConditionForm({
+  data,
+  update,
+}: {
+  data: Record<string, unknown>;
+  update: (key: string, value: unknown) => void;
+}) {
+  const t = useTranslations('flowBuilder.condition');
+  const branches = (Array.isArray(data.branches) ? data.branches : []) as ConditionBranch[];
+
+  function setBranches(next: ConditionBranch[]) {
+    update('branches', next);
+  }
+
+  function addBranch() {
+    setBranches([
+      ...branches,
+      { name: t('defaultBranchName', { n: branches.length + 1 }), conditions: [], logical: 'and' },
+    ]);
+  }
+
+  function removeBranch(i: number) {
+    setBranches(branches.filter((_, idx) => idx !== i));
+  }
+
+  function updateBranch(i: number, patch: Partial<ConditionBranch>) {
+    setBranches(branches.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
+  }
+
+  if (branches.length === 0) {
+    return (
+      <div className="flex flex-col gap-2">
+        <p className="text-xs text-[var(--color-mushu-mute)]">{t('emptyHint')}</p>
+        <Button size="sm" variant="outline" onClick={addBranch}>
+          {t('addBranch')}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[10px] text-[var(--color-mushu-faint)]">{t('explainer')}</p>
+
+      {branches.map((branch, i) => (
+        <div
+          key={i}
+          className="flex flex-col gap-2 rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] p-2.5"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <Input
+              value={branch.name}
+              onChange={(e) => updateBranch(i, { name: e.target.value })}
+              placeholder={t('branchNamePlaceholder')}
+              className="h-7 text-xs"
+            />
+            {branches.length > 1 ? (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-[var(--color-mushu-danger)]"
+                onClick={() => removeBranch(i)}
+                aria-label={t('removeBranch')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            ) : null}
+          </div>
+
+          <BranchEditor
+            branch={branch}
+            onChange={(next) => updateBranch(i, next)}
+          />
+        </div>
+      ))}
+
+      <Button size="sm" variant="outline" onClick={addBranch}>
+        {t('addBranch')}
+      </Button>
+
+      <p className="text-[10px] text-[var(--color-mushu-faint)]">{t('lastBranchIsDefault')}</p>
+    </div>
+  );
+}
+
+function BranchEditor({
+  branch,
+  onChange,
+}: {
+  branch: ConditionBranch;
+  onChange: (next: Partial<ConditionBranch>) => void;
+}) {
+  const t = useTranslations('flowBuilder.condition');
+
+  function updateConditions(next: ConditionLeaf[]) {
+    onChange({ conditions: next });
+  }
+
+  function addCondition() {
+    updateConditions([
+      ...branch.conditions,
+      { field: '', operator: 'equals', value: '' },
+    ]);
+  }
+
+  function updateCondition(i: number, patch: Partial<ConditionLeaf>) {
+    updateConditions(branch.conditions.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+  }
+
+  function removeCondition(i: number) {
+    updateConditions(branch.conditions.filter((_, idx) => idx !== i));
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {branch.conditions.length > 1 ? (
+        <select
+          value={branch.logical}
+          onChange={(e) => onChange({ logical: e.target.value as 'and' | 'or' })}
+          className="h-7 rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] px-2 text-[11px] text-[var(--color-mushu-ink)]"
+        >
+          <option value="and">{t('logical.and')}</option>
+          <option value="or">{t('logical.or')}</option>
+        </select>
+      ) : null}
+
+      {branch.conditions.map((c, i) => (
+        <div
+          key={i}
+          className="flex flex-wrap items-center gap-1.5 rounded bg-[var(--color-mushu-bg)] p-1.5"
+        >
+          {c.operator === 'has_tag' || c.operator === 'not_has_tag' ? (
+            <Input
+              value={typeof c.value === 'string' ? c.value : ''}
+              onChange={(e) => updateCondition(i, { value: e.target.value, field: 'tag' })}
+              placeholder={t('tagPlaceholder')}
+              className="h-7 flex-1 text-xs"
+            />
+          ) : (
+            <Input
+              value={c.field}
+              onChange={(e) => updateCondition(i, { field: e.target.value })}
+              placeholder={t('fieldPlaceholder')}
+              className="h-7 w-24 text-xs"
+            />
+          )}
+
+          <select
+            value={c.operator}
+            onChange={(e) =>
+              updateCondition(i, { operator: e.target.value as ConditionLeaf['operator'] })
+            }
+            className="h-7 rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-1 text-[11px] text-[var(--color-mushu-ink)]"
+          >
+            {OPERATORS.map((op) => (
+              <option key={op} value={op}>
+                {t(`operators.${op}`)}
+              </option>
+            ))}
+          </select>
+
+          {!VALUELESS_OPS.includes(c.operator) &&
+          c.operator !== 'has_tag' &&
+          c.operator !== 'not_has_tag' ? (
+            <Input
+              value={c.value !== undefined ? String(c.value) : ''}
+              onChange={(e) => updateCondition(i, { value: e.target.value })}
+              placeholder={t('valuePlaceholder')}
+              className="h-7 flex-1 text-xs"
+            />
+          ) : null}
+
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 text-[var(--color-mushu-danger)]"
+            onClick={() => removeCondition(i)}
+            aria-label={t('removeCondition')}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
+
+      <Button size="sm" variant="outline" onClick={addCondition} className="self-start">
+        {t('addCondition')}
+      </Button>
+    </div>
   );
 }

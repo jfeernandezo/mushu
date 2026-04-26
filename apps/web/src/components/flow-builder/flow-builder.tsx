@@ -14,15 +14,23 @@ import { validateFlowForPublish } from '@/lib/validate-flow';
 import { FlowCanvasShell } from './flow-canvas';
 import { NodeInspector } from './node-inspector';
 import { NodePalette } from './node-palette';
+import { TemplateBanner } from './template-banner';
 
 interface FlowBuilderProps {
   flowId: string;
   flowName: string;
   initialGraph: FlowGraph;
   isEnabled: boolean;
+  fromTemplate: string | null;
 }
 
-export function FlowBuilder({ flowId, flowName, initialGraph, isEnabled }: FlowBuilderProps) {
+export function FlowBuilder({
+  flowId,
+  flowName,
+  initialGraph,
+  isEnabled,
+  fromTemplate,
+}: FlowBuilderProps) {
   const t = useTranslations('flowBuilder');
   const [graph, setGraph] = useState<FlowGraph>(initialGraph);
   const [selected, setSelected] = useState<Node | null>(null);
@@ -118,6 +126,8 @@ export function FlowBuilder({ flowId, flowName, initialGraph, isEnabled }: FlowB
           </Button>
         </div>
       </header>
+
+      {fromTemplate ? <TemplateBanner flowId={flowId} templateId={fromTemplate} /> : null}
 
       <div className="flex flex-1 overflow-hidden">
         <NodePalette />

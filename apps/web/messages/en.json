@@ -191,16 +191,30 @@
       "selectBlock": "Select a block to edit its settings.",
       "deleteBlock": "Delete block",
       "fields": {
-        "instagramPostId": "Instagram post ID",
-        "keywordsCommaSeparated": "Keywords (comma-separated)",
+        "instagramPostId": "Which post triggers this",
+        "keywordsCommaSeparated": "Keywords",
         "messageText": "Message text",
-        "durationSeconds": "Duration (seconds)"
+        "durationSeconds": "Duration (seconds)",
+        "questionText": "Question",
+        "variableName": "Variable name",
+        "inputType": "Answer type",
+        "fallbackText": "Message if the answer is invalid",
+        "maxAttempts": "Max attempts"
       },
       "placeholders": {
         "messageText": "Hey! Here's the link…",
-        "delaySeconds": "30"
+        "delaySeconds": "30",
+        "questionText": "What's your email so I can send you the material?",
+        "fallbackText": "I didn't catch that. Can you send it again?"
       },
-      "conditionV2": "Condition editor is still being built. For now, this step always takes the first path."
+      "conditionV2": "Condition editor is still being built. For now, this step always takes the first path.",
+      "variableHint": "Use {example} in later messages to reuse what the person answered.",
+      "inputTypes": {
+        "text": "Free text",
+        "email": "Email",
+        "number": "Number",
+        "phone": "Phone"
+      }
     },
     "nodes": {
       "trigger": {
@@ -209,7 +223,12 @@
       },
       "action": {
         "send_dm": { "title": "Send a private message" },
-        "reply_comment": { "title": "Reply to the comment publicly" }
+        "reply_comment": { "title": "Reply to the comment publicly" },
+        "ask_question": {
+          "title": "Ask and save the answer",
+          "empty": "Set up the question…",
+          "savesAs": "Saves to"
+        }
       },
       "logic": {
         "delay": { "title": "Wait before the next step" },
@@ -236,7 +255,71 @@
       "noAction": "Add at least one action (Send a private message or Reply to comment) before publishing.",
       "triggerWithoutKeywords": "There's a trigger with no keywords. Click the step and fill in the words that should fire the automation.",
       "actionWithoutText": "There's an action with an empty message. Click the step and write what to send.",
+      "askQuestionIncomplete": "There's an \"Ask\" step missing the question or the variable name. Click it and fill both.",
       "triggerHasNoPath": "There's a trigger that goes nowhere. Connect it to an action by dragging from its bottom dot to the next step."
+    },
+    "condition": {
+      "emptyHint": "This step decides which path to follow based on saved variables or contact tags.",
+      "explainer": "Paths are evaluated in order. The first one that matches is taken. The last path is the default (\"else\").",
+      "addBranch": "+ Add path",
+      "addCondition": "+ Add condition",
+      "branchNamePlaceholder": "Path name (e.g. Is lead)",
+      "defaultBranchName": "Path {n}",
+      "removeBranch": "Remove path",
+      "removeCondition": "Remove condition",
+      "fieldPlaceholder": "e.g. email",
+      "valuePlaceholder": "value",
+      "tagPlaceholder": "tag",
+      "lastBranchIsDefault": "The last path is taken when nothing else matches.",
+      "logical": {
+        "and": "All must match (AND)",
+        "or": "Any matches (OR)"
+      },
+      "operators": {
+        "equals": "equals",
+        "not_equals": "doesn't equal",
+        "contains": "contains",
+        "starts_with": "starts with",
+        "gt": "is greater than",
+        "lt": "is less than",
+        "is_set": "has a value",
+        "is_empty": "is empty",
+        "has_tag": "has tag",
+        "not_has_tag": "doesn't have tag"
+      }
+    },
+    "keywordsInput": {
+      "placeholder": "Type and hit Enter…",
+      "hint": "Type a word and hit Enter (or comma) to add it.",
+      "alsoMatches": "Also matches:",
+      "plusMore": "+{n} more",
+      "remove": "Remove {keyword}"
+    },
+    "templateBanner": {
+      "title": "This flow was started from the \"{template}\" template. Customize everything!",
+      "tip1": "Click any step to edit keywords, messages or the target post in the right panel.",
+      "tip2": "Drag new steps from the left column to add more actions (e.g. \"Wait before the next step\").",
+      "tip3": "To remove a step, click it and hit the \"Delete step\" button.",
+      "tip4": "When you're ready, hit \"Publish\" in the top-right corner.",
+      "dismiss": "Dismiss tip"
+    },
+    "postSelector": {
+      "placeholder": "Pick a post…",
+      "anyPost": "Any post on the account",
+      "anyPostDescription": "The automation reacts to comments on any of your posts.",
+      "anyPostHint": "Reacts to comments on any post of your account.",
+      "specificPostHint": "Reacts only to comments on this post.",
+      "untitledPost": "Post without caption",
+      "pinnedToId": "Post {id}…",
+      "dialogTitle": "Pick a post",
+      "dialogDescription": "Recent posts from @{username}. Click to pin the automation.",
+      "dialogDescriptionNoAccount": "Connect an Instagram account to see your posts here.",
+      "loading": "Loading your posts…",
+      "noMedia": "You don't have any posts on this account yet.",
+      "noAccountTitle": "No Instagram account connected",
+      "noAccountBody": "To pick a specific post you need to connect an Instagram Business account.",
+      "connectAccount": "Connect account →",
+      "error": "We couldn't load your posts right now. Try again in a few seconds."
     }
   },
   "contacts": {

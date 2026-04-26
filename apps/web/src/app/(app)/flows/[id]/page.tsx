@@ -8,8 +8,15 @@ import { auth } from '@/lib/auth';
 
 const EMPTY_GRAPH: FlowGraph = { nodes: [], edges: [] };
 
-export default async function FlowEditorPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FlowEditorPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
   const { id } = await params;
+  const { from } = await searchParams;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/login');
   const orgId = session.session.activeOrganizationId;
@@ -37,6 +44,7 @@ export default async function FlowEditorPage({ params }: { params: Promise<{ id:
       flowName={row.name}
       initialGraph={initialGraph}
       isEnabled={row.isEnabled}
+      fromTemplate={from ?? null}
     />
   );
 }

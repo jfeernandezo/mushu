@@ -3,6 +3,7 @@
 import {
   Clock,
   GitBranch,
+  HelpCircle,
   type LucideIcon,
   MessageCircle,
   MessageSquare,
@@ -26,6 +27,7 @@ const ITEMS: PaletteItem[] = [
   { type: 'trigger.dm_keyword', icon: MessageSquare, category: 'triggers' },
   { type: 'action.send_dm', icon: Send, category: 'actions' },
   { type: 'action.reply_comment', icon: MessageCircle, category: 'actions' },
+  { type: 'action.ask_question', icon: HelpCircle, category: 'actions' },
   { type: 'logic.delay', icon: Clock, category: 'logic' },
   { type: 'logic.condition', icon: GitBranch, category: 'logic' },
   { type: 'control.end', icon: Square, category: 'control' },

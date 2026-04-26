@@ -25,7 +25,8 @@ export function findTriggerNodeInGraph(
 ): FlowNode | null {
   for (const node of graph.nodes) {
     if (input.kind === 'comment' && node.type === 'trigger.comment_keyword') {
-      if (node.data.instagramPostId !== input.instagramPostId) continue;
+      // null = wildcard (any post on the connected account).
+      if (node.data.instagramPostId !== null && node.data.instagramPostId !== input.instagramPostId) continue;
       if (matchKeywords(input.text, node.data.keywords, node.data.matchMode, node.data.caseSensitive)) {
         return node;
       }
@@ -46,14 +47,25 @@ export function matchKeywords(
   caseSensitive: boolean,
 ): boolean {
   if (mode === 'any') return true;
-  const normText = caseSensitive ? text.trim() : text.trim().toLowerCase();
+  const normText = normalizeForMatch(text.trim(), caseSensitive);
   for (const kw of keywords) {
-    const normKw = caseSensitive ? kw : kw.toLowerCase();
+    const normKw = normalizeForMatch(kw, caseSensitive);
     if (mode === 'exact' && normText === normKw) return true;
     if (mode === 'contains' && normText.includes(normKw)) return true;
     if (mode === 'starts_with' && normText.startsWith(normKw)) return true;
   }
   return false;
+}
+
+/**
+ * Normalizes a string for keyword matching. When `caseSensitive` is false
+ * (the default), folds case AND strips accents — so "informação" matches
+ * "informacao", "Informação", "INFORMACAO" all the same. NFD + stripping
+ * combining marks (\p{M}) is the canonical Unicode trick for this.
+ */
+function normalizeForMatch(s: string, caseSensitive: boolean): string {
+  if (caseSensitive) return s;
+  return s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 }
 
 /**

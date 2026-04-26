@@ -1,16 +1,27 @@
 'use client';
 
 import type { NodeProps } from '@xyflow/react';
-import { Clock, GitBranch, MessageCircle, MessageSquare, Send, Square, Zap } from 'lucide-react';
+import {
+  Clock,
+  GitBranch,
+  HelpCircle,
+  MessageCircle,
+  MessageSquare,
+  Send,
+  Square,
+  Zap,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { BaseNode } from './base-node';
 
 export function TriggerCommentNode({ data, selected }: NodeProps) {
   const t = useTranslations('flowBuilder.nodes');
+  const tPost = useTranslations('flowBuilder.postSelector');
   const d = (data ?? {}) as {
-    instagramPostId?: string;
+    instagramPostId?: string | null;
     keywords?: string[];
   };
+  const postLabel = d.instagramPostId ? tPost('specificPostHint') : tPost('anyPostHint');
   return (
     <BaseNode
       icon={MessageCircle}
@@ -20,6 +31,7 @@ export function TriggerCommentNode({ data, selected }: NodeProps) {
       selected={selected}
       hasInput={false}
     >
+      <span className="block text-[10px] text-[var(--color-mushu-faint)]">{postLabel}</span>
       {d.keywords?.length ? (
         <span>
           {t('matches')}{' '}
@@ -92,6 +104,38 @@ export function ReplyCommentNode({ data, selected }: NodeProps) {
       ) : (
         <span className="italic">{t('emptyReply')}</span>
       )}
+    </BaseNode>
+  );
+}
+
+export function AskQuestionNode({ data, selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
+  const d = (data ?? {}) as {
+    questionText?: string;
+    variableName?: string;
+    inputType?: 'text' | 'email' | 'number' | 'phone';
+  };
+  return (
+    <BaseNode
+      icon={HelpCircle}
+      iconColor="var(--color-mushu-amber)"
+      title={t('action.ask_question.title')}
+      category="action"
+      selected={selected}
+    >
+      {d.questionText ? (
+        <p className="line-clamp-2">{d.questionText}</p>
+      ) : (
+        <span className="italic">{t('action.ask_question.empty')}</span>
+      )}
+      {d.variableName ? (
+        <p className="mt-1 text-[10px] text-[var(--color-mushu-faint)]">
+          {t('action.ask_question.savesAs')}{' '}
+          <span className="font-mono text-[var(--color-mushu-amber)]">
+            {`{{${d.variableName}}}`}
+          </span>
+        </p>
+      ) : null}
     </BaseNode>
   );
 }

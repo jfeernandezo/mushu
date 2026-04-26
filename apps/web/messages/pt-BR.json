@@ -191,16 +191,30 @@
       "selectBlock": "Selecione um bloco para editar suas configurações.",
       "deleteBlock": "Excluir bloco",
       "fields": {
-        "instagramPostId": "ID do post do Instagram",
-        "keywordsCommaSeparated": "Palavras-chave (separadas por vírgula)",
+        "instagramPostId": "Publicação que dispara",
+        "keywordsCommaSeparated": "Palavras-chave",
         "messageText": "Texto da mensagem",
-        "durationSeconds": "Duração (segundos)"
+        "durationSeconds": "Duração (segundos)",
+        "questionText": "Pergunta",
+        "variableName": "Nome da variável",
+        "inputType": "Tipo de resposta",
+        "fallbackText": "Mensagem se a resposta for inválida",
+        "maxAttempts": "Máximo de tentativas"
       },
       "placeholders": {
         "messageText": "Olá! Aqui está o link…",
-        "delaySeconds": "30"
+        "delaySeconds": "30",
+        "questionText": "Qual seu e-mail pra te mandar o material?",
+        "fallbackText": "Não entendi. Pode mandar de novo?"
       },
-      "conditionV2": "O editor de condições ainda está em desenvolvimento. Por enquanto, esta etapa sempre segue o primeiro caminho."
+      "conditionV2": "O editor de condições ainda está em desenvolvimento. Por enquanto, esta etapa sempre segue o primeiro caminho.",
+      "variableHint": "Use {example} nas mensagens seguintes pra reaproveitar o que a pessoa respondeu.",
+      "inputTypes": {
+        "text": "Texto livre",
+        "email": "E-mail",
+        "number": "Número",
+        "phone": "Telefone"
+      }
     },
     "nodes": {
       "trigger": {
@@ -209,7 +223,12 @@
       },
       "action": {
         "send_dm": { "title": "Enviar mensagem privada" },
-        "reply_comment": { "title": "Responder o comentário publicamente" }
+        "reply_comment": { "title": "Responder o comentário publicamente" },
+        "ask_question": {
+          "title": "Perguntar e guardar a resposta",
+          "empty": "Configure a pergunta…",
+          "savesAs": "Salva em"
+        }
       },
       "logic": {
         "delay": { "title": "Esperar antes da próxima ação" },
@@ -236,7 +255,71 @@
       "noAction": "Adicione pelo menos uma ação (Enviar mensagem ou Responder comentário) antes de publicar.",
       "triggerWithoutKeywords": "Tem um gatilho sem palavra-chave. Clique no bloco e preencha as palavras que devem disparar a automação.",
       "actionWithoutText": "Tem uma ação com mensagem em branco. Clique no bloco e escreva o que enviar.",
+      "askQuestionIncomplete": "Tem um bloco \"Perguntar\" sem pergunta ou nome de variável. Clique no bloco e preencha os dois.",
       "triggerHasNoPath": "Tem um gatilho desconectado. Ligue ele a uma ação arrastando do ponto inferior pro próximo bloco."
+    },
+    "condition": {
+      "emptyHint": "Esta etapa decide pra qual caminho seguir com base em variáveis salvas ou tags do contato.",
+      "explainer": "Cada caminho é avaliado em ordem. O primeiro que casar é o seguido. O último caminho é o padrão (\"senão\").",
+      "addBranch": "+ Adicionar caminho",
+      "addCondition": "+ Adicionar condição",
+      "branchNamePlaceholder": "Nome do caminho (ex: É lead)",
+      "defaultBranchName": "Caminho {n}",
+      "removeBranch": "Remover caminho",
+      "removeCondition": "Remover condição",
+      "fieldPlaceholder": "ex: email",
+      "valuePlaceholder": "valor",
+      "tagPlaceholder": "tag",
+      "lastBranchIsDefault": "O último caminho é seguido quando nenhum outro casar.",
+      "logical": {
+        "and": "Todas precisam casar (E)",
+        "or": "Qualquer uma casa (OU)"
+      },
+      "operators": {
+        "equals": "é igual a",
+        "not_equals": "é diferente de",
+        "contains": "contém",
+        "starts_with": "começa com",
+        "gt": "é maior que",
+        "lt": "é menor que",
+        "is_set": "tem valor",
+        "is_empty": "está vazio",
+        "has_tag": "tem a tag",
+        "not_has_tag": "não tem a tag"
+      }
+    },
+    "keywordsInput": {
+      "placeholder": "Digite e tecle Enter…",
+      "hint": "Digite uma palavra e tecle Enter (ou vírgula) pra adicionar.",
+      "alsoMatches": "Também casa:",
+      "plusMore": "+{n} variações",
+      "remove": "Remover {keyword}"
+    },
+    "templateBanner": {
+      "title": "Esse fluxo veio do modelo \"{template}\". Personalize tudo!",
+      "tip1": "Clique em qualquer etapa pra editar palavras-chave, mensagens ou o post-alvo no painel da direita.",
+      "tip2": "Arraste novas etapas da coluna da esquerda pra adicionar passos (ex: \"Esperar antes da próxima ação\").",
+      "tip3": "Pra remover uma etapa, clique nela e use o botão \"Excluir etapa\".",
+      "tip4": "Quando estiver pronto, clique em \"Publicar\" no canto superior direito.",
+      "dismiss": "Dispensar dica"
+    },
+    "postSelector": {
+      "placeholder": "Escolher post…",
+      "anyPost": "Qualquer post da conta",
+      "anyPostDescription": "A automação reage a comentários em qualquer publicação sua.",
+      "anyPostHint": "Reage a comentários em qualquer post da sua conta.",
+      "specificPostHint": "Reage só a comentários neste post.",
+      "untitledPost": "Post sem legenda",
+      "pinnedToId": "Post {id}…",
+      "dialogTitle": "Escolher publicação",
+      "dialogDescription": "Posts recentes de @{username}. Clique pra fixar a automação.",
+      "dialogDescriptionNoAccount": "Conecte uma conta Instagram pra ver seus posts aqui.",
+      "loading": "Buscando seus posts…",
+      "noMedia": "Você ainda não tem posts nessa conta.",
+      "noAccountTitle": "Nenhuma conta Instagram conectada",
+      "noAccountBody": "Pra escolher um post específico você precisa conectar uma conta Instagram Business.",
+      "connectAccount": "Conectar conta →",
+      "error": "Não conseguimos carregar seus posts agora. Tente de novo em alguns segundos."
     }
   },
   "contacts": {

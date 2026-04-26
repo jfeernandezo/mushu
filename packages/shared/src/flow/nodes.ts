@@ -18,7 +18,9 @@ const baseNode = z.object({
 const commentKeywordTriggerNode = baseNode.extend({
   type: z.literal('trigger.comment_keyword'),
   data: z.object({
-    instagramPostId: z.string().min(1),
+    // null = react to comments on ANY post of the connected account.
+    // string = react only to comments on this specific media id.
+    instagramPostId: z.string().min(1).nullable(),
     keywords: z.array(z.string().min(1)).min(1),
     matchMode: z.enum(['exact', 'contains', 'starts_with', 'any']).default('contains'),
     caseSensitive: z.boolean().default(false),
@@ -64,6 +66,27 @@ const setCustomFieldNode = baseNode.extend({
   data: z.object({
     field: z.string().min(1).max(60),
     value: z.union([z.string(), z.number(), z.boolean()]),
+  }),
+});
+
+/**
+ * Asks the user a question via DM, pauses execution, and stores the answer
+ * into state.variables[variableName]. The worker validates the reply against
+ * inputType. On invalid replies, it resends fallbackText up to maxAttempts
+ * times, then either falls through (giving up) or cancels the run.
+ */
+const askQuestionNode = baseNode.extend({
+  type: z.literal('action.ask_question'),
+  data: z.object({
+    questionText: z.string().min(1).max(1000),
+    variableName: z
+      .string()
+      .min(1)
+      .max(40)
+      .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, 'invalid variable name'),
+    inputType: z.enum(['text', 'email', 'number', 'phone']).default('text'),
+    fallbackText: z.string().max(500).optional(),
+    maxAttempts: z.number().int().min(1).max(5).default(3),
   }),
 });
 
@@ -122,6 +145,7 @@ export const flowNodeSchema = z.discriminatedUnion('type', [
   replyCommentNode,
   setTagNode,
   setCustomFieldNode,
+  askQuestionNode,
   delayNode,
   conditionNode,
   endNode,

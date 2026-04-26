@@ -22,6 +22,7 @@ import type { FlowGraph, FlowNodeType } from '@mushu/shared/flow';
 import { useTheme } from '@/components/theme-provider';
 import { THEME_COLORS } from '@/lib/theme-colors';
 import {
+  AskQuestionNode,
   ConditionNode,
   DelayNode,
   EndNode,
@@ -36,6 +37,7 @@ const nodeTypes: NodeTypes = {
   'trigger.dm_keyword': TriggerDmNode,
   'action.send_dm': SendDmNode,
   'action.reply_comment': ReplyCommentNode,
+  'action.ask_question': AskQuestionNode,
   'logic.delay': DelayNode,
   'logic.condition': ConditionNode,
   'control.end': EndNode,
@@ -186,13 +188,20 @@ function cryptoRandomId(): string {
 function defaultDataForType(type: FlowNodeType): Record<string, unknown> {
   switch (type) {
     case 'trigger.comment_keyword':
-      return { instagramPostId: '', keywords: [], matchMode: 'contains', caseSensitive: false };
+      return { instagramPostId: null, keywords: [], matchMode: 'contains', caseSensitive: false };
     case 'trigger.dm_keyword':
       return { keywords: [], matchMode: 'contains', caseSensitive: false };
     case 'action.send_dm':
       return { text: '' };
     case 'action.reply_comment':
       return { text: '' };
+    case 'action.ask_question':
+      return {
+        questionText: '',
+        variableName: 'resposta',
+        inputType: 'text',
+        maxAttempts: 3,
+      };
     case 'action.set_tag':
       return { tag: '', operation: 'add' };
     case 'action.set_custom_field':

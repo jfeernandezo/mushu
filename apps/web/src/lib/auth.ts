@@ -9,6 +9,13 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { organization } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
+import { sendEmail } from './email';
+import {
+  invitationEmail,
+  resetPasswordEmail,
+  verificationEmail,
+} from './email-templates';
+import { isHosted } from './mode';
 import { ensureSubscription } from './plan';
 
 const baseURL = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000';
@@ -72,10 +79,26 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
   emailAndPassword: {
     enabled: true,
+    // Hosted mode requires email verification before login (App Review hygiene
+    // signal — also kills throwaway-email signup spam). Selfhost forks can opt
+    // in by setting MUSHU_REQUIRE_EMAIL_VERIFICATION=true.
+    requireEmailVerification:
+      isHosted() || process.env.MUSHU_REQUIRE_EMAIL_VERIFICATION === 'true',
+    sendResetPassword: async ({ user, url }) => {
+      const tpl = resetPasswordEmail(url, user.name);
+      await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      const tpl = verificationEmail(url, user.name);
+      await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html });
+    },
   },
   user: {
     // Enable self-service delete (Phase B). Requires the user's password.
-    // No verification email — we don't have email infra wired up yet.
     deleteUser: { enabled: true },
   },
   databaseHooks: {
@@ -90,7 +113,24 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [organization()],
+  plugins: [
+    organization({
+      // Workspace invitations: Better Auth creates the row in `invitation` and
+      // returns the link; we send it via SMTP. Recipient lands on
+      // /accept-invitation/[token] which calls auth.api.acceptInvitation.
+      async sendInvitationEmail(data) {
+        const url = `${baseURL}/accept-invitation/${data.id}`;
+        const tpl = invitationEmail({
+          url,
+          inviterName: data.inviter.user.name,
+          inviterEmail: data.inviter.user.email,
+          organizationName: data.organization.name,
+          role: data.role,
+        });
+        await sendEmail({ to: data.email, subject: tpl.subject, html: tpl.html });
+      },
+    }),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;

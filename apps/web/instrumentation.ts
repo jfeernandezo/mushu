@@ -12,9 +12,12 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
 
   const { getMode, HOSTED_REQUIRED_ENV } = await import('./src/lib/mode');
+  const { HOSTED_EMAIL_REQUIRED_ENV } = await import('./src/lib/email');
 
   if (getMode() === 'hosted') {
-    const missing = HOSTED_REQUIRED_ENV.filter((name) => !process.env[name]?.trim());
+    const missing = [...HOSTED_REQUIRED_ENV, ...HOSTED_EMAIL_REQUIRED_ENV].filter(
+      (name) => !process.env[name]?.trim(),
+    );
     if (missing.length > 0) {
       // Throwing here aborts server boot in production. In dev, Next prints the
       // stack and the dev server stays up but reload-loops — either way you

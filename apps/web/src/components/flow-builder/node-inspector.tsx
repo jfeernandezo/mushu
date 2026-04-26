@@ -65,9 +65,11 @@ function nodeTitle(type: string | undefined, tNodes: (key: string) => string): s
   switch (type) {
     case 'trigger.comment_keyword':
     case 'trigger.dm_keyword':
+    case 'trigger.first_dm':
     case 'action.send_dm':
     case 'action.reply_comment':
     case 'action.ask_question':
+    case 'action.set_tag':
     case 'logic.delay':
     case 'logic.condition':
     case 'control.end':
@@ -118,6 +120,15 @@ function Form({
           onChange={(next) => update('keywords', next)}
         />
       </Field>
+    );
+  }
+
+  if (type === 'trigger.first_dm') {
+    // No editable fields — the trigger fires on first DM regardless of content.
+    return (
+      <p className="text-xs leading-relaxed text-[var(--color-mushu-mute)]">
+        {tInspector('firstDmDescription')}
+      </p>
     );
   }
 
@@ -196,6 +207,38 @@ function Form({
               update('maxAttempts', Math.max(1, Math.min(5, Number.parseInt(e.target.value, 10) || 3)))
             }
           />
+        </Field>
+      </>
+    );
+  }
+
+  if (type === 'action.set_tag') {
+    const tag = (data.tag as string) ?? '';
+    const operation = (data.operation as 'add' | 'remove') ?? 'add';
+    return (
+      <>
+        <Field label={tFields('tag')}>
+          <Input
+            value={tag}
+            onChange={(e) =>
+              update(
+                'tag',
+                e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40).toLowerCase(),
+              )
+            }
+            placeholder={tPh('tag')}
+          />
+          <p className="text-[10px] text-[var(--color-mushu-faint)]">{tInspector('tagHint')}</p>
+        </Field>
+        <Field label={tFields('tagOperation')}>
+          <select
+            value={operation}
+            onChange={(e) => update('operation', e.target.value)}
+            className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
+          >
+            <option value="add">{tInspector('tagOps.add')}</option>
+            <option value="remove">{tInspector('tagOps.remove')}</option>
+          </select>
         </Field>
       </>
     );

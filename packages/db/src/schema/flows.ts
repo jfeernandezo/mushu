@@ -79,6 +79,7 @@ export const trigger = pgTable(
       enum: [
         'comment_keyword',
         'dm_keyword',
+        'first_dm',
         'story_reply',
         'story_mention',
         'ref_url',

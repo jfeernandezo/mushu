@@ -18,9 +18,11 @@ import { Button } from '@/components/ui/button';
 interface MembersListProps {
   members: MemberRow[];
   capabilities: { canAssignRoles: boolean; canRemove: boolean; canInvite: boolean };
+  /** False when SMTP isn't configured — invite UI shows a hint instead. */
+  emailEnabled: boolean;
 }
 
-export function MembersList({ members, capabilities }: MembersListProps) {
+export function MembersList({ members, capabilities, emailEnabled }: MembersListProps) {
   const t = useTranslations('settings.members');
   const formatter = useFormatter();
   const [pending, startTransition] = useTransition();
@@ -106,8 +108,8 @@ export function MembersList({ members, capabilities }: MembersListProps) {
           </li>
         );
       })}
-      {capabilities.canInvite ? (
-        <p className="mt-2 text-xs text-[var(--color-mushu-faint)]">{t('inviteComingSoon')}</p>
+      {capabilities.canInvite && !emailEnabled ? (
+        <p className="mt-2 text-xs text-[var(--color-mushu-faint)]">{t('smtpRequired')}</p>
       ) : null}
     </ul>
   );

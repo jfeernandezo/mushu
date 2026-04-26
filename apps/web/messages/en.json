@@ -1,4 +1,20 @@
 {
+  "acceptInvitation": {
+    "title": "Accept invitation",
+    "body": "You've been invited to join the workspace {workspace} as {role}.",
+    "acceptButton": "Accept and join",
+    "accepting": "Joining…",
+    "accepted": "Welcome! You're now part of the workspace.",
+    "failed": "Could not accept: {error}",
+    "notFoundTitle": "Invitation not found",
+    "notFoundBody": "The invitation link looks invalid. Make sure you opened the full URL from the email.",
+    "alreadyHandledTitle": "Invitation already handled",
+    "alreadyHandledBody": "This invitation has already been accepted or cancelled.",
+    "expiredTitle": "Invitation expired",
+    "expiredBody": "This invitation has expired. Ask whoever invited you to send a new one.",
+    "wrongAccountTitle": "Wrong account",
+    "wrongAccountBody": "This invitation was sent to {expected}, but you're signed in as {current}. Sign out and try again."
+  },
   "pricing": {
     "title": "Pick the plan that fits",
     "subtitle": "Free forever up to 1,000 contacts. Upgrade when you outgrow it.",
@@ -392,6 +408,14 @@
         "triggerKeywords": "hi, hello, hey",
         "dmMessage": "Hi! 👋 I'm Mushu, your support agent. How can I help?"
       }
+    },
+    "welcomeOnFirstDm": {
+      "name": "Welcome on first DM",
+      "description": "When someone DMs your account for the first time, tags them as 'new lead' and sends an automatic welcome message.",
+      "defaults": {
+        "tag": "new-lead",
+        "dmMessage": "Hi! Welcome 👋 Glad to see you here for the first time. I'm the automated assistant and happy to help — what are you looking for?"
+      }
     }
   },
   "flowBuilder": {
@@ -429,16 +453,25 @@
         "variableName": "Variable name",
         "inputType": "Answer type",
         "fallbackText": "Message if the answer is invalid",
-        "maxAttempts": "Max attempts"
+        "maxAttempts": "Max attempts",
+        "tag": "Tag",
+        "tagOperation": "Action"
       },
       "placeholders": {
         "messageText": "Hey! Here's the link…",
         "delaySeconds": "30",
         "questionText": "What's your email so I can send you the material?",
-        "fallbackText": "I didn't catch that. Can you send it again?"
+        "fallbackText": "I didn't catch that. Can you send it again?",
+        "tag": "hot-lead"
       },
       "conditionV2": "Condition editor is still being built. For now, this step always takes the first path.",
       "variableHint": "Use {example} in later messages to reuse what the person answered.",
+      "tagHint": "Letters, numbers, hyphen and underscore only. Use tags to segment contacts later.",
+      "firstDmDescription": "This trigger fires automatically the first time a contact ever DMs your account. No fields to configure — any text works. Use it to welcome them, tag as 'new lead', and kick off the relationship.",
+      "tagOps": {
+        "add": "Add tag",
+        "remove": "Remove tag"
+      },
       "inputTypes": {
         "text": "Free text",
         "email": "Email",
@@ -453,6 +486,10 @@
         },
         "dm_keyword": {
           "title": "When someone DMs a keyword"
+        },
+        "first_dm": {
+          "title": "When someone DMs for the first time",
+          "hint": "Fires only on the contact's first ever message"
         }
       },
       "action": {
@@ -466,6 +503,12 @@
           "title": "Ask and save the answer",
           "empty": "Set up the question…",
           "savesAs": "Saves to"
+        },
+        "set_tag": {
+          "title": "Tag the contact",
+          "empty": "Set the tag name…",
+          "addVerb": "Adds",
+          "removeVerb": "Removes"
         }
       },
       "logic": {
@@ -625,6 +668,7 @@
       "title": "Members",
       "subtitle": "Who has access to this workspace and what role they hold.",
       "card": "{count, plural, =1 {1 member} other {# members}}",
+      "pendingCard": "{count, plural, =1 {1 pending invitation} other {# pending invitations}}",
       "youBadge": "You",
       "joined": "Joined on {date}",
       "remove": "Remove member",
@@ -633,12 +677,37 @@
       "removeFailed": "Could not remove: {error}",
       "roleChanged": "Role updated.",
       "roleChangeFailed": "Could not update role: {error}",
-      "inviteComingSoon": "Inviting new members: coming soon (requires SMTP).",
+      "smtpRequired": "Configure SMTP in .env to enable inviting new members.",
+      "expiresAt": "Expires on {date}",
+      "cancelInvitation": "Cancel invitation",
+      "cancelInvitationConfirm": "Cancel invitation sent to {email}?",
+      "invitationCancelled": "Invitation cancelled.",
+      "cancelFailed": "Could not cancel: {error}",
       "roleLabel": {
         "owner": "Owner",
         "admin": "Admin",
         "editor": "Editor",
         "viewer": "Viewer"
+      },
+      "invite": {
+        "button": "Invite member",
+        "title": "Invite to workspace",
+        "description": "The invitation goes by email. The recipient must have (or create) a Mushu account with this address to join.",
+        "emailLabel": "Email",
+        "roleLabel": "Role",
+        "roleOption": {
+          "admin": "Admin — manage members and flows (no billing)",
+          "editor": "Editor — create and publish flows, reply in inbox",
+          "viewer": "Viewer — read-only access to contacts, inbox and analytics"
+        },
+        "send": "Send invitation",
+        "sending": "Sending…",
+        "cancel": "Cancel",
+        "sent": "Invitation sent to {email}.",
+        "alreadyMember": "This person is already a member of this workspace.",
+        "smtpNotConfigured": "SMTP not configured. Notify the operator.",
+        "invalidEmail": "Invalid email.",
+        "failed": "Send failed: {error}"
       }
     },
     "privacy": {

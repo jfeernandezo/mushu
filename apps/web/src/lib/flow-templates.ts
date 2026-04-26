@@ -4,7 +4,7 @@ export interface FlowTemplate {
   id: string;
   nameKey: string;
   descriptionKey: string;
-  iconName: 'comment' | 'lead' | 'wave';
+  iconName: 'comment' | 'lead' | 'wave' | 'sparkles';
   /**
    * Builds a FlowGraph for this template, generating fresh node/edge UUIDs so
    * multiple flows from the same template don't share IDs.
@@ -17,9 +17,12 @@ export interface FlowTemplate {
 }
 
 export interface TemplateTexts {
-  triggerKeywords: string;
+  /** Optional for first-DM template (no keyword). */
+  triggerKeywords?: string;
   replyMessage?: string;
   dmMessage: string;
+  /** Optional tag set on the contact (set_tag node template). */
+  tag?: string;
 }
 
 const POS_TRIGGER = { x: 80, y: 80 };
@@ -31,7 +34,8 @@ function uid(): string {
   return crypto.randomUUID();
 }
 
-function splitKeywords(csv: string): string[] {
+function splitKeywords(csv: string | undefined): string[] {
+  if (!csv) return [];
   return csv
     .split(',')
     .map((s) => s.trim())
@@ -105,6 +109,53 @@ export const FLOW_TEMPLATES: FlowTemplate[] = [
     descriptionKey: 'flowTemplates.welcomeDm.description',
     iconName: 'wave',
     build: (texts) => buildDmKeywordTemplate(texts),
+  },
+  {
+    id: 'welcome-on-first-dm',
+    nameKey: 'flowTemplates.welcomeOnFirstDm.name',
+    descriptionKey: 'flowTemplates.welcomeOnFirstDm.description',
+    iconName: 'sparkles',
+    build: (texts) => {
+      const triggerId = uid();
+      const tagId = uid();
+      const dmId = uid();
+      const endId = uid();
+      const tag = (texts.tag ?? '').trim() || 'novo-lead';
+      const nodes: FlowNode[] = [
+        {
+          id: triggerId,
+          type: 'trigger.first_dm',
+          position: POS_TRIGGER,
+          data: {},
+        },
+        {
+          id: tagId,
+          type: 'action.set_tag',
+          position: POS_ACTION_1,
+          data: { tag, operation: 'add' },
+        },
+        {
+          id: dmId,
+          type: 'action.send_dm',
+          position: POS_ACTION_2,
+          data: { text: texts.dmMessage },
+        },
+        {
+          id: endId,
+          type: 'control.end',
+          position: POS_END,
+          data: {},
+        },
+      ];
+      return {
+        nodes,
+        edges: [
+          { id: uid(), source: triggerId, target: tagId },
+          { id: uid(), source: tagId, target: dmId },
+          { id: uid(), source: dmId, target: endId },
+        ],
+      };
+    },
   },
 ];
 

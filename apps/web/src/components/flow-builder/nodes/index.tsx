@@ -8,7 +8,9 @@ import {
   MessageCircle,
   MessageSquare,
   Send,
+  Sparkles,
   Square,
+  Tag,
   Zap,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -64,6 +66,24 @@ export function TriggerDmNode({ data, selected }: NodeProps) {
       ) : (
         <span className="italic">{t('configureKeywords')}</span>
       )}
+    </BaseNode>
+  );
+}
+
+export function TriggerFirstDmNode({ selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
+  return (
+    <BaseNode
+      icon={Sparkles}
+      iconColor="var(--color-mushu-amber)"
+      title={t('trigger.first_dm.title')}
+      category="trigger"
+      selected={selected}
+      hasInput={false}
+    >
+      <span className="block text-[10px] text-[var(--color-mushu-faint)]">
+        {t('trigger.first_dm.hint')}
+      </span>
     </BaseNode>
   );
 }
@@ -136,6 +156,30 @@ export function AskQuestionNode({ data, selected }: NodeProps) {
           </span>
         </p>
       ) : null}
+    </BaseNode>
+  );
+}
+
+export function SetTagNode({ data, selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
+  const d = (data ?? {}) as { tag?: string; operation?: 'add' | 'remove' };
+  const tag = d.tag?.trim();
+  return (
+    <BaseNode
+      icon={Tag}
+      iconColor="var(--color-mushu-amber)"
+      title={t('action.set_tag.title')}
+      category="action"
+      selected={selected}
+    >
+      {tag ? (
+        <span>
+          {d.operation === 'remove' ? t('action.set_tag.removeVerb') : t('action.set_tag.addVerb')}{' '}
+          <span className="font-mono text-[var(--color-mushu-ink)]">{tag}</span>
+        </span>
+      ) : (
+        <span className="italic">{t('action.set_tag.empty')}</span>
+      )}
     </BaseNode>
   );
 }

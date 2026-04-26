@@ -12,7 +12,7 @@ import {
   trigger,
 } from '@mushu/db';
 import { type FlowGraph, flowGraphSchema } from '@mushu/shared/flow';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { findNextNodeId } from '../lib/trigger-matcher.ts';
 import { validateUserInput } from '../lib/validate-user-input.ts';
 import {
@@ -92,7 +92,35 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
     if (resumed) return;
   }
 
-  // Load eligible triggers via index (account + type + maybe post_id).
+  // Get-or-create contact + contact_inbox + conversation. We need this BEFORE
+  // looking up triggers because `trigger.first_dm` only fires when the contact
+  // is brand new (no prior contact_inbox row for this IG account).
+  const { contactId, contactInboxId, conversationId, isNewContact } =
+    await ensureContactContext({
+      organizationId: account.organizationId,
+      instagramAccountId: account.id,
+      actorIgsid: matchContext.actorIgsid,
+      actorUsername: matchContext.actorUsername,
+    });
+
+  // Load eligible triggers via index. For DMs, also pull `first_dm` triggers
+  // when this is the contact's first interaction — they fire alongside any
+  // matching dm_keyword triggers, no keyword config needed.
+  type TriggerType =
+    | 'comment_keyword'
+    | 'dm_keyword'
+    | 'first_dm'
+    | 'story_reply'
+    | 'story_mention'
+    | 'ref_url'
+    | 'manual';
+  const acceptedTypes: TriggerType[] =
+    matchContext.kind === 'comment'
+      ? ['comment_keyword']
+      : isNewContact
+        ? ['dm_keyword', 'first_dm']
+        : ['dm_keyword'];
+
   const triggerRows = await db
     .select({
       id: trigger.id,
@@ -105,7 +133,7 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
     .where(
       and(
         eq(trigger.instagramAccountId, account.id),
-        eq(trigger.type, matchContext.kind === 'comment' ? 'comment_keyword' : 'dm_keyword'),
+        inArray(trigger.type, acceptedTypes),
         eq(trigger.isActive, true),
       ),
     );
@@ -117,6 +145,10 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
   };
 
   const matched = triggerRows.filter((t) => {
+    // first_dm has no keyword config — always matches when isNewContact is true
+    // (and we already know it is, since it's only included in acceptedTypes
+    // under that condition).
+    if (t.type === 'first_dm') return true;
     if (matchContext.kind === 'comment' && t.instagramPostId && t.instagramPostId !== matchContext.postId) {
       return false;
     }
@@ -133,14 +165,6 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
     await markProcessed(incomingEventId, 'no trigger matched');
     return;
   }
-
-  // Get-or-create contact + contact_inbox + conversation in one transaction.
-  const { contactId, contactInboxId, conversationId } = await ensureContactContext({
-    organizationId: account.organizationId,
-    instagramAccountId: account.id,
-    actorIgsid: matchContext.actorIgsid,
-    actorUsername: matchContext.actorUsername,
-  });
 
   // Persist the inbound event as a message in the conversation (idempotent
   // via source_id unique).
@@ -196,7 +220,7 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
     // Determine starting node: the trigger node in the graph (matched by id
     // recorded in the trigger row, or we re-match by data shape if no id).
     // For MVP we re-match by node type + post_id + keywords.
-    const startNode = findStartNodeForTrigger(graph, matchContext);
+    const startNode = findStartNodeForTrigger(graph, matchContext, t.type);
     if (!startNode) {
       console.warn(`[process-event] flow ${flowRow.id}: trigger node not found in graph`);
       continue;
@@ -286,7 +310,13 @@ async function ensureContactContext(args: {
   instagramAccountId: string;
   actorIgsid: string;
   actorUsername: string | null;
-}): Promise<{ contactId: string; contactInboxId: string; conversationId: string }> {
+}): Promise<{
+  contactId: string;
+  contactInboxId: string;
+  conversationId: string;
+  /** True when we just created the contact_inbox row in this call. */
+  isNewContact: boolean;
+}> {
   // contact_inbox is the natural lookup since source_id is unique per
   // instagram_account.
   const [existingInbox] = await db
@@ -302,6 +332,7 @@ async function ensureContactContext(args: {
 
   let contactId: string;
   let contactInboxId: string;
+  const isNewContact = !existingInbox;
 
   if (existingInbox) {
     contactId = existingInbox.contactId;
@@ -353,7 +384,7 @@ async function ensureContactContext(args: {
     });
   }
 
-  return { contactId, contactInboxId, conversationId };
+  return { contactId, contactInboxId, conversationId, isNewContact };
 }
 
 /**
@@ -556,13 +587,24 @@ function defaultFallback(inputType: 'text' | 'email' | 'number' | 'phone'): stri
   }
 }
 
-function findStartNodeForTrigger(graph: FlowGraph, ctx: MatchContext) {
+function findStartNodeForTrigger(
+  graph: FlowGraph,
+  ctx: MatchContext,
+  triggerType: string,
+) {
   return graph.nodes.find((n) => {
-    if (ctx.kind === 'comment' && n.type === 'trigger.comment_keyword') {
+    if (triggerType === 'first_dm' && n.type === 'trigger.first_dm') {
+      return true;
+    }
+    if (
+      ctx.kind === 'comment' &&
+      triggerType === 'comment_keyword' &&
+      n.type === 'trigger.comment_keyword'
+    ) {
       // null postId = wildcard (any post).
       return n.data.instagramPostId === null || n.data.instagramPostId === ctx.postId;
     }
-    if (ctx.kind === 'dm' && n.type === 'trigger.dm_keyword') {
+    if (ctx.kind === 'dm' && triggerType === 'dm_keyword' && n.type === 'trigger.dm_keyword') {
       return true;
     }
     return false;

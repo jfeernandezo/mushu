@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { FLOW_TEMPLATES, type FlowTemplate } from '@/lib/flow-templates';
+import { FLOW_TEMPLATES, type FlowTemplate, type TemplateTexts } from '@/lib/flow-templates';
 import { cn } from '@/lib/utils';
 
 interface TemplatePickerDialogProps {
@@ -26,6 +26,7 @@ const ICONS: Record<FlowTemplate['iconName'], LucideIcon> = {
   comment: MessageCircle,
   lead: MessageSquare,
   wave: Hand,
+  sparkles: Sparkles,
 };
 
 export function TemplatePickerDialog({ trigger }: TemplatePickerDialogProps) {
@@ -42,15 +43,22 @@ export function TemplatePickerDialog({ trigger }: TemplatePickerDialogProps) {
         if (templateId) {
           const template = FLOW_TEMPLATES.find((tpl) => tpl.id === templateId);
           if (!template) throw new Error('template_not_found');
+          const defaultsKey = `flowTemplates.${idCamel(templateId)}.defaults`;
+          const texts: TemplateTexts = {
+            dmMessage: t(`${defaultsKey}.dmMessage`),
+          };
+          if (hasTriggerKeywords(templateId)) {
+            texts.triggerKeywords = t(`${defaultsKey}.triggerKeywords`);
+          }
+          if (hasReplyMessage(templateId)) {
+            texts.replyMessage = t(`${defaultsKey}.replyMessage`);
+          }
+          if (hasTag(templateId)) {
+            texts.tag = t(`${defaultsKey}.tag`);
+          }
           result = await createFlow(t(template.nameKey), {
             templateId,
-            templateTexts: {
-              triggerKeywords: t(`flowTemplates.${idCamel(templateId)}.defaults.triggerKeywords`),
-              dmMessage: t(`flowTemplates.${idCamel(templateId)}.defaults.dmMessage`),
-              replyMessage: hasReplyMessage(templateId)
-                ? t(`flowTemplates.${idCamel(templateId)}.defaults.replyMessage`)
-                : undefined,
-            },
+            templateTexts: texts,
           });
         } else {
           result = await createFlow(t('flows.untitled'));
@@ -145,4 +153,13 @@ function idCamel(id: string): string {
 
 function hasReplyMessage(id: string): boolean {
   return id === 'comment-to-dm';
+}
+
+function hasTriggerKeywords(id: string): boolean {
+  // Welcome-on-first-DM has no keyword config — fires on any first message.
+  return id !== 'welcome-on-first-dm';
+}
+
+function hasTag(id: string): boolean {
+  return id === 'welcome-on-first-dm';
 }

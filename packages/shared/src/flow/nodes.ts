@@ -36,6 +36,17 @@ const dmKeywordTriggerNode = baseNode.extend({
   }),
 });
 
+/**
+ * Fires the first time a contact ever DMs the connected IG account. No
+ * keyword config — every first-touch DM matches. Use to send a welcome
+ * message + tag the contact as 'new' so subsequent triggers know who's
+ * already been onboarded.
+ */
+const firstDmTriggerNode = baseNode.extend({
+  type: z.literal('trigger.first_dm'),
+  data: z.object({}),
+});
+
 // ---------- Action nodes ----------
 
 const sendDmNode = baseNode.extend({
@@ -141,6 +152,7 @@ const endNode = baseNode.extend({
 export const flowNodeSchema = z.discriminatedUnion('type', [
   commentKeywordTriggerNode,
   dmKeywordTriggerNode,
+  firstDmTriggerNode,
   sendDmNode,
   replyCommentNode,
   setTagNode,
@@ -176,6 +188,7 @@ export type FlowNodeType = FlowNode['type'];
 export const TRIGGER_NODE_TYPES = [
   'trigger.comment_keyword',
   'trigger.dm_keyword',
+  'trigger.first_dm',
 ] as const satisfies readonly FlowNodeType[];
 
 export function isTriggerNode(node: FlowNode): boolean {

@@ -1,4 +1,20 @@
 {
+  "acceptInvitation": {
+    "title": "Aceitar convite",
+    "body": "Você foi convidado a entrar no workspace {workspace} como {role}.",
+    "acceptButton": "Aceitar e entrar",
+    "accepting": "Entrando…",
+    "accepted": "Bem-vindo! Você agora faz parte do workspace.",
+    "failed": "Não foi possível aceitar: {error}",
+    "notFoundTitle": "Convite não encontrado",
+    "notFoundBody": "O link do convite parece inválido. Confira se você abriu a URL completa enviada por email.",
+    "alreadyHandledTitle": "Convite já tratado",
+    "alreadyHandledBody": "Esse convite já foi aceito ou cancelado.",
+    "expiredTitle": "Convite expirado",
+    "expiredBody": "Esse convite passou da validade. Peça pra quem te convidou enviar um novo.",
+    "wrongAccountTitle": "Conta diferente",
+    "wrongAccountBody": "Esse convite foi enviado para {expected}, mas você está logado como {current}. Faça logout e tente novamente."
+  },
   "pricing": {
     "title": "Escolha o plano que faz sentido pra você",
     "subtitle": "Free pra sempre até 1.000 contatos. Upgrade quando precisar de mais.",
@@ -392,6 +408,14 @@
         "triggerKeywords": "oi, olá, hey, hi",
         "dmMessage": "Oi! 👋 Tudo bem? Sou a Mushu, agente de atendimento. Em que posso te ajudar?"
       }
+    },
+    "welcomeOnFirstDm": {
+      "name": "Boas-vindas no primeiro DM",
+      "description": "Quando alguém manda DM pra sua conta pela primeira vez, marca como 'novo lead' e envia uma mensagem de boas-vindas automática.",
+      "defaults": {
+        "tag": "novo-lead",
+        "dmMessage": "Oi! Bem-vindo(a) 👋 Que bom te ver por aqui pela primeira vez. Sou o assistente automático e fico feliz em te ajudar — pode me contar o que está procurando?"
+      }
     }
   },
   "flowBuilder": {
@@ -429,16 +453,25 @@
         "variableName": "Nome da variável",
         "inputType": "Tipo de resposta",
         "fallbackText": "Mensagem se a resposta for inválida",
-        "maxAttempts": "Máximo de tentativas"
+        "maxAttempts": "Máximo de tentativas",
+        "tag": "Tag",
+        "tagOperation": "Ação"
       },
       "placeholders": {
         "messageText": "Olá! Aqui está o link…",
         "delaySeconds": "30",
         "questionText": "Qual seu e-mail pra te mandar o material?",
-        "fallbackText": "Não entendi. Pode mandar de novo?"
+        "fallbackText": "Não entendi. Pode mandar de novo?",
+        "tag": "lead-quente"
       },
       "conditionV2": "O editor de condições ainda está em desenvolvimento. Por enquanto, esta etapa sempre segue o primeiro caminho.",
       "variableHint": "Use {example} nas mensagens seguintes pra reaproveitar o que a pessoa respondeu.",
+      "tagHint": "Apenas letras, números, hífen e underscore. Use tags pra segmentar contatos depois.",
+      "firstDmDescription": "Esse gatilho dispara automaticamente na primeira vez que um contato manda uma DM pra sua conta. Sem campos pra configurar — qualquer texto serve. Use pra dar boas-vindas, marcar como 'novo lead' e iniciar o relacionamento.",
+      "tagOps": {
+        "add": "Adicionar tag",
+        "remove": "Remover tag"
+      },
       "inputTypes": {
         "text": "Texto livre",
         "email": "E-mail",
@@ -453,6 +486,10 @@
         },
         "dm_keyword": {
           "title": "Quando mandarem DM com uma palavra"
+        },
+        "first_dm": {
+          "title": "Quando alguém manda DM pela primeira vez",
+          "hint": "Dispara só na primeira mensagem do contato"
         }
       },
       "action": {
@@ -466,6 +503,12 @@
           "title": "Perguntar e guardar a resposta",
           "empty": "Configure a pergunta…",
           "savesAs": "Salva em"
+        },
+        "set_tag": {
+          "title": "Marcar contato com tag",
+          "empty": "Defina o nome da tag…",
+          "addVerb": "Adiciona",
+          "removeVerb": "Remove"
         }
       },
       "logic": {
@@ -625,6 +668,7 @@
       "title": "Membros",
       "subtitle": "Quem tem acesso a este workspace e que role ocupam.",
       "card": "{count, plural, =1 {1 membro} other {# membros}}",
+      "pendingCard": "{count, plural, =1 {1 convite pendente} other {# convites pendentes}}",
       "youBadge": "Você",
       "joined": "Entrou em {date}",
       "remove": "Remover membro",
@@ -633,12 +677,37 @@
       "removeFailed": "Não foi possível remover: {error}",
       "roleChanged": "Role atualizado.",
       "roleChangeFailed": "Não foi possível alterar role: {error}",
-      "inviteComingSoon": "Convidar novos membros: em breve (precisa de SMTP configurado).",
+      "smtpRequired": "Configure o SMTP no .env para habilitar o convite de novos membros.",
+      "expiresAt": "Expira em {date}",
+      "cancelInvitation": "Cancelar convite",
+      "cancelInvitationConfirm": "Cancelar convite enviado para {email}?",
+      "invitationCancelled": "Convite cancelado.",
+      "cancelFailed": "Não foi possível cancelar: {error}",
       "roleLabel": {
         "owner": "Proprietário",
         "admin": "Admin",
         "editor": "Editor",
         "viewer": "Visualizador"
+      },
+      "invite": {
+        "button": "Convidar membro",
+        "title": "Convidar para o workspace",
+        "description": "O convite vai por email. A pessoa precisa ter (ou criar) uma conta no Mushu com este endereço pra entrar.",
+        "emailLabel": "E-mail",
+        "roleLabel": "Função",
+        "roleOption": {
+          "admin": "Admin — gerencia membros e fluxos (sem billing)",
+          "editor": "Editor — cria e publica fluxos, responde inbox",
+          "viewer": "Visualizador — só vê contatos, inbox e analytics"
+        },
+        "send": "Enviar convite",
+        "sending": "Enviando…",
+        "cancel": "Cancelar",
+        "sent": "Convite enviado para {email}.",
+        "alreadyMember": "Essa pessoa já é membro deste workspace.",
+        "smtpNotConfigured": "SMTP não configurado. Avise o operador.",
+        "invalidEmail": "E-mail inválido.",
+        "failed": "Falha ao enviar: {error}"
       }
     },
     "privacy": {

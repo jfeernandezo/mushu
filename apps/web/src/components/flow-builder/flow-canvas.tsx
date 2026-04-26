@@ -28,16 +28,20 @@ import {
   EndNode,
   ReplyCommentNode,
   SendDmNode,
+  SetTagNode,
   TriggerCommentNode,
   TriggerDmNode,
+  TriggerFirstDmNode,
 } from './nodes';
 
 const nodeTypes: NodeTypes = {
   'trigger.comment_keyword': TriggerCommentNode,
   'trigger.dm_keyword': TriggerDmNode,
+  'trigger.first_dm': TriggerFirstDmNode,
   'action.send_dm': SendDmNode,
   'action.reply_comment': ReplyCommentNode,
   'action.ask_question': AskQuestionNode,
+  'action.set_tag': SetTagNode,
   'logic.delay': DelayNode,
   'logic.condition': ConditionNode,
   'control.end': EndNode,
@@ -150,6 +154,8 @@ function defaultDataForType(type: FlowNodeType): Record<string, unknown> {
       return { instagramPostId: null, keywords: [], matchMode: 'contains', caseSensitive: false };
     case 'trigger.dm_keyword':
       return { keywords: [], matchMode: 'contains', caseSensitive: false };
+    case 'trigger.first_dm':
+      return {};
     case 'action.send_dm':
       return { text: '' };
     case 'action.reply_comment':

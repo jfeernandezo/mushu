@@ -4,16 +4,11 @@ import { Trash2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
-import {
-  ASSIGNABLE_ROLE_VALUES,
-  type AssignableRole,
-  type MemberRow,
-  removeMember,
-  updateMemberRole,
-} from '@/actions/members';
+import { type MemberRow, removeMember, updateMemberRole } from '@/actions/members';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ASSIGNABLE_ROLES, type AssignableRole } from '@/lib/member-roles';
 
 interface MembersListProps {
   members: MemberRow[];
@@ -82,7 +77,7 @@ export function MembersList({ members, capabilities, emailEnabled }: MembersList
                 onChange={(e) => onChangeRole(m.memberId, e.target.value as AssignableRole)}
                 className="rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] px-2 py-1 text-xs text-[var(--color-mushu-ink)]"
               >
-                {ASSIGNABLE_ROLE_VALUES.map((r) => (
+                {ASSIGNABLE_ROLES.map((r) => (
                   <option key={r} value={r}>
                     {t(`roleLabel.${r}`)}
                   </option>

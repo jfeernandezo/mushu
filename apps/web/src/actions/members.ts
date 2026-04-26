@@ -13,18 +13,12 @@ import { z } from 'zod';
 import { AUDIT_ACTIONS, recordAudit, requestMeta } from '@/lib/audit';
 import { auth } from '@/lib/auth';
 import { isEmailEnabled } from '@/lib/email';
+import { ASSIGNABLE_ROLES, type AssignableRole } from '@/lib/member-roles';
 import { hasPermission, requirePermission, resetMemberGroupsForRole } from '@/lib/permissions';
 
 type ActionResult<T = void> =
   | (T extends void ? { ok: true } : { ok: true; data: T })
   | { ok: false; error: string };
-
-// Roles assignable via the UI. 'owner' is intentionally NOT in this list:
-// transferring ownership is a destructive operation that needs its own
-// 2-step confirmation flow (deferred to a future phase). For now, the only
-// way to become owner is to be the workspace creator.
-const ASSIGNABLE_ROLES = ['admin', 'editor', 'viewer'] as const;
-type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
 export interface MemberRow {
   memberId: string;
@@ -224,9 +218,6 @@ export async function getMyMemberCapabilities(): Promise<{
     return { canAssignRoles: false, canRemove: false, canInvite: false };
   }
 }
-
-export const ASSIGNABLE_ROLE_VALUES = ASSIGNABLE_ROLES;
-export type { AssignableRole };
 
 // ============================================================================
 // Email invitations

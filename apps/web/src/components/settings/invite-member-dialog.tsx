@@ -4,8 +4,9 @@ import { UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
-import { ASSIGNABLE_ROLE_VALUES, type AssignableRole, inviteMember } from '@/actions/members';
+import { inviteMember } from '@/actions/members';
 import { Button } from '@/components/ui/button';
+import { ASSIGNABLE_ROLES, type AssignableRole } from '@/lib/member-roles';
 import {
   Dialog,
   DialogContent,
@@ -83,7 +84,7 @@ export function InviteMemberDialog() {
               disabled={pending}
               className="rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] px-3 py-2 text-sm text-[var(--color-mushu-ink)]"
             >
-              {ASSIGNABLE_ROLE_VALUES.map((r) => (
+              {ASSIGNABLE_ROLES.map((r) => (
                 <option key={r} value={r}>
                   {t(`roleOption.${r}`)}
                 </option>

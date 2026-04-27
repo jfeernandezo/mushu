@@ -12,7 +12,9 @@ import {
   trigger,
 } from '@mushu/db';
 import { type FlowGraph, flowGraphSchema } from '@mushu/shared/flow';
+import { createLogger } from '@mushu/shared/logger';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { publishInboxEvent } from '../lib/inbox-broadcast.ts';
 import { findNextNodeId } from '../lib/trigger-matcher.ts';
 import { validateUserInput } from '../lib/validate-user-input.ts';
 import {
@@ -22,6 +24,8 @@ import {
   messageQueue,
 } from '../queues.ts';
 import { matchKeywords } from '../lib/trigger-matcher.ts';
+
+const logger = createLogger('worker.process-event');
 
 interface ProcessEventArgs {
   incomingEventId: string;
@@ -45,7 +49,7 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
     .limit(1);
 
   if (!event) {
-    console.warn(`[process-event] event ${incomingEventId} not found`);
+    logger.warn({ incoming_event_id: incomingEventId }, 'event not found');
     return;
   }
   if (event.processedAt) {
@@ -173,10 +177,11 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
 
   // Persist the inbound event as a message in the conversation (idempotent
   // via source_id unique).
+  const inboundMessageId = randomUUID();
   await db
     .insert(message)
     .values({
-      id: randomUUID(),
+      id: inboundMessageId,
       conversationId,
       instagramAccountId: account.id,
       organizationId: account.organizationId,
@@ -196,6 +201,14 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
       lastActivityAt: new Date(),
     })
     .where(eq(conversation.id, conversationId));
+
+  // Notify any open inbox SSE subscribers for this org so the operator sees
+  // the message in <2s without waiting for the 10s polling tick.
+  await publishInboxEvent(account.organizationId, {
+    kind: 'message_inserted',
+    conversationId,
+    messageId: inboundMessageId,
+  });
 
   // For each matched trigger: load flow, validate published graph, create
   // execution, enqueue execute-flow.
@@ -217,7 +230,10 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
 
     const parsed = flowGraphSchema.safeParse(flowRow.publishedGraph);
     if (!parsed.success) {
-      console.error(`[process-event] flow ${flowRow.id} graph invalid:`, parsed.error.message);
+      logger.error(
+        { flow_id: flowRow.id, zod_error: parsed.error.message },
+        'flow graph invalid',
+      );
       continue;
     }
     const graph: FlowGraph = parsed.data;
@@ -227,7 +243,7 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
     // For MVP we re-match by node type + post_id + keywords.
     const startNode = findStartNodeForTrigger(graph, matchContext, t.type);
     if (!startNode) {
-      console.warn(`[process-event] flow ${flowRow.id}: trigger node not found in graph`);
+      logger.warn({ flow_id: flowRow.id }, 'trigger node not found in graph');
       continue;
     }
 

@@ -1,9 +1,12 @@
 import { dbAdmin as db, instagramAccount, notification, session as sessionTable } from '@mushu/db';
+import { createLogger } from '@mushu/shared/logger';
 import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { auth, ensureUserOrg } from '@/lib/auth';
 import { encryptToken } from '@/lib/crypto';
+
+const logger = createLogger('web.oauth.instagram');
 
 function appUrl(path: string): URL {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
@@ -97,7 +100,7 @@ export async function GET(req: NextRequest) {
     }),
   });
   if (!shortRes.ok) {
-    console.error('[oauth] short token exchange failed', { status: shortRes.status });
+    logger.error({ http_status: shortRes.status }, 'short token exchange failed');
     return NextResponse.redirect(appUrl('/dashboard?ig_error=token_exchange_failed'));
   }
   const short = (await shortRes.json()) as ShortTokenResponse;
@@ -109,7 +112,7 @@ export async function GET(req: NextRequest) {
   longUrl.searchParams.set('access_token', short.access_token);
   const longRes = await fetch(longUrl);
   if (!longRes.ok) {
-    console.error('[oauth] long token exchange failed', { status: longRes.status });
+    logger.error({ http_status: longRes.status }, 'long token exchange failed');
     return NextResponse.redirect(appUrl('/dashboard?ig_error=long_token_failed'));
   }
   const long = (await longRes.json()) as LongTokenResponse;

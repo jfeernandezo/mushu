@@ -86,7 +86,12 @@ export const auth = betterAuth({
       isHosted() || process.env.MUSHU_REQUIRE_EMAIL_VERIFICATION === 'true',
     sendResetPassword: async ({ user, url }) => {
       const tpl = resetPasswordEmail(url, user.name);
-      await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html });
+      await sendEmail({
+        to: user.email,
+        subject: tpl.subject,
+        html: tpl.html,
+        messageType: 'reset_password',
+      });
     },
   },
   emailVerification: {
@@ -94,7 +99,12 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       const tpl = verificationEmail(url, user.name);
-      await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html });
+      await sendEmail({
+        to: user.email,
+        subject: tpl.subject,
+        html: tpl.html,
+        messageType: 'verification',
+      });
     },
   },
   user: {
@@ -127,7 +137,12 @@ export const auth = betterAuth({
           organizationName: data.organization.name,
           role: data.role,
         });
-        await sendEmail({ to: data.email, subject: tpl.subject, html: tpl.html });
+        await sendEmail({
+          to: data.email,
+          subject: tpl.subject,
+          html: tpl.html,
+          messageType: 'invitation',
+        });
       },
     }),
   ],

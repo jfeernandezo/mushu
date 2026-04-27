@@ -151,7 +151,7 @@ Auditoria atual (✅ = está coberto na privacy page; ❌ = falta cobrir):
 | Mídias listadas (id + caption + media_url + thumbnail) | Graph API `/me/media` | NÃO armazenado — fetched on-demand pro selector de post | ✅ (declarar como "tratado em memória apenas") |
 | `igsid` de contatos que interagem | Webhook payload | `contact_inbox.source_id` | ✅ |
 | `username` de contatos que interagem | Webhook payload (campo opcional `from.username`) | `contact_inbox.ig_username` | ✅ |
-| Conteúdo de comentários e DMs | Webhook payload | `incoming_event.payload` (raw, retido por 90 dias) + `message.content` (texto extraído) | ✅ |
+| Conteúdo de comentários e DMs | Webhook payload | `incoming_event.payload` (raw, sweeper diário deleta após 90 dias — ver [`apps/worker/src/processors/sweep-events.ts`](../apps/worker/src/processors/sweep-events.ts)) + `message.content` (texto extraído) | ✅ |
 | Custom fields capturados via `ask_question` | Reply do contato | `contact.custom_fields` (jsonb) | ✅ |
 | Tags atribuídas pelo fluxo | Definido pelo cliente Mushu | `contact_tag.tag` | ✅ |
 

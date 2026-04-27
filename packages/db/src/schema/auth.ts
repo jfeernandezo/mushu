@@ -1,4 +1,5 @@
-import { boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { boolean, integer, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -8,6 +9,8 @@ export const user = pgTable('user', {
   image: text('image'),
   locale: text('locale').notNull().default('pt-BR'),
   theme: text('theme').notNull().default('dark'),
+  /** Generic flags bag — see migration 0008. First key: `onboardingDismissed`. */
+  additionalAttributes: jsonb('additional_attributes').notNull().default(sql`'{}'::jsonb`),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

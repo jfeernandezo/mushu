@@ -20,13 +20,18 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "turbo run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "db:generate": "pnpm --filter @mushu/db generate",
     "db:migrate": "pnpm --filter @mushu/db migrate",
     "db:studio": "pnpm --filter @mushu/db studio"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.7",
+    "@vitest/coverage-v8": "^4.1.5",
     "turbo": "2.3.3",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.1.5"
   }
 }

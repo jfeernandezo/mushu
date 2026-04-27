@@ -380,6 +380,34 @@
     "topTriggers": {
       "title": "Top triggers",
       "empty": "No triggers fired yet. They'll show up here once your flows are live."
+    },
+    "onboarding": {
+      "title": "Get started",
+      "progress": "{done} of {total} done",
+      "dismissAria": "Close",
+      "dismissForever": "Don't show again",
+      "items": {
+        "verifyEmail": {
+          "label": "Verify your email",
+          "why": "Without verifying you can't receive invitations or reset your password. Check your inbox for the link."
+        },
+        "connectIg": {
+          "label": "Connect your Instagram account",
+          "why": "Mushu needs access to your Business account to read comments/DMs and reply on your behalf."
+        },
+        "createFlow": {
+          "label": "Create your first flow",
+          "why": "Use a template (welcome, comment-to-DM…) or start from scratch. Nothing fires without a flow."
+        },
+        "publishFlow": {
+          "label": "Publish the flow",
+          "why": "Drafts don't respond. Click \"Publish\" to make the flow live."
+        },
+        "receiveEvent": {
+          "label": "Receive your first real event",
+          "why": "When someone comments or DMs your IG, Mushu will process it — you'll see it appear in the Inbox."
+        }
+      }
     }
   },
   "flows": {

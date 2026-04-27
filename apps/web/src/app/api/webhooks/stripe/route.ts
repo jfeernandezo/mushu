@@ -1,10 +1,13 @@
 import { dbAdmin, plan as planTable, subscription as subscriptionTable } from '@mushu/db';
+import { createLogger } from '@mushu/shared/logger';
 import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { isHosted } from '@/lib/mode';
 import { getStripe } from '@/lib/stripe';
+
+const logger = createLogger('web.webhook.stripe');
 
 /**
  * Stripe webhook receiver. Stripe calls this with subscription / invoice
@@ -42,9 +45,7 @@ export async function POST(req: NextRequest) {
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig, secret);
   } catch (err) {
-    console.error('[stripe webhook] signature verification failed', {
-      error: err instanceof Error ? err.message : String(err),
-    });
+    logger.error({ err }, 'signature verification failed');
     return NextResponse.json({ error: 'invalid_signature' }, { status: 400 });
   }
 
@@ -65,10 +66,7 @@ export async function POST(req: NextRequest) {
         break;
     }
   } catch (err) {
-    console.error('[stripe webhook] handler error', {
-      type: event.type,
-      error: err instanceof Error ? err.message : String(err),
-    });
+    logger.error({ event_type: event.type, err }, 'handler error');
     // Return 500 so Stripe retries with backoff.
     return NextResponse.json({ error: 'handler_error' }, { status: 500 });
   }
@@ -79,7 +77,7 @@ export async function POST(req: NextRequest) {
 async function syncSubscription(s: Stripe.Subscription): Promise<void> {
   const orgId = s.metadata?.organizationId;
   if (!orgId) {
-    console.error('[stripe webhook] subscription has no organizationId metadata', { id: s.id });
+    logger.error({ subscription_id: s.id }, 'subscription has no organizationId metadata');
     return;
   }
 
@@ -96,10 +94,10 @@ async function syncSubscription(s: Stripe.Subscription): Promise<void> {
     planCode = p?.code ?? null;
   }
   if (!planCode) {
-    console.error('[stripe webhook] no local plan matches Stripe price', {
-      orgId,
-      stripePriceId,
-    });
+    logger.error(
+      { org_id: orgId, stripe_price_id: stripePriceId },
+      'no local plan matches Stripe price',
+    );
     return;
   }
 

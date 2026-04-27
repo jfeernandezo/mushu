@@ -294,6 +294,71 @@ group that role should grant. Update the UI dropdown in
 [`apps/web/src/actions/members.ts`](../apps/web/src/actions/members.ts)
 (`ASSIGNABLE_ROLES`).
 
+### 11. Email deliverability (bounces + Hostinger NDRs)
+
+Mushu rastreia toda mensagem que sai pelo SMTP na tabela `email_delivery`
+(migration `0007`). O fluxo é:
+
+1. Antes de enviar, checa se o destinatário tem ≥3 rows com `status='bounced'`
+   nos últimos 30 dias. Se tiver, **aborta** o envio e retorna
+   `reason: 'bounced_recently'` pra que a UI possa avisar o usuário.
+2. Tenta enviar via Nodemailer. Em caso de erro:
+   - SMTP `5xx` (mailbox inexistente, bloqueado) → registra `status='bounced'`
+   - SMTP `4xx` ou erro de rede → registra `status='deferred'` (caller pode
+     re-tentar; bounce-counter não acumula)
+3. Sucesso → registra `status='sent'` com `smtp_response`.
+
+**Importante**: o SMTP entregar 250 OK não garante que o email chegou. Hostinger
+devolve NDRs (mailer-daemon) na própria caixa do `noreply@<seudominio>`. Sem
+ler isso, contas com email morto não são detectadas.
+
+**Recomendação operacional** (MVP):
+
+- Configure forward da caixa `noreply@<seudominio>` pro seu email pessoal de ops
+  no painel Hostinger. Você lê NDRs manualmente nos primeiros 30 dias e
+  insere bounces na tabela via SQL (`INSERT INTO email_delivery (...)`)
+  quando aparecerem.
+- A médio prazo, escrever um script IMAP-pull em
+  `apps/web/scripts/import-bounces.ts` (TODO) que conecta à caixa, parseia
+  NDRs (`Final-Recipient`, `Status: 5.x.x`), e insere rows. Roda como cron
+  semanal.
+
+**SPF + DKIM**: confira no painel Hostinger que estão configurados antes de
+mandar pra produção. Sem isso, emails caem no spam de Gmail/Outlook e
+contam como bounce silencioso.
+
+**Quando bounce-handling é desligado**: sempre que SMTP não está configurado
+(selfhost forks que não setaram `SMTP_HOST` etc.) — `sendEmail` retorna
+`reason: 'no_smtp'` direto, sem tocar na tabela.
+
+### 12. Logs estruturados (Pino)
+
+Mushu usa [Pino](https://getpino.io) pra logs estruturados em JSON. Em
+produção (`NODE_ENV=production`) cada linha é JSON com `time`, `level`, `name`
+(subsistema) + qualquer campo que o handler tenha anexado (`flow_id`,
+`account_id`, `org_id`, etc.). Em dev usa `pino-pretty` pra ficar legível no
+terminal.
+
+**Variáveis opcionais:**
+
+- `LOG_LEVEL`: `trace` / `debug` / `info` / `warn` / `error` / `fatal`. Default
+  `debug` em dev, `info` em produção.
+- `MUSHU_APP_NAME`: rótulo `app` em todas as linhas (default `mushu`). Útil
+  quando você roda múltiplas instâncias e quer separar no agregador.
+- `MUSHU_VERSION`: rótulo `version` se você quiser correlacionar logs com
+  release. Sem default — só aparece se setada.
+
+**Como agregar (MVP):** `docker logs mushu-web --tail 500 | jq` e
+`docker logs mushu-worker --tail 500 | jq 'select(.level >= 40)'` resolvem o
+caso de uso de "achar o erro de ontem". Para escala maior: subir Loki +
+Promtail no mesmo Docker compose, configurar Promtail pra ler os arquivos JSON
+de `/var/lib/docker/containers/*/`. Grafana já consegue queries `name="worker.send-message" AND flow_id="X"`
+direto.
+
+**Frontend** (browser logs do `flow-builder.tsx`) ainda usa `console.*` — sem
+sink server-side ainda. Se isso virar problema, considerar Sentry breadcrumbs
+ou um endpoint `/api/client-log` em batch.
+
 ## Going live checklist
 
 Before pointing real users at your instance:

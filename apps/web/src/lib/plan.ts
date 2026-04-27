@@ -6,7 +6,10 @@ import {
   plan as planTable,
   subscription as subscriptionTable,
 } from '@mushu/db';
+import { createLogger } from '@mushu/shared/logger';
 import { and, eq, sql } from 'drizzle-orm';
+
+const logger = createLogger('web.plan');
 
 export type PlanCode = 'free' | 'pro' | 'agency';
 export type LimitName = 'contacts' | 'ig_accounts' | 'operators';
@@ -82,10 +85,10 @@ export async function getOrgPlan(orgId: string): Promise<OrgPlan> {
   if (!planRow) {
     // Subscription points at a plan that no longer exists. Treat it as Free
     // so the app keeps working — log so ops notice and reconcile manually.
-    console.error('[plan] subscription points to unknown plan', {
-      orgId,
-      planCode: subscription.planCode,
-    });
+    logger.error(
+      { org_id: orgId, plan_code: subscription.planCode },
+      'subscription points to unknown plan',
+    );
     return {
       plan: {
         code: 'free',

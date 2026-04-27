@@ -3,6 +3,7 @@ import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 
 let _connection: IORedis | undefined;
+let _publisher: IORedis | undefined;
 let _eventQueue: Queue<ProcessEventJob> | undefined;
 let _messageQueue: Queue<SendMessageJob> | undefined;
 
@@ -17,6 +18,28 @@ function connection(): IORedis {
     enableReadyCheck: true,
   });
   return _connection;
+}
+
+/**
+ * Dedicated publisher connection for inbox SSE broadcasts. Separate from the
+ * BullMQ-shared `connection` to keep BullMQ's blocking commands (BRPOP) and
+ * pub/sub PUBLISH from contending. Subscriber-side lives in the SSE route
+ * (`apps/web/src/app/api/inbox/stream/route.ts`) and creates its own
+ * subscriber-mode IORedis there — pub/sub mode connections can't multiplex
+ * with regular commands.
+ */
+export function pubConnection(): IORedis {
+  if (_publisher) return _publisher;
+  const url = process.env.REDIS_URL;
+  if (!url) {
+    throw new Error('REDIS_URL is required');
+  }
+  _publisher = new IORedis(url, {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: true,
+    lazyConnect: false,
+  });
+  return _publisher;
 }
 
 export function getEventQueue(): Queue<ProcessEventJob> {

@@ -1,6 +1,9 @@
 import { dbAdmin } from '@mushu/db';
+import { createLogger } from '@mushu/shared/logger';
 import { sql } from 'drizzle-orm';
 import { isSelfHost } from './mode';
+
+const logger = createLogger('web.permissions');
 
 /**
  * Resolves whether a member has a permission, considering all three sources
@@ -55,12 +58,8 @@ export async function hasPermission(memberId: string, code: string): Promise<boo
       ) AS has
     `);
     return Boolean(rows[0]?.has);
-  } catch (e) {
-    console.error('[permissions] hasPermission failed', {
-      memberId,
-      code,
-      error: e instanceof Error ? e.message : String(e),
-    });
+  } catch (err) {
+    logger.error({ member_id: memberId, code, err }, 'hasPermission failed');
     return false;
   }
 }
@@ -103,11 +102,8 @@ export async function listMemberPermissions(memberId: string): Promise<string[]>
       }
     }
     return perms;
-  } catch (e) {
-    console.error('[permissions] listMemberPermissions failed', {
-      memberId,
-      error: e instanceof Error ? e.message : String(e),
-    });
+  } catch (err) {
+    logger.error({ member_id: memberId, err }, 'listMemberPermissions failed');
     return [];
   }
 }

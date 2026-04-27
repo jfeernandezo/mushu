@@ -106,15 +106,41 @@ export function InboxClient({
     void refreshThread();
   }, [refreshThread]);
 
-  // Polling loop. Pauses while the tab is hidden — saves battery on mobile
-  // and keeps Postgres quiet when nobody's actively watching.
+  // Realtime: SSE first, polling as fallback. Both pause while the tab is
+  // hidden so we don't waste resources when nobody's watching.
+  //
+  // SSE strategy:
+  //   - Open EventSource('/api/inbox/stream') on mount. On message, refresh.
+  //   - If 3 reconnects fail within 30s, give up and fall back to polling.
+  //     Common cause: Redis down, or proxy mishandling text/event-stream.
+  //   - Polling is the safety net even when SSE works (tabs that briefly
+  //     missed an event due to flaky network catch up on next tick).
   useEffect(() => {
     let cancelled = false;
-    let timer: ReturnType<typeof setInterval> | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let eventSource: EventSource | null = null;
+    let sseFailWindow: number[] = [];
+    const SSE_FAIL_WINDOW_MS = 30_000;
+    const SSE_FAIL_THRESHOLD = 3;
+    let sseGivenUp = false;
 
-    function start() {
-      if (timer) return;
-      timer = setInterval(() => {
+    // Debounce refreshes — bursty publishes (insert msg + update conv in
+    // quick succession) collapse into one round-trip.
+    let refreshPending: ReturnType<typeof setTimeout> | null = null;
+    function scheduleRefresh() {
+      if (refreshPending) return;
+      refreshPending = setTimeout(() => {
+        refreshPending = null;
+        if (cancelled) return;
+        if (document.visibilityState !== 'visible') return;
+        void refreshList();
+        if (selectedId) void refreshThread();
+      }, 500);
+    }
+
+    function startPolling() {
+      if (pollTimer) return;
+      pollTimer = setInterval(() => {
         if (cancelled) return;
         if (document.visibilityState !== 'visible') return;
         void refreshList();
@@ -122,29 +148,76 @@ export function InboxClient({
       }, POLL_INTERVAL_MS);
     }
 
-    function stop() {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    function startSse() {
+      if (sseGivenUp) return;
+      if (eventSource) return;
+      if (typeof EventSource === 'undefined') return;
+      try {
+        const es = new EventSource('/api/inbox/stream');
+        es.onmessage = () => {
+          scheduleRefresh();
+        };
+        es.onerror = () => {
+          // Track failures within the rolling window; if we cross threshold,
+          // give up and let polling carry the rest of the session.
+          const now = Date.now();
+          sseFailWindow = [...sseFailWindow.filter((t) => now - t < SSE_FAIL_WINDOW_MS), now];
+          if (sseFailWindow.length >= SSE_FAIL_THRESHOLD) {
+            sseGivenUp = true;
+            try {
+              es.close();
+            } catch {
+              // ignore
+            }
+            eventSource = null;
+          }
+        };
+        eventSource = es;
+      } catch {
+        sseGivenUp = true;
+      }
+    }
+
+    function stopSse() {
+      if (eventSource) {
+        try {
+          eventSource.close();
+        } catch {
+          // ignore
+        }
+        eventSource = null;
       }
     }
 
     function onVisibility() {
       if (document.visibilityState === 'visible') {
-        // Catch up immediately after tab returns to foreground.
+        // Catch up immediately on return.
         void refreshList();
         if (selectedId) void refreshThread();
-        start();
+        startPolling();
+        startSse();
       } else {
-        stop();
+        stopPolling();
+        stopSse();
       }
     }
 
     document.addEventListener('visibilitychange', onVisibility);
-    start();
+    startPolling();
+    startSse();
+
     return () => {
       cancelled = true;
-      stop();
+      stopPolling();
+      stopSse();
+      if (refreshPending) clearTimeout(refreshPending);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [refreshList, refreshThread, selectedId]);

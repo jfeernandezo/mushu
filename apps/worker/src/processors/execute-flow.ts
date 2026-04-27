@@ -6,7 +6,10 @@ import {
   flowGraphSchema,
   renderTemplate,
 } from '@mushu/shared/flow';
+import { createLogger } from '@mushu/shared/logger';
 import { and, eq, sql } from 'drizzle-orm';
+
+const logger = createLogger('worker.execute-flow');
 import { type ExecuteFlowJob, type SendMessageJob, executionQueue, messageQueue } from '../queues.ts';
 import { findNextNodeId, getNodeById } from '../lib/trigger-matcher.ts';
 
@@ -39,7 +42,7 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
     .returning();
 
   if (lockResult.length === 0) {
-    console.warn(`[execute-flow] ${flowExecutionId} is locked by another worker, skipping`);
+    logger.warn({ flow_execution_id: flowExecutionId }, 'locked by another worker, skipping');
     return;
   }
   const exec = lockResult[0];
@@ -237,8 +240,17 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
       return;
     }
 
-    // Unknown node type — advance past it.
-    console.warn(`[execute-flow] unknown node type, skipping`);
+    // Unknown node type — advance past it. TS narrows `node` to `never` here
+    // because every variant is handled above; cast to read the runtime type
+    // when an old graph snapshot has a node we don't recognize.
+    logger.warn(
+      {
+        flow_execution_id: flowExecutionId,
+        node_id: currentNodeId,
+        node_type: (node as { type?: string }).type,
+      },
+      'unknown node type, skipping',
+    );
     currentNodeId = findNextNodeId(graph, currentNodeId);
   }
 
@@ -450,7 +462,7 @@ async function releaseLock(executionId: string): Promise<void> {
 }
 
 async function failExecution(executionId: string, reason: string): Promise<void> {
-  console.error(`[execute-flow] ${executionId} failed: ${reason}`);
+  logger.error({ execution_id: executionId, reason }, 'execution failed');
   await db
     .update(flowExecution)
     .set({

@@ -1,10 +1,14 @@
 import { Queue, QueueEvents, Worker, type WorkerOptions } from 'bullmq';
 import IORedis from 'ioredis';
+import { createLogger } from '@mushu/shared/logger';
 import { QUEUES, type QueueName } from '@mushu/shared/queue';
+
+const logger = createLogger('worker.queues');
 
 export {
   QUEUES,
   type ExecuteFlowJob,
+  type MaintenanceJob,
   type ProcessEventJob,
   type QueueName,
   type SendMessageJob,
@@ -20,6 +24,7 @@ export const connection = new IORedis(redisUrl, {
 export const eventQueue = new Queue(QUEUES.events, { connection });
 export const executionQueue = new Queue(QUEUES.executions, { connection });
 export const messageQueue = new Queue(QUEUES.messages, { connection });
+export const maintenanceQueue = new Queue(QUEUES.maintenance, { connection });
 
 export function createWorker<T>(
   queueName: QueueName,
@@ -39,7 +44,10 @@ export function createWorker<T>(
   );
 
   worker.on('failed', (job, err) => {
-    console.error(`[${queueName}] job ${job?.id} failed:`, err);
+    logger.error(
+      { queue: queueName, job_id: job?.id, attempts: job?.attemptsMade, err },
+      'job failed',
+    );
   });
 
   return worker;

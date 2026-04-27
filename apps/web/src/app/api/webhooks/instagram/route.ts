@@ -1,9 +1,13 @@
 import { dbAdmin as db, incomingEvent, instagramAccount } from '@mushu/db';
 import { type WebhookPayload, webhookPayloadSchema } from '@mushu/shared/instagram';
+import { createLogger } from '@mushu/shared/logger';
 import { eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
 import { verifyMetaSignature } from '@/lib/crypto';
 import { enqueueProcessEvent } from '@/lib/queue';
+import { classifyMessagingType } from '@/lib/webhook-classify';
+
+const logger = createLogger('web.webhook.instagram');
 
 /**
  * Meta webhook verification (one-time setup).
@@ -53,7 +57,7 @@ export async function POST(req: NextRequest) {
   try {
     parsed = webhookPayloadSchema.parse(JSON.parse(rawBody));
   } catch (err) {
-    console.error('[webhook] invalid payload', err);
+    logger.error({ err }, 'invalid payload');
     // Still return 200 — we don't want Meta to retry malformed payloads forever.
     return NextResponse.json({ ok: true, ignored: 'invalid_shape' });
   }
@@ -97,40 +101,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-/**
- * Resolve the canonical event type for a messaging payload. Story replies
- * arrive as DMs with `message.reply_to.story` set; story mentions arrive with
- * an attachment of type `story_mention`. We tag them up-front so the worker's
- * trigger lookup can pick the right node type without re-parsing the payload.
- */
-function classifyMessagingType(
-  m: {
-    message?: {
-      is_echo?: boolean;
-      reply_to?: { story?: unknown } | undefined;
-      attachments?: Array<{ type: string }> | undefined;
-    } | undefined;
-    reaction?: unknown;
-    read?: unknown;
-  },
-  isEcho: boolean,
-):
-  | 'message'
-  | 'message_echo'
-  | 'message_reaction'
-  | 'message_seen'
-  | 'story_reply'
-  | 'story_mention' {
-  if (isEcho) return 'message_echo';
-  if (m.reaction) return 'message_reaction';
-  if (m.read) return 'message_seen';
-  if (m.message?.reply_to?.story) return 'story_reply';
-  if (m.message?.attachments?.some((a) => a.type === 'story_mention')) {
-    return 'story_mention';
-  }
-  return 'message';
-}
-
 async function persistEvent(args: {
   eventId: string;
   accountId: string | null;
@@ -167,7 +137,7 @@ async function persistEvent(args: {
     try {
       await enqueueProcessEvent(inserted[0].id);
     } catch (err) {
-      console.error('[webhook] failed to enqueue process-event', err);
+      logger.error({ incoming_event_id: inserted[0].id, err }, 'failed to enqueue process-event');
       // Don't fail the webhook — we'll re-drive from incoming_event later via a
       // sweeper if needed. For now, log and move on.
     }

@@ -7,7 +7,9 @@ import {
   getMessagesChartData,
   getTopTriggers,
 } from '@/actions/dashboard';
+import { getOnboardingState } from '@/actions/onboarding';
 import { MessagesChart } from '@/components/dashboard/messages-chart';
+import { OnboardingChecklist } from '@/components/dashboard/onboarding-checklist';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { TopTriggersList } from '@/components/dashboard/top-triggers-list';
 import { AppShell } from '@/components/shell/app-shell';
@@ -30,10 +32,11 @@ export default async function DashboardPage() {
     );
   }
 
-  const [stats, chartData, topTriggers] = await Promise.all([
+  const [stats, chartData, topTriggers, onboarding] = await Promise.all([
     getDashboardStats(orgId),
     getMessagesChartData(orgId),
     getTopTriggers(orgId),
+    getOnboardingState(),
   ]);
 
   return (
@@ -43,6 +46,8 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-semibold tracking-tight">{t('today')}</h1>
           <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
         </div>
+
+        <OnboardingChecklist state={onboarding} />
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard

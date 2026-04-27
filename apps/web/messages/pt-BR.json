@@ -380,6 +380,34 @@
     "topTriggers": {
       "title": "Gatilhos mais usados",
       "empty": "Nenhum gatilho disparado ainda. Eles aparecem aqui assim que seus fluxos forem publicados."
+    },
+    "onboarding": {
+      "title": "Primeiros passos",
+      "progress": "{done} de {total} concluídos",
+      "dismissAria": "Fechar",
+      "dismissForever": "Não mostrar mais",
+      "items": {
+        "verifyEmail": {
+          "label": "Confirmar e-mail",
+          "why": "Sem confirmar, você não recebe convites nem pode resetar a senha. Procure o link na sua caixa de entrada."
+        },
+        "connectIg": {
+          "label": "Conectar conta do Instagram",
+          "why": "Mushu precisa de acesso à sua conta Business pra ler comentários/DMs e responder em seu nome."
+        },
+        "createFlow": {
+          "label": "Criar seu primeiro fluxo",
+          "why": "Use um modelo (boas-vindas, comment-to-DM…) ou comece do zero. Sem fluxo, nada dispara."
+        },
+        "publishFlow": {
+          "label": "Publicar o fluxo",
+          "why": "Rascunhos não respondem. Clique em \"Publicar\" pra deixar o fluxo ativo."
+        },
+        "receiveEvent": {
+          "label": "Receber o primeiro evento real",
+          "why": "Quando alguém comentar ou mandar DM no seu IG, o Mushu vai processar — você verá aparecer no Inbox."
+        }
+      }
     }
   },
   "flows": {

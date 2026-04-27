@@ -1,11 +1,14 @@
 'use server';
 
 import { instagramAccount, withOrgTx } from '@mushu/db';
+import { createLogger } from '@mushu/shared/logger';
 import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { decryptToken } from '@/lib/crypto';
+
+const logger = createLogger('web.instagram-media');
 
 export interface IgMediaItem {
   id: string;
@@ -90,7 +93,10 @@ export async function listInstagramMedia(limit = 25): Promise<ListMediaResult> {
   try {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) {
-      console.error('[ig-media] graph api failed', await res.text());
+      logger.error(
+        { account_id: acc.id, http_status: res.status, body: await res.text() },
+        'graph api failed',
+      );
       return {
         account: { id: acc.id, username: acc.username },
         media: [],
@@ -98,8 +104,8 @@ export async function listInstagramMedia(limit = 25): Promise<ListMediaResult> {
       };
     }
     json = (await res.json()) as { data?: IgApiMedia[] };
-  } catch (e) {
-    console.error('[ig-media] fetch threw', e);
+  } catch (err) {
+    logger.error({ account_id: acc.id, err }, 'fetch threw');
     return {
       account: { id: acc.id, username: acc.username },
       media: [],

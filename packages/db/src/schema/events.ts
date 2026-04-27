@@ -3,6 +3,8 @@ import { index, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm
 import { organization, user } from './auth.ts';
 import { instagramAccount } from './domain.ts';
 
+// Re-exported below — declared at module bottom to keep file order stable.
+
 /**
  * Audit trail for everything Meta sends us. Also a dedupe layer:
  * if Meta retries a webhook, we already saw the eventId and skip processing.
@@ -43,6 +45,43 @@ export const incomingEvent = pgTable(
   (t) => ({
     eventIdUnique: uniqueIndex('incoming_event_event_id_unique').on(t.eventId),
     accountTypeIdx: index('incoming_event_account_type_idx').on(t.instagramAccountId, t.type),
+    // Used by the retention sweeper (apps/worker/src/processors/sweep-events.ts)
+    // to delete rows older than 90 days without a full table scan.
+    createdAtIdx: index('incoming_event_created_at_idx').on(t.createdAt),
+  }),
+);
+
+/**
+ * Outbound email delivery log. Backs the bounce-handling and pre-send
+ * deliverability gate in `apps/web/src/lib/email.ts`. We don't store the body
+ * (subject is enough for ops); status transitions are append-only — a bounced
+ * recipient gets a NEW row, never an UPDATE, so the count-of-bounces query is
+ * trivial.
+ *
+ * Status:
+ *   - sent     : transporter accepted; downstream NDR may still arrive
+ *   - bounced  : SMTP 5xx OR ingested NDR
+ *   - deferred : SMTP 4xx; transient
+ */
+export const emailDelivery = pgTable(
+  'email_delivery',
+  {
+    id: text('id').primaryKey(),
+    recipientEmail: text('recipient_email').notNull(),
+    messageType: text('message_type').notNull(),
+    status: text('status', { enum: ['sent', 'bounced', 'deferred'] }).notNull(),
+    subject: text('subject'),
+    smtpResponse: text('smtp_response'),
+    errorMessage: text('error_message'),
+    sentAt: timestamp('sent_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => ({
+    recipientStatusIdx: index('email_delivery_recipient_status_idx').on(
+      sql`lower(${t.recipientEmail})`,
+      t.status,
+    ),
+    sentAtIdx: index('email_delivery_sent_at_idx').on(t.sentAt),
   }),
 );
 

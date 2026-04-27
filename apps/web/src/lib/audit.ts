@@ -1,5 +1,8 @@
 import { auditLog, db } from '@mushu/db';
+import { createLogger } from '@mushu/shared/logger';
 import { headers as nextHeaders } from 'next/headers';
+
+const logger = createLogger('web.audit');
 
 /**
  * Action codes used across audit log entries. Centralised so we can grep for
@@ -67,11 +70,8 @@ export async function recordAudit(params: RecordAuditParams): Promise<void> {
       ipAddress: params.ipAddress ?? null,
       userAgent: params.userAgent ?? null,
     });
-  } catch (e) {
-    console.error('[audit] failed to record entry', {
-      action: params.action,
-      error: e instanceof Error ? e.message : String(e),
-    });
+  } catch (err) {
+    logger.error({ action: params.action, err }, 'failed to record entry');
   }
 }
 

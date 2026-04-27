@@ -8,13 +8,16 @@ import {
   message,
 } from '@mushu/db';
 import { type FlowGraph, flowGraphSchema } from '@mushu/shared/flow';
+import { createLogger } from '@mushu/shared/logger';
 import { eq } from 'drizzle-orm';
 import { type ExecuteFlowJob, executionQueue } from '../queues.ts';
 import { connection } from '../queues.ts';
+import { publishInboxEvent } from '../lib/inbox-broadcast.ts';
 import { IgError, createIgClient } from '../lib/instagram-client.ts';
 import { RateLimiter } from '../lib/rate-limiter.ts';
 import { findNextNodeId, getNodeById } from '../lib/trigger-matcher.ts';
 
+const logger = createLogger('worker.send-message');
 const rateLimiter = new RateLimiter(connection);
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
@@ -43,7 +46,7 @@ export async function sendMessage({
 }: SendMessageArgs): Promise<void> {
   const [msg] = await db.select().from(message).where(eq(message.id, outgoingMessageId)).limit(1);
   if (!msg) {
-    console.warn(`[send-message] message ${outgoingMessageId} not found`);
+    logger.warn({ outgoing_message_id: outgoingMessageId }, 'message not found');
     return;
   }
   if (msg.status === 'sent') {
@@ -183,6 +186,14 @@ export async function sendMessage({
       })
       .where(eq(message.id, outgoingMessageId));
 
+    // Notify SSE subscribers — operator sees the bubble flip from "queued"
+    // to delivered without waiting for the polling tick.
+    await publishInboxEvent(account.organizationId, {
+      kind: 'message_inserted',
+      conversationId: msg.conversationId,
+      messageId: outgoingMessageId,
+    });
+
     if (exec) {
       await advanceExecution(exec.id, exec.flowId, exec.currentNodeId, state);
     }
@@ -231,7 +242,7 @@ async function advanceExecution(
   if (!exec) return;
   const parsed = flowGraphSchema.safeParse(exec.graphSnapshot ?? flowRow?.publishedGraph);
   if (!parsed.success) {
-    console.error(`[send-message] cannot parse graph for ${executionId}`);
+    logger.error({ execution_id: executionId }, 'cannot parse graph snapshot');
     return;
   }
   const graph: FlowGraph = parsed.data;

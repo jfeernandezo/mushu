@@ -13,13 +13,17 @@ import {
   user as userTable,
   withOrgTx,
 } from '@mushu/db';
+import { createLogger } from '@mushu/shared/logger';
 import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { headers as nextHeaders } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
+import { publishInboxEvent } from '@/lib/inbox-broadcast';
 import { hasPermission, requirePermission } from '@/lib/permissions';
 import { enqueueSendMessage } from '@/lib/queue';
+
+const logger = createLogger('web.inbox');
 
 type ActionResult<T = void> =
   | (T extends void ? { ok: true } : { ok: true; data: T })
@@ -527,11 +531,19 @@ export async function sendManualMessage(
       try {
         await enqueueSendMessage({ outgoingMessageId: messageId, flowExecutionId: '' });
       } catch (err) {
-        console.error('[inbox] failed to enqueue send', err);
+        logger.error({ message_id: messageId, err }, 'failed to enqueue send');
         // Don't fail the action — operator already sees the message in the
         // thread, and a sweeper job will retry queued messages.
       }
     }
+
+    // Push to other open inbox tabs in the same org (the sender's tab will
+    // also receive this and refresh — fine, it's idempotent).
+    await publishInboxEvent(orgId, {
+      kind: 'message_inserted',
+      conversationId: parsed.data.conversationId,
+      messageId,
+    });
 
     revalidatePath('/inbox');
     return { ok: true, data: { messageId } };
@@ -585,6 +597,11 @@ export async function updateConversation(
         .set(patch)
         .where(eq(conversation.id, parsed.data.conversationId)),
     );
+
+    await publishInboxEvent(orgId, {
+      kind: 'conversation_updated',
+      conversationId: parsed.data.conversationId,
+    });
 
     revalidatePath('/inbox');
     return { ok: true };

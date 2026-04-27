@@ -1,9 +1,11 @@
 'use client';
 
 import {
+  AtSign,
   Clock,
   GitBranch,
   HelpCircle,
+  Image,
   type LucideIcon,
   MessageCircle,
   MessageSquare,
@@ -28,6 +30,8 @@ const ITEMS: PaletteItem[] = [
   { type: 'trigger.comment_keyword', icon: MessageCircle, category: 'triggers' },
   { type: 'trigger.dm_keyword', icon: MessageSquare, category: 'triggers' },
   { type: 'trigger.first_dm', icon: Sparkles, category: 'triggers' },
+  { type: 'trigger.story_reply', icon: Image, category: 'triggers' },
+  { type: 'trigger.story_mention', icon: AtSign, category: 'triggers' },
   { type: 'action.send_dm', icon: Send, category: 'actions' },
   { type: 'action.reply_comment', icon: MessageCircle, category: 'actions' },
   { type: 'action.ask_question', icon: HelpCircle, category: 'actions' },

@@ -3,6 +3,7 @@
 import type { Node } from '@xyflow/react';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { type KeyboardEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { KeywordChipsInput } from './keyword-chips-input';
@@ -66,6 +67,8 @@ function nodeTitle(type: string | undefined, tNodes: (key: string) => string): s
     case 'trigger.comment_keyword':
     case 'trigger.dm_keyword':
     case 'trigger.first_dm':
+    case 'trigger.story_reply':
+    case 'trigger.story_mention':
     case 'action.send_dm':
     case 'action.reply_comment':
     case 'action.ask_question':
@@ -132,17 +135,48 @@ function Form({
     );
   }
 
-  if (type === 'action.send_dm' || type === 'action.reply_comment') {
+  if (type === 'trigger.story_reply') {
     return (
-      <Field label={tFields('messageText')}>
-        <textarea
-          value={(data.text as string) ?? ''}
-          onChange={(e) => update('text', e.target.value)}
-          rows={5}
-          className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
-          placeholder={tPh('messageText')}
-        />
-      </Field>
+      <p className="text-xs leading-relaxed text-[var(--color-mushu-mute)]">
+        {tInspector('storyReplyDescription')}
+      </p>
+    );
+  }
+
+  if (type === 'trigger.story_mention') {
+    return (
+      <p className="text-xs leading-relaxed text-[var(--color-mushu-mute)]">
+        {tInspector('storyMentionDescription')}
+      </p>
+    );
+  }
+
+  if (type === 'action.send_dm' || type === 'action.reply_comment') {
+    const isDm = type === 'action.send_dm';
+    const quickReplies = Array.isArray(data.quickReplies) ? (data.quickReplies as string[]) : [];
+    return (
+      <>
+        <Field label={tFields('messageText')}>
+          <textarea
+            value={(data.text as string) ?? ''}
+            onChange={(e) => update('text', e.target.value)}
+            rows={5}
+            className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
+            placeholder={tPh('messageText')}
+          />
+        </Field>
+        {isDm ? (
+          <Field label={tFields('quickReplies')}>
+            <QuickRepliesEditor
+              value={quickReplies}
+              onChange={(next) => update('quickReplies', next)}
+            />
+            <p className="text-[10px] text-[var(--color-mushu-faint)]">
+              {tInspector('quickRepliesHint')}
+            </p>
+          </Field>
+        ) : null}
+      </>
     );
   }
 
@@ -270,6 +304,99 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-xs text-[var(--color-mushu-mute)]">{label}</span>
       {children}
     </label>
+  );
+}
+
+const QUICK_REPLY_MAX_LEN = 20;
+const QUICK_REPLY_MAX_COUNT = 13;
+
+/**
+ * Chip-style editor for `action.send_dm.quickReplies`. Caps at 13 chips
+ * (Meta hard limit) and 20 chars per title (Meta hard limit). Each chip
+ * becomes a button under the DM; the click sends back the title as the
+ * user's reply text, so downstream `dm_keyword` triggers can match it.
+ */
+function QuickRepliesEditor({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const t = useTranslations('flowBuilder.quickReplies');
+  const [draft, setDraft] = useState('');
+
+  function commit() {
+    const trimmed = draft.trim().slice(0, QUICK_REPLY_MAX_LEN);
+    if (!trimmed) return;
+    if (value.includes(trimmed)) {
+      setDraft('');
+      return;
+    }
+    if (value.length >= QUICK_REPLY_MAX_COUNT) return;
+    onChange([...value, trimmed]);
+    setDraft('');
+  }
+
+  function removeAt(i: number) {
+    onChange(value.filter((_, idx) => idx !== i));
+  }
+
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      commit();
+    } else if (e.key === 'Backspace' && draft === '' && value.length > 0) {
+      e.preventDefault();
+      removeAt(value.length - 1);
+    }
+  }
+
+  const isFull = value.length >= QUICK_REPLY_MAX_COUNT;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div
+        className="flex flex-wrap items-center gap-1.5 rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-2 py-1.5 focus-within:border-[var(--color-mushu-amber)]"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.focus();
+          }
+        }}
+      >
+        {value.map((label, i) => (
+          <span
+            key={`${label}-${i}`}
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] px-2 py-0.5 text-xs text-[var(--color-mushu-ink)]"
+          >
+            {label}
+            <button
+              type="button"
+              onClick={() => removeAt(i)}
+              aria-label={t('remove', { label })}
+              className="text-[var(--color-mushu-mute)] hover:text-[var(--color-mushu-ink)]"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        {!isFull ? (
+          <input
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, QUICK_REPLY_MAX_LEN))}
+            onKeyDown={onKeyDown}
+            onBlur={commit}
+            maxLength={QUICK_REPLY_MAX_LEN}
+            placeholder={value.length === 0 ? t('placeholder') : t('addAnother')}
+            className="min-w-[80px] flex-1 bg-transparent text-xs text-[var(--color-mushu-ink)] outline-none placeholder:text-[var(--color-mushu-faint)]"
+          />
+        ) : null}
+      </div>
+      <p className="px-1 text-[10px] text-[var(--color-mushu-faint)]">
+        {t('counter', { count: value.length, max: QUICK_REPLY_MAX_COUNT })}
+      </p>
+    </div>
   );
 }
 

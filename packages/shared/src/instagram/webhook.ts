@@ -66,10 +66,23 @@ export const messagingEventSchema = z.object({
       attachments: z
         .array(
           z.object({
+            // Meta types observed: 'image', 'video', 'audio', 'file', 'share',
+            // 'story_mention', 'reel', 'ig_reel'.
             type: z.string(),
             payload: z.record(z.string(), z.unknown()).optional(),
           }),
         )
+        .optional(),
+      // Set when the user replied to one of OUR stories (slide-up reply).
+      reply_to: z
+        .object({
+          story: z
+            .object({
+              url: z.string().optional(),
+              id: z.string().optional(),
+            })
+            .optional(),
+        })
         .optional(),
     })
     .optional(),

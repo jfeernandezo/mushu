@@ -50,24 +50,33 @@ export async function sendMessage({
     return; // already sent (job replay)
   }
 
-  const [exec] = await db
-    .select()
-    .from(flowExecution)
-    .where(eq(flowExecution.id, flowExecutionId))
-    .limit(1);
-  if (!exec) {
-    await failMessage(outgoingMessageId, 'flow_execution not found');
-    return;
-  }
-  if (exec.status === 'cancelled' || exec.status === 'failed' || exec.status === 'done') {
-    await failMessage(outgoingMessageId, `execution status is ${exec.status}`);
-    return;
+  // Manual sends (from the inbox UI) don't have a flow_execution. They pass
+  // flowExecutionId='' to signal "no execution to advance". For those we
+  // resolve the IG account + conversation directly off the message row.
+  const isManualSend = flowExecutionId === '';
+
+  let exec: typeof flowExecution.$inferSelect | null = null;
+  if (!isManualSend) {
+    const [row] = await db
+      .select()
+      .from(flowExecution)
+      .where(eq(flowExecution.id, flowExecutionId))
+      .limit(1);
+    if (!row) {
+      await failMessage(outgoingMessageId, 'flow_execution not found');
+      return;
+    }
+    if (row.status === 'cancelled' || row.status === 'failed' || row.status === 'done') {
+      await failMessage(outgoingMessageId, `execution status is ${row.status}`);
+      return;
+    }
+    exec = row;
   }
 
   const [account] = await db
     .select()
     .from(instagramAccount)
-    .where(eq(instagramAccount.id, exec.instagramAccountId))
+    .where(eq(instagramAccount.id, msg.instagramAccountId))
     .limit(1);
   if (!account) {
     await failMessage(outgoingMessageId, 'instagram account not found');
@@ -98,8 +107,18 @@ export async function sendMessage({
   }
 
   const ig = createIgClient(account);
-  const state = (exec.state as Record<string, unknown>) ?? {};
+  // Manual sends don't carry execution state — defaults are fine since
+  // they're plain DM replies (no comment-to-DM bootstrap, no flow advance).
+  const state = (exec?.state as Record<string, unknown>) ?? {};
   const triggerCommentId = state.triggerCommentId as string | null | undefined;
+
+  // Lift any quick-reply chips off the persisted contentAttributes — they
+  // were stashed there by execute-flow when the action.send_dm node ran.
+  const attrs = (msg.contentAttributes as Record<string, unknown> | null) ?? {};
+  const quickReplyTitles = Array.isArray(attrs.quickReplies)
+    ? (attrs.quickReplies as unknown[]).map((s) => String(s)).filter(Boolean)
+    : [];
+  const quickReplies = quickReplyTitles.map((title) => ({ title, payload: title }));
 
   try {
     let metaMessageId = '';
@@ -120,7 +139,9 @@ export async function sendMessage({
 
       if (!inWindow && !useCommentRecipient) {
         await failMessage(outgoingMessageId, '24h messaging window expired and no comment context');
-        await failExecutionLater(flowExecutionId, 'window_expired');
+        if (!isManualSend) {
+          await failExecutionLater(flowExecutionId, 'window_expired');
+        }
         return;
       }
 
@@ -128,6 +149,7 @@ export async function sendMessage({
         const r = await ig.sendDmByCommentId({
           commentId: triggerCommentId,
           text: msg.content ?? '',
+          ...(quickReplies.length > 0 ? { quickReplies } : {}),
         });
         metaMessageId = r.messageId;
         // Mark first-dm-sent so subsequent DMs go via IGSID.
@@ -142,7 +164,11 @@ export async function sendMessage({
           await failMessage(outgoingMessageId, 'contact_inbox not found');
           return;
         }
-        const r = await ig.sendDmByIgsid({ igsid: inbox.sourceId, text: msg.content ?? '' });
+        const r = await ig.sendDmByIgsid({
+          igsid: inbox.sourceId,
+          text: msg.content ?? '',
+          ...(quickReplies.length > 0 ? { quickReplies } : {}),
+        });
         metaMessageId = r.messageId;
       }
     }
@@ -157,7 +183,9 @@ export async function sendMessage({
       })
       .where(eq(message.id, outgoingMessageId));
 
-    await advanceExecution(exec.id, exec.flowId, exec.currentNodeId, state);
+    if (exec) {
+      await advanceExecution(exec.id, exec.flowId, exec.currentNodeId, state);
+    }
   } catch (err) {
     if (err instanceof IgError) {
       if (err.kind === 'rate_limit' || err.kind === 'transient') {
@@ -165,11 +193,13 @@ export async function sendMessage({
         throw err;
       }
       await failMessage(outgoingMessageId, `${err.kind}: ${err.message}`);
-      if (err.kind === 'token_invalid' || err.kind === 'permanent') {
-        await failExecutionLater(flowExecutionId, err.kind);
-      }
-      if (err.kind === 'window_expired') {
-        await failExecutionLater(flowExecutionId, 'window_expired');
+      if (!isManualSend) {
+        if (err.kind === 'token_invalid' || err.kind === 'permanent') {
+          await failExecutionLater(flowExecutionId, err.kind);
+        }
+        if (err.kind === 'window_expired') {
+          await failExecutionLater(flowExecutionId, 'window_expired');
+        }
       }
       return;
     }

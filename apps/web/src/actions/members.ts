@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { AUDIT_ACTIONS, recordAudit, requestMeta } from '@/lib/audit';
 import { auth } from '@/lib/auth';
 import { isEmailEnabled } from '@/lib/email';
-import { ASSIGNABLE_ROLES, type AssignableRole } from '@/lib/member-roles';
+import { ASSIGNABLE_ROLES } from '@/lib/member-roles';
 import { hasPermission, requirePermission, resetMemberGroupsForRole } from '@/lib/permissions';
 
 type ActionResult<T = void> =
@@ -339,6 +339,171 @@ export async function listPendingInvitations(): Promise<ActionResult<PendingInvi
       ok: true,
       data: rows.filter((r) => r.expiresAt.getTime() > now),
     };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'unknown_error' };
+  }
+}
+
+// ============================================================================
+// Ownership transfer
+// ============================================================================
+
+const transferOwnershipSchema = z.object({
+  targetMemberId: z.string().min(1),
+  confirmEmail: z.string().email().toLowerCase().trim(),
+});
+
+export interface OwnershipTransferContext {
+  /** True iff the current user is the owner of the active org (only the
+   *  owner can see the ownership-transfer UI). */
+  isOwner: boolean;
+  /** Email of the current user — the dialog asks them to type it back to
+   *  confirm intent, same pattern as the delete-account flow. */
+  ownerEmail: string;
+  /** Other members in the org who can become the new owner. We exclude
+   *  viewers because handing the workspace to someone with read-only access
+   *  is almost certainly a mistake. */
+  eligibleTargets: Array<{
+    memberId: string;
+    name: string;
+    email: string;
+    role: string;
+  }>;
+}
+
+/**
+ * Server-rendered context for the ownership transfer card. Returns isOwner=
+ * false when the caller isn't the owner so the UI can hide the card entirely.
+ */
+export async function getOwnershipTransferContext(): Promise<OwnershipTransferContext> {
+  const empty: OwnershipTransferContext = {
+    isOwner: false,
+    ownerEmail: '',
+    eligibleTargets: [],
+  };
+  try {
+    const session = await requireSession();
+    const orgId = session.session.activeOrganizationId;
+    if (!orgId) return empty;
+
+    const me = await findMyMember(session.user.id, orgId);
+    if (!me || me.role !== 'owner') return empty;
+
+    const candidates = await db
+      .select({
+        memberId: memberTable.id,
+        name: userTable.name,
+        email: userTable.email,
+        role: memberTable.role,
+      })
+      .from(memberTable)
+      .innerJoin(userTable, eq(userTable.id, memberTable.userId))
+      .where(eq(memberTable.organizationId, orgId));
+
+    const eligibleTargets = candidates
+      .filter((c) => c.memberId !== me.id && c.role !== 'viewer')
+      .map((c) => ({
+        memberId: c.memberId,
+        name: c.name,
+        email: c.email,
+        role: c.role,
+      }));
+
+    return {
+      isOwner: true,
+      ownerEmail: session.user.email,
+      eligibleTargets,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/**
+ * Hand the workspace ownership to another member. Atomic: both role flips
+ * happen in one transaction, and we reset both members' permission groups
+ * so they each end up with the correct default group set for the new role.
+ *
+ * Safety:
+ *   - Only the current owner can call (uses workspace.delete as proxy)
+ *   - Confirm email must match the CURRENT owner's email (not target's) —
+ *     same pattern as the destroy-account dialog, prevents accidental clicks
+ *   - Target must be in the same org and not the owner already
+ *   - Ex-owner is demoted to admin (highest non-owner role)
+ */
+export async function transferOwnership(
+  input: z.input<typeof transferOwnershipSchema>,
+): Promise<ActionResult> {
+  const parsed = transferOwnershipSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'invalid_input' };
+
+  try {
+    const session = await requireSession();
+    const orgId = session.session.activeOrganizationId;
+    if (!orgId) return { ok: false, error: 'no_active_org' };
+
+    const me = await findMyMember(session.user.id, orgId);
+    if (!me) return { ok: false, error: 'not_a_member' };
+    if (me.role !== 'owner') return { ok: false, error: 'not_owner' };
+    // Belt-and-suspenders: workspace.delete is owner-only by seed, so this
+    // also enforces "only the owner can transfer".
+    await requirePermission(me.id, 'workspace.delete');
+
+    if (parsed.data.confirmEmail !== session.user.email.toLowerCase()) {
+      return { ok: false, error: 'email_mismatch' };
+    }
+    if (parsed.data.targetMemberId === me.id) {
+      return { ok: false, error: 'cannot_transfer_to_self' };
+    }
+
+    const [target] = await db
+      .select({ id: memberTable.id, role: memberTable.role, userId: memberTable.userId })
+      .from(memberTable)
+      .where(
+        and(
+          eq(memberTable.id, parsed.data.targetMemberId),
+          eq(memberTable.organizationId, orgId),
+        ),
+      )
+      .limit(1);
+    if (!target) return { ok: false, error: 'member_not_found' };
+    if (target.role === 'owner') return { ok: false, error: 'already_owner' };
+    if (target.role === 'viewer') return { ok: false, error: 'viewer_cannot_own' };
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(memberTable)
+        .set({ role: 'owner' })
+        .where(eq(memberTable.id, target.id));
+      await tx
+        .update(memberTable)
+        .set({ role: 'admin' })
+        .where(eq(memberTable.id, me.id));
+    });
+
+    // Reset group memberships AFTER the role change — resetMemberGroupsForRole
+    // re-derives groups from the new role.
+    await resetMemberGroupsForRole(target.id, orgId, 'owner');
+    await resetMemberGroupsForRole(me.id, orgId, 'admin');
+
+    const meta = await requestMeta();
+    await recordAudit({
+      orgId,
+      actorUserId: session.user.id,
+      action: AUDIT_ACTIONS.WORKSPACE_OWNERSHIP_TRANSFER,
+      targetType: 'member',
+      targetId: target.id,
+      metadata: {
+        previousOwnerUserId: session.user.id,
+        newOwnerUserId: target.userId,
+        previousOwnerNewRole: 'admin',
+      },
+      ...meta,
+    });
+
+    revalidatePath('/settings/members');
+    revalidatePath('/settings/danger');
+    return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'unknown_error' };
   }

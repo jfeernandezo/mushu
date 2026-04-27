@@ -100,7 +100,13 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
     }
 
     // ---- Trigger nodes are entry points; just walk past them ----
-    if (node.type === 'trigger.comment_keyword' || node.type === 'trigger.dm_keyword') {
+    if (
+      node.type === 'trigger.comment_keyword' ||
+      node.type === 'trigger.dm_keyword' ||
+      node.type === 'trigger.first_dm' ||
+      node.type === 'trigger.story_reply' ||
+      node.type === 'trigger.story_mention'
+    ) {
       currentNodeId = findNextNodeId(graph, currentNodeId);
       continue;
     }
@@ -267,7 +273,19 @@ async function persistOutgoingMessage(
     variables: (state.variables as Record<string, unknown>) ?? {},
     customFields,
   });
-  return persistOutgoingTextMessage(exec, rendered, node.id, node.type);
+  // quick_replies are attached to send_dm only — reply_comment is a public
+  // comment which can't have buttons. Filter blanks defensively.
+  const quickReplies =
+    node.type === 'action.send_dm'
+      ? (node.data.quickReplies ?? []).map((s) => s.trim()).filter(Boolean)
+      : [];
+  return persistOutgoingTextMessage(
+    exec,
+    rendered,
+    node.id,
+    node.type,
+    quickReplies.length > 0 ? quickReplies : undefined,
+  );
 }
 
 async function persistOutgoingTextMessage(
@@ -280,6 +298,7 @@ async function persistOutgoingTextMessage(
   text: string,
   nodeId: string,
   nodeType: 'action.send_dm' | 'action.reply_comment',
+  quickReplies?: string[],
 ): Promise<string> {
   const id = randomUUID();
   if (!exec.conversationId) {
@@ -299,6 +318,7 @@ async function persistOutgoingTextMessage(
     contentAttributes: {
       nodeType,
       nodeId,
+      ...(quickReplies && quickReplies.length > 0 ? { quickReplies } : {}),
     },
     createdByAutomationId: exec.id,
   });

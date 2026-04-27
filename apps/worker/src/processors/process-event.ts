@@ -103,9 +103,10 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
       actorUsername: matchContext.actorUsername,
     });
 
-  // Load eligible triggers via index. For DMs, also pull `first_dm` triggers
-  // when this is the contact's first interaction — they fire alongside any
-  // matching dm_keyword triggers, no keyword config needed.
+  // Load eligible triggers via index. Story events are mutually exclusive
+  // with regular DM triggers — a story reply only fires `story_reply`
+  // triggers, never `dm_keyword`. For new-contact regular DMs, also pull
+  // `first_dm` triggers (they fire alongside any matching dm_keyword).
   type TriggerType =
     | 'comment_keyword'
     | 'dm_keyword'
@@ -117,9 +118,13 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
   const acceptedTypes: TriggerType[] =
     matchContext.kind === 'comment'
       ? ['comment_keyword']
-      : isNewContact
-        ? ['dm_keyword', 'first_dm']
-        : ['dm_keyword'];
+      : matchContext.kind === 'story_reply'
+        ? ['story_reply']
+        : matchContext.kind === 'story_mention'
+          ? ['story_mention']
+          : isNewContact
+            ? ['dm_keyword', 'first_dm']
+            : ['dm_keyword'];
 
   const triggerRows = await db
     .select({
@@ -145,10 +150,10 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
   };
 
   const matched = triggerRows.filter((t) => {
-    // first_dm has no keyword config — always matches when isNewContact is true
-    // (and we already know it is, since it's only included in acceptedTypes
-    // under that condition).
-    if (t.type === 'first_dm') return true;
+    // Config-less triggers — always match within their accepted-type window.
+    if (t.type === 'first_dm' || t.type === 'story_reply' || t.type === 'story_mention') {
+      return true;
+    }
     if (matchContext.kind === 'comment' && t.instagramPostId && t.instagramPostId !== matchContext.postId) {
       return false;
     }
@@ -259,7 +264,7 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
 }
 
 interface MatchContext {
-  kind: 'comment' | 'dm';
+  kind: 'comment' | 'dm' | 'story_reply' | 'story_mention';
   text: string;
   actorIgsid: string;
   actorUsername: string | null;
@@ -287,19 +292,24 @@ function extractMatchContext(
       sourceId: String(value.id),
     };
   }
-  if (type === 'message') {
+  if (type === 'message' || type === 'story_reply' || type === 'story_mention') {
     const messaging = (payload as { messaging?: Record<string, unknown> }).messaging;
     if (!messaging) return null;
     const sender = messaging.sender as { id?: string } | undefined;
     const msg = messaging.message as { mid?: string; text?: string } | undefined;
-    if (!sender?.id || !msg?.text) return null;
+    if (!sender?.id) return null;
+    // Regular DMs require a text body; story mentions often arrive with no
+    // text (just the attachment), so we accept empty text for those.
+    if (type === 'message' && !msg?.text) return null;
+    const kind: MatchContext['kind'] =
+      type === 'story_reply' ? 'story_reply' : type === 'story_mention' ? 'story_mention' : 'dm';
     return {
-      kind: 'dm',
-      text: msg.text,
+      kind,
+      text: msg?.text ?? '',
       actorIgsid: sender.id,
       actorUsername: null,
       postId: null,
-      sourceId: msg.mid ?? `dm:${Date.now()}`,
+      sourceId: msg?.mid ?? `${kind}:${Date.now()}`,
     };
   }
   return null;
@@ -594,6 +604,12 @@ function findStartNodeForTrigger(
 ) {
   return graph.nodes.find((n) => {
     if (triggerType === 'first_dm' && n.type === 'trigger.first_dm') {
+      return true;
+    }
+    if (triggerType === 'story_reply' && n.type === 'trigger.story_reply') {
+      return true;
+    }
+    if (triggerType === 'story_mention' && n.type === 'trigger.story_mention') {
       return true;
     }
     if (

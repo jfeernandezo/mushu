@@ -32,12 +32,16 @@ import {
   TriggerCommentNode,
   TriggerDmNode,
   TriggerFirstDmNode,
+  TriggerStoryMentionNode,
+  TriggerStoryReplyNode,
 } from './nodes';
 
 const nodeTypes: NodeTypes = {
   'trigger.comment_keyword': TriggerCommentNode,
   'trigger.dm_keyword': TriggerDmNode,
   'trigger.first_dm': TriggerFirstDmNode,
+  'trigger.story_reply': TriggerStoryReplyNode,
+  'trigger.story_mention': TriggerStoryMentionNode,
   'action.send_dm': SendDmNode,
   'action.reply_comment': ReplyCommentNode,
   'action.ask_question': AskQuestionNode,
@@ -156,8 +160,12 @@ function defaultDataForType(type: FlowNodeType): Record<string, unknown> {
       return { keywords: [], matchMode: 'contains', caseSensitive: false };
     case 'trigger.first_dm':
       return {};
+    case 'trigger.story_reply':
+      return {};
+    case 'trigger.story_mention':
+      return {};
     case 'action.send_dm':
-      return { text: '' };
+      return { text: '', quickReplies: [] };
     case 'action.reply_comment':
       return { text: '' };
     case 'action.ask_question':

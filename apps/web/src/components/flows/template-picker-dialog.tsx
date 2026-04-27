@@ -1,6 +1,6 @@
 'use client';
 
-import { Hand, MessageCircle, MessageSquare, Sparkles } from 'lucide-react';
+import { Hand, Image, MessageCircle, MessageSquare, Sparkles, Tag } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -27,6 +27,8 @@ const ICONS: Record<FlowTemplate['iconName'], LucideIcon> = {
   lead: MessageSquare,
   wave: Hand,
   sparkles: Sparkles,
+  tag: Tag,
+  image: Image,
 };
 
 export function TemplatePickerDialog({ trigger }: TemplatePickerDialogProps) {
@@ -152,14 +154,23 @@ function idCamel(id: string): string {
 }
 
 function hasReplyMessage(id: string): boolean {
-  return id === 'comment-to-dm';
+  return id === 'comment-to-dm' || id === 'comment-first-time';
 }
 
 function hasTriggerKeywords(id: string): boolean {
-  // Welcome-on-first-DM has no keyword config — fires on any first message.
-  return id !== 'welcome-on-first-dm';
+  // These templates fire without keyword config — first DM, story mention,
+  // and "first comment" (matchMode 'any') don't read keywords from the picker.
+  return (
+    id !== 'welcome-on-first-dm' &&
+    id !== 'story-mention-thanks' &&
+    id !== 'comment-first-time'
+  );
 }
 
 function hasTag(id: string): boolean {
-  return id === 'welcome-on-first-dm';
+  return (
+    id === 'welcome-on-first-dm' ||
+    id === 'comment-first-time' ||
+    id === 'story-mention-thanks'
+  );
 }

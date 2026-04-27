@@ -28,7 +28,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard },
-  { href: '/inbox', key: 'inbox', icon: Inbox, badge: 'v0.3', disabled: true },
+  { href: '/inbox', key: 'inbox', icon: Inbox },
   { href: '/flows', key: 'flows', icon: Workflow },
   { href: '/contacts', key: 'contacts', icon: Users },
   { href: '/triggers', key: 'triggers', icon: Zap },

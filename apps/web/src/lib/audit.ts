@@ -28,6 +28,7 @@ export const AUDIT_ACTIONS = {
   MEMBER_ROLE_CHANGE: 'member.role_change',
   MEMBER_REMOVE: 'member.remove',
   MEMBER_INVITE: 'member.invite',
+  WORKSPACE_OWNERSHIP_TRANSFER: 'workspace.ownership_transfer',
 
   // Billing (used in Phase 6+)
   BILLING_CHECKOUT_STARTED: 'billing.checkout_started',

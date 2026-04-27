@@ -37,10 +37,26 @@ export class IgError extends Error {
   }
 }
 
+export interface QuickReply {
+  /** Button label shown to the user. Meta caps at 20 chars. */
+  title: string;
+  /** Payload returned in the webhook when clicked. We set this = title so
+   *  the next dm_keyword trigger can match against it as if the user typed it. */
+  payload: string;
+}
+
 export interface IgClient {
   replyComment(args: { commentId: string; message: string }): Promise<{ id: string }>;
-  sendDmByIgsid(args: { igsid: string; text: string }): Promise<{ messageId: string }>;
-  sendDmByCommentId(args: { commentId: string; text: string }): Promise<{ messageId: string }>;
+  sendDmByIgsid(args: {
+    igsid: string;
+    text: string;
+    quickReplies?: QuickReply[];
+  }): Promise<{ messageId: string }>;
+  sendDmByCommentId(args: {
+    commentId: string;
+    text: string;
+    quickReplies?: QuickReply[];
+  }): Promise<{ messageId: string }>;
 }
 
 export function createIgClient(account: InstagramAccount): IgClient {
@@ -106,27 +122,45 @@ export function createIgClient(account: InstagramAccount): IgClient {
       return { id: String(r.id ?? '') };
     },
 
-    async sendDmByIgsid({ igsid, text }) {
+    async sendDmByIgsid({ igsid, text, quickReplies }) {
       const r = await call('/me/messages', {
         body: {
           recipient: { id: igsid },
-          message: { text },
+          message: buildMessageBody(text, quickReplies),
         },
       });
       return { messageId: String(r.message_id ?? '') };
     },
 
-    async sendDmByCommentId({ commentId, text }) {
+    async sendDmByCommentId({ commentId, text, quickReplies }) {
       // Sending DM in response to a comment uses recipient.comment_id —
       // this is the only way to start a DM in-thread without violating the
       // 24h messaging window.
       const r = await call('/me/messages', {
         body: {
           recipient: { comment_id: commentId },
-          message: { text },
+          message: buildMessageBody(text, quickReplies),
         },
       });
       return { messageId: String(r.message_id ?? '') };
     },
   };
+}
+
+/**
+ * Build the `message` field for Graph API. When quickReplies are provided we
+ * attach them as `content_type: 'text'` chips. Meta caps each title at 20
+ * chars and the array at 13 entries — the inspector enforces these too, but
+ * we re-clamp here as defense in depth.
+ */
+function buildMessageBody(text: string, quickReplies?: QuickReply[]): Record<string, unknown> {
+  const body: Record<string, unknown> = { text };
+  if (quickReplies && quickReplies.length > 0) {
+    body.quick_replies = quickReplies.slice(0, 13).map((qr) => ({
+      content_type: 'text',
+      title: qr.title.slice(0, 20),
+      payload: (qr.payload || qr.title).slice(0, 1000),
+    }));
+  }
+  return body;
 }

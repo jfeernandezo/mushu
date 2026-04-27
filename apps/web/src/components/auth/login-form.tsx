@@ -1,11 +1,13 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { authClient } from '@/lib/auth-client';
 
 export function LoginForm() {
@@ -44,14 +46,21 @@ export function LoginForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <Input
-        type="password"
+      <PasswordInput
         autoComplete="current-password"
         required
         placeholder={tFields('passwordPlaceholder')}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
+      <div className="flex justify-end">
+        <Link
+          href="/forgot-password"
+          className="text-xs text-[var(--color-mushu-mute)] hover:text-[var(--color-mushu-amber)] hover:underline"
+        >
+          {t('forgotPassword')}
+        </Link>
+      </div>
       {error ? <p className="text-xs text-[var(--color-mushu-danger)]">{error}</p> : null}
       <Button type="submit" disabled={loading}>
         {loading ? t('submitting') : t('submit')}

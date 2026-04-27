@@ -2,9 +2,11 @@
 
 import type { NodeProps } from '@xyflow/react';
 import {
+  AtSign,
   Clock,
   GitBranch,
   HelpCircle,
+  Image,
   MessageCircle,
   MessageSquare,
   Send,
@@ -88,9 +90,46 @@ export function TriggerFirstDmNode({ selected }: NodeProps) {
   );
 }
 
+export function TriggerStoryReplyNode({ selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
+  return (
+    <BaseNode
+      icon={Image}
+      iconColor="var(--color-mushu-amber)"
+      title={t('trigger.story_reply.title')}
+      category="trigger"
+      selected={selected}
+      hasInput={false}
+    >
+      <span className="block text-[10px] text-[var(--color-mushu-faint)]">
+        {t('trigger.story_reply.hint')}
+      </span>
+    </BaseNode>
+  );
+}
+
+export function TriggerStoryMentionNode({ selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
+  return (
+    <BaseNode
+      icon={AtSign}
+      iconColor="var(--color-mushu-amber)"
+      title={t('trigger.story_mention.title')}
+      category="trigger"
+      selected={selected}
+      hasInput={false}
+    >
+      <span className="block text-[10px] text-[var(--color-mushu-faint)]">
+        {t('trigger.story_mention.hint')}
+      </span>
+    </BaseNode>
+  );
+}
+
 export function SendDmNode({ data, selected }: NodeProps) {
   const t = useTranslations('flowBuilder.nodes');
-  const d = (data ?? {}) as { text?: string };
+  const d = (data ?? {}) as { text?: string; quickReplies?: string[] };
+  const quickCount = (d.quickReplies ?? []).filter(Boolean).length;
   return (
     <BaseNode
       icon={Send}
@@ -104,6 +143,11 @@ export function SendDmNode({ data, selected }: NodeProps) {
       ) : (
         <span className="italic">{t('emptyMessage')}</span>
       )}
+      {quickCount > 0 ? (
+        <p className="mt-1 text-[10px] text-[var(--color-mushu-amber)]">
+          {t('action.send_dm.quickReplyCount', { count: quickCount })}
+        </p>
+      ) : null}
     </BaseNode>
   );
 }

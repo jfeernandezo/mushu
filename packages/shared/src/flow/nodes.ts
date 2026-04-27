@@ -47,6 +47,27 @@ const firstDmTriggerNode = baseNode.extend({
   data: z.object({}),
 });
 
+/**
+ * Fires when a contact replies to one of the account's stories (sliding-up
+ * from a story → typed text). Meta delivers this as a DM with `reply_to.story`
+ * set; the worker tags it as `story_reply` upstream of trigger lookup, so this
+ * trigger does not also fire dm_keyword triggers.
+ */
+const storyReplyTriggerNode = baseNode.extend({
+  type: z.literal('trigger.story_reply'),
+  data: z.object({}),
+});
+
+/**
+ * Fires when a contact mentions the account in their own story. Delivered as
+ * a DM with `attachments[].type === 'story_mention'`. Often has no text
+ * payload — the user just tagged the account in a story.
+ */
+const storyMentionTriggerNode = baseNode.extend({
+  type: z.literal('trigger.story_mention'),
+  data: z.object({}),
+});
+
 // ---------- Action nodes ----------
 
 const sendDmNode = baseNode.extend({
@@ -153,6 +174,8 @@ export const flowNodeSchema = z.discriminatedUnion('type', [
   commentKeywordTriggerNode,
   dmKeywordTriggerNode,
   firstDmTriggerNode,
+  storyReplyTriggerNode,
+  storyMentionTriggerNode,
   sendDmNode,
   replyCommentNode,
   setTagNode,
@@ -189,6 +212,8 @@ export const TRIGGER_NODE_TYPES = [
   'trigger.comment_keyword',
   'trigger.dm_keyword',
   'trigger.first_dm',
+  'trigger.story_reply',
+  'trigger.story_mention',
 ] as const satisfies readonly FlowNodeType[];
 
 export function isTriggerNode(node: FlowNode): boolean {

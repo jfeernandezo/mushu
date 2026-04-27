@@ -1,4 +1,10 @@
 {
+  "common": {
+    "passwordInput": {
+      "show": "Mostrar senha",
+      "hide": "Ocultar senha"
+    }
+  },
   "acceptInvitation": {
     "title": "Aceitar convite",
     "body": "Você foi convidado a entrar no workspace {workspace} como {role}.",
@@ -252,7 +258,32 @@
       "submit": "Entrar",
       "submitting": "Entrando…",
       "invalidCredentials": "Credenciais inválidas",
-      "welcomeBack": "Bem-vindo de volta"
+      "welcomeBack": "Bem-vindo de volta",
+      "forgotPassword": "Esqueceu a senha?"
+    },
+    "forgotPassword": {
+      "title": "Recuperar senha",
+      "subtitle": "Vamos te enviar um link para criar uma nova senha.",
+      "submit": "Enviar link",
+      "submitting": "Enviando…",
+      "sentTitle": "Verifique seu email",
+      "sentBody": "Se {email} estiver cadastrado, você vai receber um link para redefinir a senha em até 1 minuto.",
+      "sentHint": "Não esqueça de checar a caixa de spam.",
+      "rememberedIt": "Lembrou da senha?",
+      "backToLogin": "Voltar pro login"
+    },
+    "resetPassword": {
+      "title": "Definir nova senha",
+      "subtitle": "Escolha uma senha forte que você consiga lembrar.",
+      "submit": "Salvar nova senha",
+      "submitting": "Salvando…",
+      "mismatch": "As duas senhas não batem.",
+      "failed": "Não foi possível redefinir a senha. O link pode ter expirado.",
+      "success": "Senha redefinida! Faça login com a nova senha.",
+      "invalidToken": "Esse link de recuperação é inválido ou já foi usado.",
+      "missingToken": "Link incompleto. Use o botão do email original.",
+      "requestNew": "Pedir um novo link",
+      "backToLogin": "Voltar pro login"
     },
     "signup": {
       "title": "Crie sua conta no Mushu",
@@ -268,6 +299,8 @@
       "emailPlaceholder": "voce@exemplo.com",
       "passwordPlaceholder": "Senha",
       "passwordSignupPlaceholder": "Senha (mínimo 8 caracteres)",
+      "newPasswordPlaceholder": "Nova senha (mínimo 8 caracteres)",
+      "confirmPasswordPlaceholder": "Confirme a nova senha",
       "namePlaceholder": "Seu nome"
     },
     "consent": {
@@ -416,6 +449,22 @@
         "tag": "novo-lead",
         "dmMessage": "Oi! Bem-vindo(a) 👋 Que bom te ver por aqui pela primeira vez. Sou o assistente automático e fico feliz em te ajudar — pode me contar o que está procurando?"
       }
+    },
+    "commentFirstTime": {
+      "name": "Marcar primeiro comentarista",
+      "description": "Quando alguém comenta em qualquer post seu, marca o contato com uma tag e responde publicamente. Útil pra segmentar quem já interagiu pelo menos uma vez.",
+      "defaults": {
+        "tag": "novo-comentarista",
+        "replyMessage": "Obrigado pelo comentário! 🙌"
+      }
+    },
+    "storyMentionThanks": {
+      "name": "Agradecer menção em story",
+      "description": "Quando alguém menciona sua conta em um story, marca o contato como engajado e manda um agradecimento por DM.",
+      "defaults": {
+        "tag": "mencionou-no-story",
+        "dmMessage": "Vi que você me marcou no seu story! 💛 Muito obrigado(a) pelo carinho — significa muito pra gente."
+      }
     }
   },
   "flowBuilder": {
@@ -455,7 +504,8 @@
         "fallbackText": "Mensagem se a resposta for inválida",
         "maxAttempts": "Máximo de tentativas",
         "tag": "Tag",
-        "tagOperation": "Ação"
+        "tagOperation": "Ação",
+        "quickReplies": "Botões de resposta rápida"
       },
       "placeholders": {
         "messageText": "Olá! Aqui está o link…",
@@ -468,6 +518,9 @@
       "variableHint": "Use {example} nas mensagens seguintes pra reaproveitar o que a pessoa respondeu.",
       "tagHint": "Apenas letras, números, hífen e underscore. Use tags pra segmentar contatos depois.",
       "firstDmDescription": "Esse gatilho dispara automaticamente na primeira vez que um contato manda uma DM pra sua conta. Sem campos pra configurar — qualquer texto serve. Use pra dar boas-vindas, marcar como 'novo lead' e iniciar o relacionamento.",
+      "storyReplyDescription": "Dispara quando um contato responde um story seu (deslizando pra cima e enviando uma mensagem). Sem filtro de texto — qualquer resposta serve. Use pra agradecer, oferecer cupom ou iniciar uma sequência de qualificação.",
+      "storyMentionDescription": "Dispara quando alguém menciona sua conta no story dele. O Instagram entrega como uma DM com a imagem do story. Use pra agradecer, repostar ou marcar o contato como engajado.",
+      "quickRepliesHint": "Botões clicáveis abaixo da mensagem (até 13, máx 20 caracteres cada). Quando o contato clica, o texto vira a próxima resposta dele — você pode capturar isso em outro fluxo com gatilho de palavra-chave.",
       "tagOps": {
         "add": "Adicionar tag",
         "remove": "Remover tag"
@@ -490,11 +543,20 @@
         "first_dm": {
           "title": "Quando alguém manda DM pela primeira vez",
           "hint": "Dispara só na primeira mensagem do contato"
+        },
+        "story_reply": {
+          "title": "Quando responderem o seu story",
+          "hint": "Dispara em qualquer resposta a um story seu"
+        },
+        "story_mention": {
+          "title": "Quando te marcarem em um story",
+          "hint": "Dispara quando alguém menciona sua conta em um story"
         }
       },
       "action": {
         "send_dm": {
-          "title": "Enviar mensagem privada"
+          "title": "Enviar mensagem privada",
+          "quickReplyCount": "{count, plural, one {# botão anexado} other {# botões anexados}}"
         },
         "reply_comment": {
           "title": "Responder o comentário publicamente"
@@ -582,6 +644,12 @@
       "plusMore": "+{n} variações",
       "remove": "Remover {keyword}"
     },
+    "quickReplies": {
+      "placeholder": "Texto do botão",
+      "addAnother": "+ outro botão",
+      "remove": "Remover {label}",
+      "counter": "{count} de {max} botões"
+    },
     "templateBanner": {
       "title": "Esse fluxo veio do modelo \"{template}\". Personalize tudo!",
       "tip1": "Clique em qualquer etapa pra editar palavras-chave, mensagens ou o post-alvo no painel da direita.",
@@ -613,6 +681,77 @@
     "title": "Contatos",
     "subtitle": "Todos que interagiram com seu Instagram via Mushu.",
     "empty": "Sem contatos ainda. Eles aparecem aqui conforme pessoas comentarem ou enviarem DM no seu IG."
+  },
+  "inbox": {
+    "title": "Inbox",
+    "subtitle": "Conversas em tempo real. Atribua, responda manualmente ou deixe a automação seguir.",
+    "noPermission": "Você não tem permissão para ver o inbox. Peça ao admin do workspace.",
+    "selectConversation": "Selecione uma conversa pra ver o histórico.",
+    "filters": {
+      "status": "Status",
+      "assignee": "Responsável",
+      "igAccount": "Conta IG",
+      "allAccounts": "Todas as contas",
+      "statuses": {
+        "all": "Todos",
+        "open": "Em atendimento",
+        "pending": "Pendente",
+        "resolved": "Resolvido",
+        "snoozed": "Adiado"
+      },
+      "assignees": {
+        "any": "Qualquer um",
+        "me": "Eu",
+        "unassigned": "Sem responsável"
+      }
+    },
+    "list": {
+      "empty": "Nenhuma conversa nesse filtro.",
+      "unknownContact": "Contato sem nome",
+      "humanTookOver": "humano"
+    },
+    "thread": {
+      "loading": "Carregando…",
+      "selectConversation": "Selecione uma conversa.",
+      "unknownContact": "Contato sem nome",
+      "windowOpen": "{hours}h{minutes}m de janela",
+      "windowExpired": "Janela 24h fechada",
+      "windowClosed": "A janela de 24h do Instagram fechou. Você não pode mandar DM até o contato responder. Notas internas continuam funcionando.",
+      "noReplyPermission": "Você não tem permissão pra responder. Peça ao admin do workspace.",
+      "publicPlaceholder": "Escreva sua resposta…",
+      "privatePlaceholder": "Nota interna (visível só pro time)…",
+      "privateNoteOn": "Nota interna",
+      "privateNoteOff": "Nota interna",
+      "sendDm": "Enviar",
+      "addNote": "Adicionar nota",
+      "sending": "Enviando…",
+      "sendFailed": "Falhou: {error}",
+      "internalNote": "Nota interna",
+      "automation": "Automação",
+      "you": "Você",
+      "teammate": "Time",
+      "queuedStatus": "enviando…",
+      "failedStatus": "falhou"
+    },
+    "details": {
+      "loading": "Carregando…",
+      "selectConversation": "Selecione uma conversa.",
+      "unknownContact": "Contato sem nome",
+      "actions": "Ações",
+      "assignToMe": "Pegar pra mim",
+      "unassignMe": "Soltar conversa",
+      "reopen": "Reabrir",
+      "resolve": "Resolver",
+      "snooze": "Adiar",
+      "tags": "Tags",
+      "noTags": "Sem tags ainda.",
+      "addTagPlaceholder": "nova-tag",
+      "addTag": "Adicionar",
+      "removeTag": "Remover {tag}",
+      "tagFailed": "Não foi possível alterar a tag: {error}",
+      "updateFailed": "Não foi possível atualizar: {error}",
+      "customFields": "Campos customizados"
+    }
   },
   "triggers": {
     "title": "Gatilhos",
@@ -818,6 +957,25 @@
       "emailMismatch": "O e-mail não confere",
       "fillFields": "Preencha seu e-mail e senha",
       "couldNotDelete": "Não foi possível excluir a conta: {error}"
+    },
+    "transferOwnership": {
+      "cardTitle": "Transferir propriedade do workspace",
+      "cardDescription": "Passa a propriedade do workspace para outro membro. Você vira admin (perde acesso a billing e à exclusão do workspace). Esta ação não pode ser desfeita pelo novo dono — pra voltar a ser owner, o novo dono precisa transferir de volta.",
+      "openButton": "Transferir propriedade",
+      "confirmTitle": "Confirmar transferência",
+      "confirmBody": "Selecione o novo dono e digite seu e-mail pra confirmar. Você vai virar admin imediatamente após confirmar.",
+      "targetField": "Novo dono do workspace",
+      "targetPlaceholder": "Selecione um membro…",
+      "emailField": "Digite seu e-mail ({email}) pra confirmar",
+      "warning": "⚠️ Após confirmar, você perde acesso a billing e exclusão do workspace. Só o novo dono pode desfazer.",
+      "noEligibleTargets": "Não há outros admins ou editores neste workspace pra receber a propriedade. Convide e/ou promova alguém antes.",
+      "cancel": "Cancelar",
+      "transferring": "Transferindo…",
+      "transfer": "Transferir agora",
+      "success": "Propriedade transferida. Você agora é admin.",
+      "emailMismatch": "O e-mail não confere com o seu",
+      "fillFields": "Selecione o novo dono e digite seu e-mail",
+      "failed": "Falhou: {error}"
     }
   },
   "notificationsPage": {

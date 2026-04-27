@@ -1,4 +1,10 @@
 {
+  "common": {
+    "passwordInput": {
+      "show": "Show password",
+      "hide": "Hide password"
+    }
+  },
   "acceptInvitation": {
     "title": "Accept invitation",
     "body": "You've been invited to join the workspace {workspace} as {role}.",
@@ -252,7 +258,32 @@
       "submit": "Sign in",
       "submitting": "Signing in…",
       "invalidCredentials": "Invalid credentials",
-      "welcomeBack": "Welcome back"
+      "welcomeBack": "Welcome back",
+      "forgotPassword": "Forgot password?"
+    },
+    "forgotPassword": {
+      "title": "Reset password",
+      "subtitle": "We'll email you a link to set a new password.",
+      "submit": "Send link",
+      "submitting": "Sending…",
+      "sentTitle": "Check your inbox",
+      "sentBody": "If {email} is registered, you'll get a reset link within a minute.",
+      "sentHint": "Don't forget to check your spam folder.",
+      "rememberedIt": "Remembered your password?",
+      "backToLogin": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Set a new password",
+      "subtitle": "Pick a strong password you'll remember.",
+      "submit": "Save new password",
+      "submitting": "Saving…",
+      "mismatch": "The passwords don't match.",
+      "failed": "Couldn't reset the password. The link may have expired.",
+      "success": "Password reset! Sign in with your new password.",
+      "invalidToken": "This reset link is invalid or has already been used.",
+      "missingToken": "Incomplete link. Use the button from the original email.",
+      "requestNew": "Request a new link",
+      "backToLogin": "Back to sign in"
     },
     "signup": {
       "title": "Create your Mushu account",
@@ -268,6 +299,8 @@
       "emailPlaceholder": "you@example.com",
       "passwordPlaceholder": "Password",
       "passwordSignupPlaceholder": "Password (8+ characters)",
+      "newPasswordPlaceholder": "New password (8+ characters)",
+      "confirmPasswordPlaceholder": "Confirm new password",
       "namePlaceholder": "Your name"
     },
     "consent": {
@@ -416,6 +449,22 @@
         "tag": "new-lead",
         "dmMessage": "Hi! Welcome 👋 Glad to see you here for the first time. I'm the automated assistant and happy to help — what are you looking for?"
       }
+    },
+    "commentFirstTime": {
+      "name": "Tag first-time commenters",
+      "description": "When someone comments on any of your posts, tags the contact and replies publicly. Useful to segment people who've interacted at least once.",
+      "defaults": {
+        "tag": "new-commenter",
+        "replyMessage": "Thanks for the comment! 🙌"
+      }
+    },
+    "storyMentionThanks": {
+      "name": "Thank story mentions",
+      "description": "When someone mentions your account in their story, tags the contact as engaged and sends a thank-you DM.",
+      "defaults": {
+        "tag": "mentioned-in-story",
+        "dmMessage": "Thanks for tagging us in your story! 💛 We really appreciate it."
+      }
     }
   },
   "flowBuilder": {
@@ -455,7 +504,8 @@
         "fallbackText": "Message if the answer is invalid",
         "maxAttempts": "Max attempts",
         "tag": "Tag",
-        "tagOperation": "Action"
+        "tagOperation": "Action",
+        "quickReplies": "Quick reply buttons"
       },
       "placeholders": {
         "messageText": "Hey! Here's the link…",
@@ -468,6 +518,9 @@
       "variableHint": "Use {example} in later messages to reuse what the person answered.",
       "tagHint": "Letters, numbers, hyphen and underscore only. Use tags to segment contacts later.",
       "firstDmDescription": "This trigger fires automatically the first time a contact ever DMs your account. No fields to configure — any text works. Use it to welcome them, tag as 'new lead', and kick off the relationship.",
+      "storyReplyDescription": "Fires when a contact replies to one of your stories (sliding up to send a message). No text filter — any reply matches. Use it to thank them, send a coupon, or kick off a qualification flow.",
+      "storyMentionDescription": "Fires when someone tags your account in their own story. Instagram delivers this as a DM with the story image attached. Use it to thank them, repost, or mark the contact as engaged.",
+      "quickRepliesHint": "Tappable buttons under the message (up to 13, max 20 characters each). When the contact taps one, the title becomes their next reply — you can capture that in another flow with a keyword trigger.",
       "tagOps": {
         "add": "Add tag",
         "remove": "Remove tag"
@@ -490,11 +543,20 @@
         "first_dm": {
           "title": "When someone DMs for the first time",
           "hint": "Fires only on the contact's first ever message"
+        },
+        "story_reply": {
+          "title": "When someone replies to your story",
+          "hint": "Fires on any reply to one of your stories"
+        },
+        "story_mention": {
+          "title": "When someone mentions you in a story",
+          "hint": "Fires when a contact tags your account in their own story"
         }
       },
       "action": {
         "send_dm": {
-          "title": "Send a private message"
+          "title": "Send a private message",
+          "quickReplyCount": "{count, plural, one {# button attached} other {# buttons attached}}"
         },
         "reply_comment": {
           "title": "Reply to the comment publicly"
@@ -582,6 +644,12 @@
       "plusMore": "+{n} more",
       "remove": "Remove {keyword}"
     },
+    "quickReplies": {
+      "placeholder": "Button text",
+      "addAnother": "+ another button",
+      "remove": "Remove {label}",
+      "counter": "{count} of {max} buttons"
+    },
     "templateBanner": {
       "title": "This flow was started from the \"{template}\" template. Customize everything!",
       "tip1": "Click any step to edit keywords, messages or the target post in the right panel.",
@@ -613,6 +681,77 @@
     "title": "Contacts",
     "subtitle": "Everyone who interacted with your Instagram via Mushu.",
     "empty": "No contacts yet. They'll show up here as people comment or DM your IG."
+  },
+  "inbox": {
+    "title": "Inbox",
+    "subtitle": "Real-time conversations. Assign, reply manually, or let automation drive.",
+    "noPermission": "You don't have permission to view the inbox. Ask your workspace admin.",
+    "selectConversation": "Pick a conversation to see the thread.",
+    "filters": {
+      "status": "Status",
+      "assignee": "Assignee",
+      "igAccount": "IG account",
+      "allAccounts": "All accounts",
+      "statuses": {
+        "all": "All",
+        "open": "Open",
+        "pending": "Pending",
+        "resolved": "Resolved",
+        "snoozed": "Snoozed"
+      },
+      "assignees": {
+        "any": "Anyone",
+        "me": "Me",
+        "unassigned": "Unassigned"
+      }
+    },
+    "list": {
+      "empty": "No conversations match this filter.",
+      "unknownContact": "Unnamed contact",
+      "humanTookOver": "human"
+    },
+    "thread": {
+      "loading": "Loading…",
+      "selectConversation": "Pick a conversation.",
+      "unknownContact": "Unnamed contact",
+      "windowOpen": "{hours}h{minutes}m window left",
+      "windowExpired": "24h window closed",
+      "windowClosed": "Instagram's 24h window has closed. You can't send a DM until the contact replies. Internal notes still work.",
+      "noReplyPermission": "You don't have permission to reply. Ask your workspace admin.",
+      "publicPlaceholder": "Type your reply…",
+      "privatePlaceholder": "Internal note (only visible to the team)…",
+      "privateNoteOn": "Internal note",
+      "privateNoteOff": "Internal note",
+      "sendDm": "Send",
+      "addNote": "Add note",
+      "sending": "Sending…",
+      "sendFailed": "Failed: {error}",
+      "internalNote": "Internal note",
+      "automation": "Automation",
+      "you": "You",
+      "teammate": "Team",
+      "queuedStatus": "sending…",
+      "failedStatus": "failed"
+    },
+    "details": {
+      "loading": "Loading…",
+      "selectConversation": "Pick a conversation.",
+      "unknownContact": "Unnamed contact",
+      "actions": "Actions",
+      "assignToMe": "Take this",
+      "unassignMe": "Release",
+      "reopen": "Reopen",
+      "resolve": "Resolve",
+      "snooze": "Snooze",
+      "tags": "Tags",
+      "noTags": "No tags yet.",
+      "addTagPlaceholder": "new-tag",
+      "addTag": "Add",
+      "removeTag": "Remove {tag}",
+      "tagFailed": "Couldn't update tag: {error}",
+      "updateFailed": "Couldn't update: {error}",
+      "customFields": "Custom fields"
+    }
   },
   "triggers": {
     "title": "Triggers",
@@ -818,6 +957,25 @@
       "emailMismatch": "Email doesn't match",
       "fillFields": "Fill in your email and password",
       "couldNotDelete": "Could not delete account: {error}"
+    },
+    "transferOwnership": {
+      "cardTitle": "Transfer workspace ownership",
+      "cardDescription": "Hands ownership of this workspace to another member. You become an admin (losing billing access and the ability to delete the workspace). The new owner can transfer it back if needed.",
+      "openButton": "Transfer ownership",
+      "confirmTitle": "Confirm transfer",
+      "confirmBody": "Pick the new owner and type your email to confirm. You'll become admin immediately.",
+      "targetField": "New workspace owner",
+      "targetPlaceholder": "Select a member…",
+      "emailField": "Type your email ({email}) to confirm",
+      "warning": "⚠️ After confirming, you lose billing access and the ability to delete the workspace. Only the new owner can reverse this.",
+      "noEligibleTargets": "There are no other admins or editors in this workspace to receive ownership. Invite and/or promote someone first.",
+      "cancel": "Cancel",
+      "transferring": "Transferring…",
+      "transfer": "Transfer now",
+      "success": "Ownership transferred. You're now an admin.",
+      "emailMismatch": "Email doesn't match yours",
+      "fillFields": "Pick the new owner and type your email",
+      "failed": "Failed: {error}"
     }
   },
   "notificationsPage": {

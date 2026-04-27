@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { recordSignupConsent } from '@/actions/consent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { authClient } from '@/lib/auth-client';
 
 export function SignupForm() {
@@ -68,8 +69,7 @@ export function SignupForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <Input
-        type="password"
+      <PasswordInput
         autoComplete="new-password"
         required
         minLength={8}

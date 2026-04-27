@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
         await persistEvent({
           eventId,
           accountId: account?.id ?? null,
-          type: isEcho ? 'message_echo' : m.reaction ? 'message_reaction' : m.read ? 'message_seen' : 'message',
+          type: classifyMessagingType(m, isEcho),
           payload: { entry, messaging: m },
         });
       }
@@ -95,6 +95,40 @@ export async function POST(req: NextRequest) {
 
   // TODO: enqueue process-event jobs in BullMQ once worker is wired.
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * Resolve the canonical event type for a messaging payload. Story replies
+ * arrive as DMs with `message.reply_to.story` set; story mentions arrive with
+ * an attachment of type `story_mention`. We tag them up-front so the worker's
+ * trigger lookup can pick the right node type without re-parsing the payload.
+ */
+function classifyMessagingType(
+  m: {
+    message?: {
+      is_echo?: boolean;
+      reply_to?: { story?: unknown } | undefined;
+      attachments?: Array<{ type: string }> | undefined;
+    } | undefined;
+    reaction?: unknown;
+    read?: unknown;
+  },
+  isEcho: boolean,
+):
+  | 'message'
+  | 'message_echo'
+  | 'message_reaction'
+  | 'message_seen'
+  | 'story_reply'
+  | 'story_mention' {
+  if (isEcho) return 'message_echo';
+  if (m.reaction) return 'message_reaction';
+  if (m.read) return 'message_seen';
+  if (m.message?.reply_to?.story) return 'story_reply';
+  if (m.message?.attachments?.some((a) => a.type === 'story_mention')) {
+    return 'story_mention';
+  }
+  return 'message';
 }
 
 async function persistEvent(args: {

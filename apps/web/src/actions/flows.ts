@@ -171,5 +171,35 @@ async function syncTriggersFromGraph(
         },
       });
     }
+    if (node.type === 'trigger.first_dm') {
+      await tx.insert(trigger).values({
+        id: randomUUID(),
+        flowId,
+        instagramAccountId,
+        organizationId,
+        type: 'first_dm',
+        config: {},
+      });
+    }
+    if (node.type === 'trigger.story_reply') {
+      await tx.insert(trigger).values({
+        id: randomUUID(),
+        flowId,
+        instagramAccountId,
+        organizationId,
+        type: 'story_reply',
+        config: {},
+      });
+    }
+    if (node.type === 'trigger.story_mention') {
+      await tx.insert(trigger).values({
+        id: randomUUID(),
+        flowId,
+        instagramAccountId,
+        organizationId,
+        type: 'story_mention',
+        config: {},
+      });
+    }
   }
 }

@@ -4,7 +4,7 @@ export interface FlowTemplate {
   id: string;
   nameKey: string;
   descriptionKey: string;
-  iconName: 'comment' | 'lead' | 'wave' | 'sparkles';
+  iconName: 'comment' | 'lead' | 'wave' | 'sparkles' | 'tag' | 'image';
   /**
    * Builds a FlowGraph for this template, generating fresh node/edge UUIDs so
    * multiple flows from the same template don't share IDs.
@@ -125,6 +125,111 @@ export const FLOW_TEMPLATES: FlowTemplate[] = [
         {
           id: triggerId,
           type: 'trigger.first_dm',
+          position: POS_TRIGGER,
+          data: {},
+        },
+        {
+          id: tagId,
+          type: 'action.set_tag',
+          position: POS_ACTION_1,
+          data: { tag, operation: 'add' },
+        },
+        {
+          id: dmId,
+          type: 'action.send_dm',
+          position: POS_ACTION_2,
+          data: { text: texts.dmMessage },
+        },
+        {
+          id: endId,
+          type: 'control.end',
+          position: POS_END,
+          data: {},
+        },
+      ];
+      return {
+        nodes,
+        edges: [
+          { id: uid(), source: triggerId, target: tagId },
+          { id: uid(), source: tagId, target: dmId },
+          { id: uid(), source: dmId, target: endId },
+        ],
+      };
+    },
+  },
+  {
+    id: 'comment-first-time',
+    nameKey: 'flowTemplates.commentFirstTime.name',
+    descriptionKey: 'flowTemplates.commentFirstTime.description',
+    iconName: 'tag',
+    build: (texts) => {
+      // Comment trigger with no keyword filter (matchMode 'any' matches any
+      // comment). Tags the contact so a future condition node can branch on
+      // "is this their first comment?" — combined with `set_tag remove` later
+      // in another flow when they've been "warmed up".
+      const triggerId = uid();
+      const tagId = uid();
+      const replyId = uid();
+      const endId = uid();
+      const tag = (texts.tag ?? '').trim() || 'novo-comentarista';
+      const nodes: FlowNode[] = [
+        {
+          id: triggerId,
+          type: 'trigger.comment_keyword',
+          position: POS_TRIGGER,
+          data: {
+            instagramPostId: null,
+            // Single empty-ish keyword + matchMode 'any' = match every comment.
+            // The schema requires keywords.min(1), so we use a wildcard token.
+            keywords: ['*'],
+            matchMode: 'any',
+            caseSensitive: false,
+          },
+        },
+        {
+          id: tagId,
+          type: 'action.set_tag',
+          position: POS_ACTION_1,
+          data: { tag, operation: 'add' },
+        },
+        {
+          id: replyId,
+          type: 'action.reply_comment',
+          position: POS_ACTION_2,
+          data: { text: texts.replyMessage ?? '' },
+        },
+        {
+          id: endId,
+          type: 'control.end',
+          position: POS_END,
+          data: {},
+        },
+      ];
+      return {
+        nodes,
+        edges: [
+          { id: uid(), source: triggerId, target: tagId },
+          { id: uid(), source: tagId, target: replyId },
+          { id: uid(), source: replyId, target: endId },
+        ],
+      };
+    },
+  },
+  {
+    id: 'story-mention-thanks',
+    nameKey: 'flowTemplates.storyMentionThanks.name',
+    descriptionKey: 'flowTemplates.storyMentionThanks.description',
+    iconName: 'image',
+    build: (texts) => {
+      const triggerId = uid();
+      const tagId = uid();
+      const dmId = uid();
+      const endId = uid();
+      const tag = (texts.tag ?? '').trim() || 'mencionou-no-story';
+      const nodes: FlowNode[] = [
+        {
+          id: triggerId,
+          type: 'trigger.story_mention',
           position: POS_TRIGGER,
           data: {},
         },

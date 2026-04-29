@@ -1,11 +1,12 @@
 'use client';
 
 import type { Node } from '@xyflow/react';
-import { X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { type KeyboardEvent, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { KeywordChipsInput } from './keyword-chips-input';
 import { PostSelector } from './post-selector';
 
@@ -111,18 +112,22 @@ function Form({
             onChange={(next) => update('keywords', next)}
           />
         </Field>
+        <KeywordMatchControls data={data} update={update} />
       </>
     );
   }
 
   if (type === 'trigger.dm_keyword') {
     return (
-      <Field label={tFields('keywordsCommaSeparated')}>
-        <KeywordChipsInput
-          value={Array.isArray(data.keywords) ? (data.keywords as string[]) : []}
-          onChange={(next) => update('keywords', next)}
-        />
-      </Field>
+      <>
+        <Field label={tFields('keywordsCommaSeparated')}>
+          <KeywordChipsInput
+            value={Array.isArray(data.keywords) ? (data.keywords as string[]) : []}
+            onChange={(next) => update('keywords', next)}
+          />
+        </Field>
+        <KeywordMatchControls data={data} update={update} />
+      </>
     );
   }
 
@@ -188,60 +193,71 @@ function Form({
     const maxAttempts = (data.maxAttempts as number) ?? 3;
     return (
       <>
-        <Field label={tFields('questionText')}>
-          <textarea
-            value={questionText}
-            onChange={(e) => update('questionText', e.target.value)}
-            rows={3}
-            className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
-            placeholder={tPh('questionText')}
-          />
-        </Field>
-        <Field label={tFields('variableName')}>
-          <Input
-            value={variableName}
-            onChange={(e) =>
-              update(
-                'variableName',
-                e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 40),
-              )
-            }
-            placeholder="email"
-          />
-          <p className="text-[10px] text-[var(--color-mushu-faint)]">
-            {tInspector('variableHint', { example: `{{${variableName || 'email'}}}` })}
-          </p>
-        </Field>
-        <Field label={tFields('inputType')}>
-          <select
-            value={inputType}
-            onChange={(e) => update('inputType', e.target.value)}
-            className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
+        <Section title={tInspector('sections.question')}>
+          <Field label={tFields('questionText')}>
+            <textarea
+              value={questionText}
+              onChange={(e) => update('questionText', e.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
+              placeholder={tPh('questionText')}
+            />
+          </Field>
+        </Section>
+
+        <Section title={tInspector('sections.answer')}>
+          <Field
+            label={tFields('variableName')}
+            hint={tInspector('variableHint', { example: `{{${variableName || 'email'}}}` })}
           >
-            <option value="text">{tInspector('inputTypes.text')}</option>
-            <option value="email">{tInspector('inputTypes.email')}</option>
-            <option value="number">{tInspector('inputTypes.number')}</option>
-            <option value="phone">{tInspector('inputTypes.phone')}</option>
-          </select>
-        </Field>
-        <Field label={tFields('fallbackText')}>
-          <Input
-            value={fallbackText}
-            onChange={(e) => update('fallbackText', e.target.value)}
-            placeholder={tPh('fallbackText')}
-          />
-        </Field>
-        <Field label={tFields('maxAttempts')}>
-          <Input
-            type="number"
-            min={1}
-            max={5}
-            value={String(maxAttempts)}
-            onChange={(e) =>
-              update('maxAttempts', Math.max(1, Math.min(5, Number.parseInt(e.target.value, 10) || 3)))
-            }
-          />
-        </Field>
+            <Input
+              value={variableName}
+              onChange={(e) =>
+                update(
+                  'variableName',
+                  e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 40),
+                )
+              }
+              placeholder="email"
+            />
+          </Field>
+          <Field label={tFields('inputType')}>
+            <select
+              value={inputType}
+              onChange={(e) => update('inputType', e.target.value)}
+              className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
+            >
+              <option value="text">{tInspector('inputTypes.text')}</option>
+              <option value="email">{tInspector('inputTypes.email')}</option>
+              <option value="number">{tInspector('inputTypes.number')}</option>
+              <option value="phone">{tInspector('inputTypes.phone')}</option>
+            </select>
+          </Field>
+        </Section>
+
+        <Section title={tInspector('sections.validation')} defaultOpen={false}>
+          <Field
+            label={tFields('fallbackText')}
+            hint={tInspector('fallbackHint')}
+          >
+            <Input
+              value={fallbackText}
+              onChange={(e) => update('fallbackText', e.target.value)}
+              placeholder={tPh('fallbackText')}
+            />
+          </Field>
+          <Field label={tFields('maxAttempts')} hint={tInspector('maxAttemptsHint')}>
+            <Input
+              type="number"
+              min={1}
+              max={5}
+              value={String(maxAttempts)}
+              onChange={(e) =>
+                update('maxAttempts', Math.max(1, Math.min(5, Number.parseInt(e.target.value, 10) || 3)))
+              }
+            />
+          </Field>
+        </Section>
       </>
     );
   }
@@ -298,12 +314,123 @@ function Form({
   return null;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/**
+ * Collapsible section for grouping related fields in the inspector.
+ * Used by long forms (ask_question, send_dm) to keep the panel scannable —
+ * default-open for the main section, default-closed for advanced/optional.
+ *
+ * Pure CSS/state — no Radix dependency. The chevron rotates on open.
+ */
+function Section({
+  title,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="flex flex-col">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="-mx-1 flex items-center justify-between rounded-md px-1 py-1 text-[11px] font-medium uppercase tracking-wider text-[var(--color-mushu-faint)] transition-colors hover:text-[var(--color-mushu-mute)]"
+      >
+        <span>{title}</span>
+        <ChevronDown
+          className={cn('h-3 w-3 transition-transform', open ? 'rotate-180' : 'rotate-0')}
+        />
+      </button>
+      {open ? <div className="mt-1.5 flex flex-col gap-3">{children}</div> : null}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-xs text-[var(--color-mushu-mute)]">{label}</span>
       {children}
+      {hint ? (
+        <span className="text-[10px] leading-snug text-[var(--color-mushu-faint)]">{hint}</span>
+      ) : null}
     </label>
+  );
+}
+
+const MATCH_MODES: Array<'contains' | 'exact' | 'starts_with' | 'any'> = [
+  'contains',
+  'exact',
+  'starts_with',
+  'any',
+];
+
+/**
+ * Shared sub-form for keyword-style triggers (comment_keyword, dm_keyword).
+ * Surfaces the matchMode + caseSensitive options that already live in the
+ * trigger's data shape but had no UI control until now — flows previously
+ * inherited the defaults silently. The hints explain what each mode does so
+ * the choice isn't a guess.
+ */
+function KeywordMatchControls({
+  data,
+  update,
+}: {
+  data: Record<string, unknown>;
+  update: (key: string, value: unknown) => void;
+}) {
+  const tFields = useTranslations('flowBuilder.inspector.fields');
+  const tInspector = useTranslations('flowBuilder.inspector');
+  const matchMode = ((data.matchMode as string) ?? 'contains') as
+    | 'contains'
+    | 'exact'
+    | 'starts_with'
+    | 'any';
+  const caseSensitive = data.caseSensitive === true;
+  return (
+    <>
+      <Field
+        label={tFields('matchMode')}
+        hint={tInspector(`matchModeHint.${matchMode}`)}
+      >
+        <select
+          value={matchMode}
+          onChange={(e) => update('matchMode', e.target.value)}
+          className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
+        >
+          {MATCH_MODES.map((m) => (
+            <option key={m} value={m}>
+              {tInspector(`matchModes.${m}`)}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <label className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          checked={caseSensitive}
+          onChange={(e) => update('caseSensitive', e.target.checked)}
+          className="mt-0.5 h-3.5 w-3.5 accent-[var(--color-mushu-amber)]"
+        />
+        <span className="flex flex-col gap-0.5">
+          <span className="text-xs text-[var(--color-mushu-ink)]">{tFields('caseSensitive')}</span>
+          <span className="text-[10px] text-[var(--color-mushu-faint)]">
+            {tInspector('caseSensitiveHint')}
+          </span>
+        </span>
+      </label>
+    </>
   );
 }
 

@@ -11,6 +11,7 @@ import {
 } from '@/actions/user';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmAlertDialog } from '@/components/ui/confirm-alert-dialog';
 
 interface SessionsListProps {
   sessions: SessionRow[];
@@ -30,13 +31,14 @@ export function SessionsList({ sessions }: SessionsListProps) {
     });
   }
 
-  function onRevokeAllOthers() {
-    if (!confirm(t('revokeAllOthersConfirm'))) return;
-    startTransition(async () => {
-      const r = await revokeAllOtherSessions();
-      if (r.ok) toast.success(t('othersRevoked'));
-      else toast.error(t('couldNotRevoke', { error: r.error }));
-    });
+  async function onRevokeAllOthers() {
+    const r = await revokeAllOtherSessions();
+    if (r.ok) {
+      toast.success(t('othersRevoked'));
+    } else {
+      toast.error(t('couldNotRevoke', { error: r.error }));
+      throw new Error(r.error);
+    }
   }
 
   const hasOthers = sessions.some((s) => !s.isCurrent);
@@ -45,15 +47,20 @@ export function SessionsList({ sessions }: SessionsListProps) {
     <div className="flex flex-col gap-4">
       {hasOthers ? (
         <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={pending}
-            onClick={onRevokeAllOthers}
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            {t('revokeAllOthers')}
-          </Button>
+          <ConfirmAlertDialog
+            trigger={
+              <Button variant="outline" size="sm" disabled={pending}>
+                <LogOut className="h-3.5 w-3.5" />
+                {t('revokeAllOthers')}
+              </Button>
+            }
+            title={t('revokeAllOthersTitle')}
+            description={t('revokeAllOthersConfirm')}
+            confirmLabel={t('revokeAllOthers')}
+            pendingLabel={t('revoking')}
+            cancelLabel={t('cancel')}
+            onConfirm={onRevokeAllOthers}
+          />
         </div>
       ) : null}
 

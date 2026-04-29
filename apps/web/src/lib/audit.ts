@@ -27,6 +27,10 @@ export const AUDIT_ACTIONS = {
   IG_CONNECT: 'ig.connect',
   IG_DISCONNECT: 'ig.disconnect',
 
+  // Threads integration
+  THREADS_CONNECT: 'threads.connect',
+  THREADS_DISCONNECT: 'threads.disconnect',
+
   // Member management
   MEMBER_ROLE_CHANGE: 'member.role_change',
   MEMBER_REMOVE: 'member.remove',

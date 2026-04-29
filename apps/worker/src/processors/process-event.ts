@@ -279,16 +279,18 @@ export async function processEvent({ incomingEventId }: ProcessEventArgs): Promi
   await markProcessed(incomingEventId, null);
 }
 
-interface MatchContext {
+export interface MatchContext {
   kind: 'comment' | 'dm' | 'story_reply' | 'story_mention';
   text: string;
+  /** Provider-scoped id of whoever sent the event. IGSID for IG, Threads
+   *  user id for Threads. The field name is kept for historical reasons. */
   actorIgsid: string;
   actorUsername: string | null;
   postId: string | null;
   sourceId: string;
 }
 
-function extractMatchContext(
+export function extractMatchContext(
   type: string,
   payload: Record<string, unknown>,
 ): MatchContext | null {
@@ -305,6 +307,26 @@ function extractMatchContext(
       actorIgsid: from.id,
       actorUsername: from.username ?? null,
       postId: media.id,
+      sourceId: String(value.id),
+    };
+  }
+  // Threads replies and mentions share the IG comment shape (entry.changes[].value)
+  // with one twist: media may be absent on top-level mentions, in which case we
+  // fall back to the change value's own id as a stand-in postId so post-level
+  // trigger filtering still works for genuine replies.
+  if (type === 'threads_reply' || type === 'threads_mention') {
+    const change = (payload as { change?: { value?: Record<string, unknown> } }).change;
+    const value = change?.value;
+    if (!value) return null;
+    const from = value.from as { id?: string; username?: string } | undefined;
+    const media = value.media as { id?: string } | undefined;
+    if (!from?.id || !value.id) return null;
+    return {
+      kind: 'comment',
+      text: typeof value.text === 'string' ? value.text : '',
+      actorIgsid: from.id,
+      actorUsername: from.username ?? null,
+      postId: media?.id ?? null,
       sourceId: String(value.id),
     };
   }

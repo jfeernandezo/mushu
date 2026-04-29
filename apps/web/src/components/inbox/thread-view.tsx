@@ -1,6 +1,6 @@
 'use client';
 
-import { Lock, Send, StickyNote } from 'lucide-react';
+import { ArrowLeft, Info, Lock, Send, StickyNote } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import {
   type FormEvent,
@@ -20,11 +20,22 @@ interface ThreadViewProps {
   myUserId: string | null;
   /** Called after a successful manual send so the parent can re-fetch. */
   onSent: () => void;
+  /** Mobile-only: clear selection and go back to the list. Hidden on md+. */
+  onBack?: () => void;
+  /** md-only: open the details drawer. Hidden on lg+ where the panel is inline. */
+  onShowDetails?: () => void;
 }
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
-export function ThreadView({ thread, loading, myUserId, onSent }: ThreadViewProps) {
+export function ThreadView({
+  thread,
+  loading,
+  myUserId,
+  onSent,
+  onBack,
+  onShowDetails,
+}: ThreadViewProps) {
   const t = useTranslations('inbox.thread');
   const formatter = useFormatter();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -83,16 +94,58 @@ export function ThreadView({ thread, loading, myUserId, onSent }: ThreadViewProp
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex items-center justify-between border-b border-[var(--color-mushu-border)] px-4 py-3">
-        <div className="flex flex-col">
-          <span className="text-sm font-medium text-[var(--color-mushu-ink)]">
-            {thread.contact.name || thread.contact.username || t('unknownContact')}
-          </span>
-          <span className="text-[11px] text-[var(--color-mushu-faint)]">
-            @{thread.igAccount.username} · #{thread.conversation.displayId}
-          </span>
+      <header className="flex items-center justify-between gap-2 border-b border-[var(--color-mushu-border)] px-3 py-3 md:px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          {onBack ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="md:hidden"
+              onClick={onBack}
+              aria-label={t('backToList')}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          ) : null}
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium text-[var(--color-mushu-ink)]">
+              {thread.contact.name || thread.contact.username || t('unknownContact')}
+            </span>
+            <span className="flex items-center gap-1.5 truncate text-[11px] text-[var(--color-mushu-faint)]">
+              <span
+                className={cn(
+                  'rounded-sm px-1 py-px text-[8px] font-semibold uppercase tracking-wider',
+                  thread.igAccount.channel === 'threads'
+                    ? 'bg-[var(--color-mushu-ink)]/10 text-[var(--color-mushu-ink)]'
+                    : 'bg-[var(--color-mushu-scarlet)]/10 text-[var(--color-mushu-scarlet)]',
+                )}
+              >
+                {thread.igAccount.channel === 'threads' ? 'TH' : 'IG'}
+              </span>
+              <span className="truncate">@{thread.igAccount.username}</span>
+              <span>·</span>
+              <span>#{thread.conversation.displayId}</span>
+            </span>
+          </div>
         </div>
-        <WindowIndicator remainingMs={remainingWindowMs} />
+        <div className="flex shrink-0 items-center gap-2">
+          {thread.igAccount.channel === 'threads' ? null : (
+            <WindowIndicator remainingMs={remainingWindowMs} />
+          )}
+          {onShowDetails ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={onShowDetails}
+              aria-label={t('openDetails')}
+            >
+              <Info className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
@@ -115,7 +168,14 @@ export function ThreadView({ thread, loading, myUserId, onSent }: ThreadViewProp
         onSubmit={onSubmit}
         className="flex flex-col gap-2 border-t border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] p-3"
       >
-        {!isWindowOpen && !isPrivate ? (
+        {thread.sendBlockedReason === 'dm_unsupported_for_channel' && !isPrivate ? (
+          <p className="rounded-md border border-[var(--color-mushu-mute)]/30 bg-[var(--color-mushu-mute)]/10 px-2 py-1 text-[11px] text-[var(--color-mushu-mute)]">
+            {t('threadsNoDm')}
+          </p>
+        ) : null}
+        {thread.sendBlockedReason !== 'dm_unsupported_for_channel' &&
+        !isWindowOpen &&
+        !isPrivate ? (
           <p className="rounded-md border border-[var(--color-mushu-amber)]/30 bg-[var(--color-mushu-amber)]/10 px-2 py-1 text-[11px] text-[var(--color-mushu-amber)]">
             {t('windowClosed')}
           </p>
@@ -130,7 +190,10 @@ export function ThreadView({ thread, loading, myUserId, onSent }: ThreadViewProp
           onChange={(e) => setText(e.target.value)}
           rows={3}
           disabled={
-            sending || thread.sendBlockedReason === 'no_permission' || (!isWindowOpen && !isPrivate)
+            sending ||
+            thread.sendBlockedReason === 'no_permission' ||
+            (thread.sendBlockedReason === 'dm_unsupported_for_channel' && !isPrivate) ||
+            (!isWindowOpen && !isPrivate && thread.igAccount.channel !== 'threads')
           }
           placeholder={isPrivate ? t('privatePlaceholder') : t('publicPlaceholder')}
           className={cn(
@@ -162,7 +225,8 @@ export function ThreadView({ thread, loading, myUserId, onSent }: ThreadViewProp
               sending ||
               !text.trim() ||
               thread.sendBlockedReason === 'no_permission' ||
-              (!isWindowOpen && !isPrivate)
+              (thread.sendBlockedReason === 'dm_unsupported_for_channel' && !isPrivate) ||
+              (!isWindowOpen && !isPrivate && thread.igAccount.channel !== 'threads')
             }
           >
             <Send className="h-3.5 w-3.5" />

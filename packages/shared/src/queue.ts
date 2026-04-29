@@ -35,4 +35,5 @@ export interface SendMessageJob {
  */
 export type MaintenanceJob =
   | { kind: 'sweep_incoming_events' }
-  | { kind: 'sweep_email_delivery' };
+  | { kind: 'sweep_email_delivery' }
+  | { kind: 'refresh_meta_tokens' };

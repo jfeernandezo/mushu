@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { cancelInvitation, type PendingInvitation } from '@/actions/members';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmAlertDialog } from '@/components/ui/confirm-alert-dialog';
 
 interface InvitationsListProps {
   invitations: PendingInvitation[];
@@ -18,14 +19,16 @@ export function InvitationsList({ invitations, canCancel }: InvitationsListProps
   const formatter = useFormatter();
   const [pending, setPending] = useState<string | null>(null);
 
-  async function onCancel(id: string, email: string) {
-    if (pending) return;
-    if (!confirm(t('cancelInvitationConfirm', { email }))) return;
+  async function onCancel(id: string) {
     setPending(id);
     try {
       const r = await cancelInvitation(id);
-      if (r.ok) toast.success(t('invitationCancelled'));
-      else toast.error(t('cancelFailed', { error: r.error }));
+      if (r.ok) {
+        toast.success(t('invitationCancelled'));
+      } else {
+        toast.error(t('cancelFailed', { error: r.error }));
+        throw new Error(r.error);
+      }
     } finally {
       setPending(null);
     }
@@ -53,15 +56,24 @@ export function InvitationsList({ invitations, canCancel }: InvitationsListProps
             </Badge>
           ) : null}
           {canCancel ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={pending === inv.id}
-              onClick={() => onCancel(inv.id, inv.email)}
-              aria-label={t('cancelInvitation')}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
+            <ConfirmAlertDialog
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={pending === inv.id}
+                  aria-label={t('cancelInvitationAriaLabel', { email: inv.email })}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              }
+              title={t('cancelInvitationTitle')}
+              description={t('cancelInvitationConfirm', { email: inv.email })}
+              confirmLabel={t('cancelInvitation')}
+              pendingLabel={t('cancelling')}
+              cancelLabel={t('keepInvitation')}
+              onConfirm={() => onCancel(inv.id)}
+            />
           ) : null}
         </li>
       ))}

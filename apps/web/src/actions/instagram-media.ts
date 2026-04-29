@@ -2,7 +2,7 @@
 
 import { instagramAccount, withOrgTx } from '@mushu/db';
 import { createLogger } from '@mushu/shared/logger';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
@@ -50,6 +50,9 @@ export async function listInstagramMedia(limit = 25): Promise<ListMediaResult> {
   const orgId = session.session.activeOrganizationId;
   if (!orgId) return { account: null, media: [], error: 'no_account' };
 
+  // The post selector currently fetches IG media only — Threads doesn't have
+  // a comparable list-media surface in our flow builder yet, and Threads
+  // accounts can still create flows with no specific post filter.
   const [acc] = await withOrgTx(orgId, (tx) =>
     tx
       .select({
@@ -60,7 +63,12 @@ export async function listInstagramMedia(limit = 25): Promise<ListMediaResult> {
         authTag: instagramAccount.accessTokenAuthTag,
       })
       .from(instagramAccount)
-      .where(eq(instagramAccount.organizationId, orgId))
+      .where(
+        and(
+          eq(instagramAccount.organizationId, orgId),
+          eq(instagramAccount.channel, 'instagram'),
+        ),
+      )
       .limit(1),
   );
 

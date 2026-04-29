@@ -64,6 +64,13 @@
       "when": 1778457600000,
       "tag": "0008_user_additional_attributes",
       "breakpoints": false
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778544000000,
+      "tag": "0009_threads_channel",
+      "breakpoints": false
     }
   ]
 }

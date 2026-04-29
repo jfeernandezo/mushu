@@ -33,6 +33,8 @@ export type ConversationStatus = 'open' | 'pending' | 'resolved' | 'snoozed';
 export type SenderType = 'contact' | 'user' | 'automation' | 'system';
 export type MessageType = 'incoming' | 'outgoing' | 'activity';
 
+export type ChannelKind = 'instagram' | 'threads';
+
 export interface InboxConversationRow {
   id: string;
   displayId: number;
@@ -43,6 +45,9 @@ export interface InboxConversationRow {
   contactProfilePicUrl: string | null;
   igAccountId: string;
   igAccountUsername: string;
+  /** Provider this conversation belongs to. UI uses it to render the channel
+   *  badge and to decide whether the DM compose box is enabled. */
+  channel: ChannelKind;
   assigneeUserId: string | null;
   assigneeName: string | null;
   lastActivityAt: Date;
@@ -91,6 +96,7 @@ export interface InboxThreadDetails {
   igAccount: {
     id: string;
     username: string;
+    channel: ChannelKind;
   };
   messages: InboxThreadMessage[];
   /** True if the conversation can accept an outbound DM right now (24h window open AND not paused for our own pause-on-human flow). */
@@ -100,7 +106,8 @@ export interface InboxThreadDetails {
     | null
     | 'window_expired'
     | 'paused_for_automation'
-    | 'no_permission';
+    | 'no_permission'
+    | 'dm_unsupported_for_channel';
 }
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
@@ -190,6 +197,7 @@ export async function listInboxConversations(
           contactUsername: contactInbox.igUsername,
           igAccountId: conversation.instagramAccountId,
           igAccountUsername: instagramAccount.igUsername,
+          channel: instagramAccount.channel,
           assigneeUserId: conversation.assigneeUserId,
           assigneeName: userTable.name,
           lastActivityAt: conversation.lastActivityAt,
@@ -252,6 +260,7 @@ export async function listInboxConversations(
           contactProfilePicUrl: r.contactProfilePicUrl,
           igAccountId: r.igAccountId,
           igAccountUsername: r.igAccountUsername,
+          channel: r.channel as ChannelKind,
           assigneeUserId: r.assigneeUserId,
           assigneeName: r.assigneeName,
           lastActivityAt: r.lastActivityAt,
@@ -374,12 +383,20 @@ export async function getInboxThread(
     const pausedForAutomation =
       convRow.conv.automationPausedUntil &&
       convRow.conv.automationPausedUntil.getTime() > now;
+    const isThreads = convRow.igAccount.channel === 'threads';
 
     let canSendNow = canReply;
     let sendBlockedReason: InboxThreadDetails['sendBlockedReason'] = null;
     if (!canReply) {
       canSendNow = false;
       sendBlockedReason = 'no_permission';
+    } else if (isThreads) {
+      // Threads has no DM API — manual replies on Threads conversations
+      // happen via the public reply path (handled elsewhere when the
+      // conversation was opened by a webhook reply). The compose box stays
+      // disabled in the UI to avoid sending a message that would fail.
+      canSendNow = false;
+      sendBlockedReason = 'dm_unsupported_for_channel';
     } else if (!inWindow) {
       canSendNow = false;
       sendBlockedReason = 'window_expired';
@@ -415,6 +432,7 @@ export async function getInboxThread(
         igAccount: {
           id: convRow.igAccount.id,
           username: convRow.igAccount.igUsername,
+          channel: (convRow.igAccount.channel as ChannelKind) ?? 'instagram',
         },
         messages: messages.map<InboxThreadMessage>((m) => ({
           id: m.id,

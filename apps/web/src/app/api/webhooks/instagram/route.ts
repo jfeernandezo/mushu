@@ -97,7 +97,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // TODO: enqueue process-event jobs in BullMQ once worker is wired.
   return NextResponse.json({ ok: true });
 }
 

@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/nextjs';
+
 /**
  * Next.js instrumentation hook — runs once when the server process boots,
  * before any request is handled. Use to validate required configuration so
@@ -6,7 +8,22 @@
  *
  * https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
+
+// Per-request error reporter — Next.js calls this for every uncaught error
+// raised in a route handler / server action / RSC. When SENTRY_DSN is unset,
+// Sentry.captureRequestError no-ops cleanly.
+export const onRequestError = Sentry.captureRequestError;
+
 export async function register() {
+  // Sentry init for the appropriate runtime (Next.js convention with
+  // instrumentation.ts). Each config file checks SENTRY_DSN and no-ops when
+  // unset, so dev/CI runs incur zero cost.
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./sentry.server.config');
+  } else if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./sentry.edge.config');
+  }
+
   // Only validate on the Node.js runtime — Edge runtime instances run a
   // different bundle and cannot reach Stripe anyway.
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;

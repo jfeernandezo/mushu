@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { Queue, QueueEvents, Worker, type WorkerOptions } from 'bullmq';
 import IORedis from 'ioredis';
 import { createLogger } from '@mushu/shared/logger';
@@ -48,6 +49,16 @@ export function createWorker<T>(
       { queue: queueName, job_id: job?.id, attempts: job?.attemptsMade, err },
       'job failed',
     );
+    // Send to Sentry on the FINAL failure (BullMQ retries up to attempts) so
+    // we don't drown the inbox in transient errors that the retry loop will
+    // swallow. `attemptsMade` is post-increment — equal to attempts when
+    // there are no more retries.
+    if (process.env.SENTRY_DSN && job && job.attemptsMade >= (job.opts.attempts ?? 1)) {
+      Sentry.captureException(err, {
+        tags: { queue: queueName, job_name: job.name },
+        extra: { job_id: job.id, attempts: job.attemptsMade, data: job.data },
+      });
+    }
   });
 
   return worker;

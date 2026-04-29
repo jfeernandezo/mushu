@@ -5,6 +5,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { auth, ensureUserOrg } from '@/lib/auth';
 import { encryptToken } from '@/lib/crypto';
+import { subscribeInstagramWebhook } from '@/lib/meta-subscriptions';
 
 const logger = createLogger('web.oauth.instagram');
 
@@ -138,6 +139,18 @@ export async function GET(req: NextRequest) {
     .where(eq(instagramAccount.igUserId, igUserId))
     .limit(1);
 
+  // Subscribe webhook BEFORE persisting so we can stamp webhookSubscribed
+  // accurately on the new/updated row. A failed subscribe is non-fatal —
+  // the user can retry from the workspace settings page (subscription is
+  // idempotent on Meta's side).
+  const subscribed = await subscribeInstagramWebhook({
+    externalUserId: igUserId,
+    accessToken: long.access_token,
+  });
+  if (!subscribed) {
+    logger.warn({ ig_user_id: igUserId }, 'webhook subscribe failed — user can retry');
+  }
+
   if (existing[0]) {
     await db
       .update(instagramAccount)
@@ -148,6 +161,7 @@ export async function GET(req: NextRequest) {
         accessTokenIv: encrypted.iv,
         accessTokenAuthTag: encrypted.authTag,
         expiresAt,
+        webhookSubscribed: subscribed,
         updatedAt: new Date(),
       })
       .where(eq(instagramAccount.id, existing[0].id));
@@ -161,6 +175,7 @@ export async function GET(req: NextRequest) {
       accessTokenIv: encrypted.iv,
       accessTokenAuthTag: encrypted.authTag,
       expiresAt,
+      webhookSubscribed: subscribed,
     });
   }
 
@@ -186,6 +201,5 @@ export async function GET(req: NextRequest) {
     userAgent: req.headers.get('user-agent'),
   });
 
-  // TODO: subscribe to webhooks via Graph API once webhook URL is public.
   return NextResponse.redirect(appUrl('/dashboard?ig_connected=1'));
 }

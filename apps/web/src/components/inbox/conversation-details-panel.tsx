@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface ConversationDetailsPanelProps {
   thread: InboxThreadDetails | null;
@@ -132,6 +133,7 @@ export function ConversationDetailsPanel({
                 variant="outline"
                 disabled={busy}
                 onClick={() => update({ assigneeUserId: null })}
+                aria-label={t('unassignMeAriaLabel')}
               >
                 {t('unassignMe')}
               </Button>
@@ -141,8 +143,9 @@ export function ConversationDetailsPanel({
                 variant="outline"
                 disabled={busy}
                 onClick={() => update({ assigneeUserId: capabilities.myUserId })}
+                aria-label={t('assignToMeAriaLabel')}
               >
-                <UserPlus className="h-3.5 w-3.5" />
+                <UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
                 {t('assignToMe')}
               </Button>
             )
@@ -177,31 +180,40 @@ export function ConversationDetailsPanel({
             <span className="text-[10px] uppercase tracking-wider text-[var(--color-mushu-faint)]">
               {t('snooze')}
             </span>
-            <div className="flex flex-wrap gap-1.5">
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={busy}
-                onClick={() => update({ snoozeHours: 1 })}
-              >
-                1h
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={busy}
-                onClick={() => update({ snoozeHours: 24 })}
-              >
-                1d
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={busy}
-                onClick={() => update({ snoozeHours: 72 })}
-              >
-                3d
-              </Button>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('snooze')}>
+              <Tooltip content={t('snoozeForAriaLabel', { duration: t('snooze1hLabel') })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => update({ snoozeHours: 1 })}
+                  aria-label={t('snoozeForAriaLabel', { duration: '1h' })}
+                >
+                  1h
+                </Button>
+              </Tooltip>
+              <Tooltip content={t('snoozeForAriaLabel', { duration: t('snooze1dLabel') })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => update({ snoozeHours: 24 })}
+                  aria-label={t('snoozeForAriaLabel', { duration: '1d' })}
+                >
+                  1d
+                </Button>
+              </Tooltip>
+              <Tooltip content={t('snoozeForAriaLabel', { duration: t('snooze3dLabel') })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => update({ snoozeHours: 72 })}
+                  aria-label={t('snoozeForAriaLabel', { duration: '3d' })}
+                >
+                  3d
+                </Button>
+              </Tooltip>
             </div>
           </div>
         ) : null}

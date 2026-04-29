@@ -62,6 +62,10 @@ interface FlowCanvasProps {
   onAddNode: (node: Node) => void;
   onSelect: (node: Node | null) => void;
   selectedId: string | null;
+  /** Set of node ids that have a publish-blocking issue. The matching nodes
+   *  get an amber pulse (`.mushu-node-issue` in globals.css) so the user can
+   *  spot them on the canvas without scrolling the issues popover. */
+  issueNodeIds?: Set<string>;
 }
 
 export function FlowCanvasShell(props: FlowCanvasProps) {
@@ -81,6 +85,7 @@ function FlowCanvas({
   onAddNode,
   onSelect,
   selectedId,
+  issueNodeIds,
 }: FlowCanvasProps) {
   const reactFlow = useReactFlow();
   const { resolved } = useTheme();
@@ -115,7 +120,11 @@ function FlowCanvas({
       onDrop={onDrop}
     >
       <ReactFlow
-        nodes={nodes.map((n) => ({ ...n, selected: n.id === selectedId }))}
+        nodes={nodes.map((n) => ({
+          ...n,
+          selected: n.id === selectedId,
+          className: issueNodeIds?.has(n.id) ? 'mushu-node-issue' : undefined,
+        }))}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

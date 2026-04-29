@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./flow": "./src/flow/index.ts",
     "./instagram": "./src/instagram/index.ts",
+    "./threads": "./src/threads/index.ts",
     "./crypto": "./src/crypto.ts",
     "./queue": "./src/queue.ts",
     "./logger": "./src/logger.ts"

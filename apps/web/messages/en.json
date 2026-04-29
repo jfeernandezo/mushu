@@ -386,6 +386,7 @@
       "progress": "{done} of {total} done",
       "dismissAria": "Close",
       "dismissForever": "Don't show again",
+      "continue": "Continue",
       "items": {
         "verifyEmail": {
           "label": "Verify your email",
@@ -393,15 +394,18 @@
         },
         "connectIg": {
           "label": "Connect your Instagram account",
-          "why": "Mushu needs access to your Business account to read comments/DMs and reply on your behalf."
+          "why": "Mushu needs access to your Business account to read comments/DMs and reply on your behalf.",
+          "cta": "Connect"
         },
         "createFlow": {
           "label": "Create your first flow",
-          "why": "Use a template (welcome, comment-to-DM…) or start from scratch. Nothing fires without a flow."
+          "why": "Use a template (welcome, comment-to-DM…) or start from scratch. Nothing fires without a flow.",
+          "cta": "Create flow"
         },
         "publishFlow": {
           "label": "Publish the flow",
-          "why": "Drafts don't respond. Click \"Publish\" to make the flow live."
+          "why": "Drafts don't respond. Click \"Publish\" to make the flow live.",
+          "cta": "Publish"
         },
         "receiveEvent": {
           "label": "Receive your first real event",
@@ -504,11 +508,23 @@
     "live": "Live",
     "draft": "Draft",
     "publishFailed": "Publish failed: {error}",
+    "undo": "Undo",
+    "undoTooltip": "Undo (Ctrl+Z)",
+    "redo": "Redo",
+    "redoTooltip": "Redo (Ctrl+Shift+Z)",
     "save": {
       "saving": "Saving…",
       "saved": "All changes saved",
       "error": "Save failed",
       "draft": "Draft"
+    },
+    "issues": {
+      "ready": "Ready to publish",
+      "readyAriaLabel": "Flow is valid and ready to publish",
+      "issuesCount": "{count, plural, one {# issue} other {# issues}}",
+      "issuesAriaLabel": "{count} issue(s) blocking publish. Click to see details.",
+      "listTitle": "Fix before publishing",
+      "jumpToNode": "Open the block with the issue"
     },
     "palette": {
       "title": "Available steps",
@@ -524,6 +540,8 @@
       "fields": {
         "instagramPostId": "Which post triggers this",
         "keywordsCommaSeparated": "Keywords",
+        "matchMode": "Match mode",
+        "caseSensitive": "Case sensitive",
         "messageText": "Message text",
         "durationSeconds": "Duration (seconds)",
         "questionText": "Question",
@@ -535,6 +553,26 @@
         "tagOperation": "Action",
         "quickReplies": "Quick reply buttons"
       },
+      "sections": {
+        "question": "Question",
+        "answer": "Answer",
+        "validation": "Validation"
+      },
+      "matchModes": {
+        "contains": "Contains the keyword",
+        "exact": "Equal to the keyword",
+        "starts_with": "Starts with the keyword",
+        "any": "Any message"
+      },
+      "matchModeHint": {
+        "contains": "Fires if the keyword appears anywhere in the text.",
+        "exact": "Fires only if the entire text is exactly the keyword (after trimming spaces).",
+        "starts_with": "Fires when the text starts with the keyword.",
+        "any": "Fires on any message, ignoring keywords."
+      },
+      "caseSensitiveHint": "By default, 'PROMO', 'promo' and 'Promo' are treated as the same. Check to require an exact case match.",
+      "fallbackHint": "Message the bot sends when the answer doesn't match the chosen type (e.g. asked for email but got plain text).",
+      "maxAttemptsHint": "How many times the bot retries asking for a valid answer before giving up and cancelling the flow.",
       "placeholders": {
         "messageText": "Hey! Here's the link…",
         "delaySeconds": "30",
@@ -715,6 +753,13 @@
     "subtitle": "Real-time conversations. Assign, reply manually, or let automation drive.",
     "noPermission": "You don't have permission to view the inbox. Ask your workspace admin.",
     "selectConversation": "Pick a conversation to see the thread.",
+    "selectConversationTitle": "No conversation selected",
+    "selectConversationBody": "Pick a conversation from the list to see the thread, reply, or leave an internal note.",
+    "noAccountTitle": "Connect your first account",
+    "noAccountBody": "Connect your Instagram or Threads account to start receiving conversations here automatically.",
+    "noAccountConnect": "Connect account",
+    "detailsTitle": "Conversation details",
+    "closeDetails": "Close details",
     "filters": {
       "status": "Status",
       "assignee": "Assignee",
@@ -735,6 +780,11 @@
     },
     "list": {
       "empty": "No conversations match this filter.",
+      "emptyTitle": "No conversations yet",
+      "emptyBody": "When someone comments on a post or sends a DM, the conversation shows up here automatically.",
+      "emptyFilteredTitle": "Nothing matches these filters",
+      "emptyFilteredBody": "Try clearing the filters or adjusting the criteria to see more conversations.",
+      "clearFilters": "Clear filters",
       "unknownContact": "Unnamed contact",
       "humanTookOver": "human"
     },
@@ -745,6 +795,7 @@
       "windowOpen": "{hours}h{minutes}m window left",
       "windowExpired": "24h window closed",
       "windowClosed": "Instagram's 24h window has closed. You can't send a DM until the contact replies. Internal notes still work.",
+      "threadsNoDm": "Threads DMs aren't available through Meta's API yet. Use public reply on comments or internal notes.",
       "noReplyPermission": "You don't have permission to reply. Ask your workspace admin.",
       "publicPlaceholder": "Type your reply…",
       "privatePlaceholder": "Internal note (only visible to the team)…",
@@ -759,7 +810,9 @@
       "you": "You",
       "teammate": "Team",
       "queuedStatus": "sending…",
-      "failedStatus": "failed"
+      "failedStatus": "failed",
+      "backToList": "Back to the list",
+      "openDetails": "Open conversation details"
     },
     "details": {
       "loading": "Loading…",
@@ -767,10 +820,16 @@
       "unknownContact": "Unnamed contact",
       "actions": "Actions",
       "assignToMe": "Take this",
+      "assignToMeAriaLabel": "Assign this conversation to me",
       "unassignMe": "Release",
+      "unassignMeAriaLabel": "Unassign this conversation from me",
       "reopen": "Reopen",
       "resolve": "Resolve",
       "snooze": "Snooze",
+      "snoozeForAriaLabel": "Snooze this conversation for {duration}",
+      "snooze1hLabel": "1 hour",
+      "snooze1dLabel": "1 day",
+      "snooze3dLabel": "3 days",
       "tags": "Tags",
       "noTags": "No tags yet.",
       "addTagPlaceholder": "new-tag",
@@ -838,8 +897,12 @@
       "pendingCard": "{count, plural, =1 {1 pending invitation} other {# pending invitations}}",
       "youBadge": "You",
       "joined": "Joined on {date}",
-      "remove": "Remove member",
-      "removeConfirm": "Are you sure you want to remove {name} from this workspace?",
+      "remove": "Remove",
+      "removeAriaLabel": "Remove member {name}",
+      "removeTitle": "Remove {name} from the workspace?",
+      "removeConfirm": "{name} loses access to this workspace immediately. Content created by this person stays.",
+      "removing": "Removing…",
+      "cancel": "Cancel",
       "removed": "Member removed.",
       "removeFailed": "Could not remove: {error}",
       "roleChanged": "Role updated.",
@@ -847,7 +910,11 @@
       "smtpRequired": "Configure SMTP in .env to enable inviting new members.",
       "expiresAt": "Expires on {date}",
       "cancelInvitation": "Cancel invitation",
-      "cancelInvitationConfirm": "Cancel invitation sent to {email}?",
+      "cancelInvitationAriaLabel": "Cancel invitation sent to {email}",
+      "cancelInvitationTitle": "Cancel this invitation?",
+      "cancelInvitationConfirm": "The invitation sent to {email} will no longer be valid. You can resend any time.",
+      "cancelling": "Cancelling…",
+      "keepInvitation": "Keep invitation",
       "invitationCancelled": "Invitation cancelled.",
       "cancelFailed": "Could not cancel: {error}",
       "roleLabel": {
@@ -930,7 +997,10 @@
       "thisSession": "This session",
       "revoke": "Revoke",
       "revokeAllOthers": "Revoke all others",
-      "revokeAllOthersConfirm": "Sign out of all other sessions?",
+      "revokeAllOthersTitle": "Sign out of all other devices?",
+      "revokeAllOthersConfirm": "You'll be signed out of every other browser and device. The current session stays active.",
+      "revoking": "Revoking…",
+      "cancel": "Cancel",
       "revoked": "Session revoked",
       "couldNotRevoke": "Could not revoke: {error}",
       "othersRevoked": "Other sessions signed out",
@@ -946,12 +1016,22 @@
       "title": "Workspace",
       "subtitle": "Instagram accounts and integrations for this organization.",
       "card": "Instagram accounts",
-      "empty": "No Instagram accounts connected yet.",
+      "emptyTitle": "No accounts connected",
+      "empty": "Connect an Instagram or Threads account below to start receiving conversations and triggering flows.",
       "active": "Active",
       "webhookPending": "Connecting to Instagram…",
       "expiresOn": "Expires {date}",
       "neverExpires": "—",
-      "connect": "Connect Instagram account"
+      "connect": "Connect Instagram account",
+      "connectThreads": "Connect Threads account",
+      "disconnect": "Disconnect",
+      "disconnecting": "Disconnecting…",
+      "disconnectCancel": "Cancel",
+      "disconnectTitle": "Disconnect {label} account?",
+      "disconnectAriaLabel": "Disconnect {label} account @{username}",
+      "disconnectConfirm": "Disconnect {label} account @{username}? Conversations, messages and flows tied to this account will be removed. This cannot be undone.",
+      "disconnected": "Account @{username} disconnected.",
+      "disconnectFailed": "Disconnect failed: {error}"
     },
     "preferences": {
       "title": "Preferences",

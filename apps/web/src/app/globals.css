@@ -71,3 +71,43 @@ html {
   background-color: var(--color-mushu-scarlet);
   color: #ffffff;
 }
+
+/* Shimmer sweep for <Skeleton> — sweep a translucent band left→right across
+   the placeholder. Reduced-motion users get a static placeholder instead. */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .before\:animate-\[shimmer_1\.6s_infinite\]::before {
+    animation: none;
+  }
+}
+
+/* Issue highlight for flow-builder nodes. Applied via className on the
+   ReactFlow node wrapper when the node has a publish-blocking issue. The
+   pulse calls attention without being so loud the user can't read the node.
+   Reduced-motion users get a steady amber outline instead. */
+@keyframes mushu-issue-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.35);
+  }
+}
+
+.mushu-node-issue {
+  border-radius: 8px;
+  outline: 2px solid var(--color-mushu-amber);
+  outline-offset: 2px;
+  animation: mushu-issue-pulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mushu-node-issue {
+    animation: none;
+  }
+}

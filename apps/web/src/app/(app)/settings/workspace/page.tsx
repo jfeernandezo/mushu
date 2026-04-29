@@ -1,12 +1,14 @@
 import { instagramAccount, withOrgTx } from '@mushu/db';
 import { eq } from 'drizzle-orm';
-import { Instagram } from 'lucide-react';
+import { AtSign, Instagram, Plug } from 'lucide-react';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { DisconnectAccountButton } from '@/components/settings/disconnect-account-button';
 import { auth } from '@/lib/auth';
 
 export default async function WorkspaceSettingsPage() {
@@ -23,6 +25,7 @@ export default async function WorkspaceSettingsPage() {
           .select({
             id: instagramAccount.id,
             igUsername: instagramAccount.igUsername,
+            channel: instagramAccount.channel,
             expiresAt: instagramAccount.expiresAt,
             webhookSubscribed: instagramAccount.webhookSubscribed,
           })
@@ -44,7 +47,12 @@ export default async function WorkspaceSettingsPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {accounts.length === 0 ? (
-            <p className="text-sm text-[var(--color-mushu-mute)]">{t('empty')}</p>
+            <EmptyState
+              size="compact"
+              icon={Plug}
+              title={t('emptyTitle')}
+              description={t('empty')}
+            />
           ) : (
             accounts.map((a) => (
               <div
@@ -52,8 +60,15 @@ export default async function WorkspaceSettingsPage() {
                 className="flex items-center justify-between rounded-md border border-[var(--color-mushu-border)] px-3 py-2"
               >
                 <div className="flex items-center gap-3">
-                  <Instagram className="h-4 w-4 text-[var(--color-mushu-amber)]" />
+                  {a.channel === 'threads' ? (
+                    <AtSign className="h-4 w-4 text-[var(--color-mushu-ink)]" />
+                  ) : (
+                    <Instagram className="h-4 w-4 text-[var(--color-mushu-amber)]" />
+                  )}
                   <span className="text-sm">@{a.igUsername}</span>
+                  <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                    {a.channel === 'threads' ? 'Threads' : 'Instagram'}
+                  </Badge>
                 </div>
                 <div className="flex items-center gap-2">
                   {a.webhookSubscribed ? (
@@ -68,16 +83,29 @@ export default async function WorkspaceSettingsPage() {
                         })
                       : t('neverExpires')}
                   </span>
+                  <DisconnectAccountButton
+                    accountId={a.id}
+                    username={a.igUsername}
+                    channel={a.channel as 'instagram' | 'threads'}
+                  />
                 </div>
               </div>
             ))
           )}
-          <Button asChild variant="default" className="w-fit">
-            <a href="/api/oauth/instagram/start">
-              <Instagram className="h-4 w-4" />
-              {t('connect')}
-            </a>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="default" className="w-fit">
+              <a href="/api/oauth/instagram/start">
+                <Instagram className="h-4 w-4" />
+                {t('connect')}
+              </a>
+            </Button>
+            <Button asChild variant="secondary" className="w-fit">
+              <a href="/api/oauth/threads/start">
+                <AtSign className="h-4 w-4" />
+                {t('connectThreads')}
+              </a>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

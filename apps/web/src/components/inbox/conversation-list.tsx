@@ -1,30 +1,57 @@
 'use client';
 
+import { Inbox, SearchX } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { InboxConversationRow } from '@/actions/inbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
 
 interface ConversationListProps {
   conversations: InboxConversationRow[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** True when at least one filter (status/account/assignee) narrows the
+   *  result. Drives the empty-state copy: filtered = "no match, clear filters",
+   *  unfiltered = "no conversations yet, here's what triggers them". */
+  hasActiveFilters?: boolean;
+  onClearFilters?: () => void;
 }
 
 export function ConversationList({
   conversations,
   selectedId,
   onSelect,
+  hasActiveFilters,
+  onClearFilters,
 }: ConversationListProps) {
   const t = useTranslations('inbox.list');
   const formatter = useFormatter();
 
   if (conversations.length === 0) {
+    if (hasActiveFilters) {
+      return (
+        <EmptyState
+          size="compact"
+          icon={SearchX}
+          title={t('emptyFilteredTitle')}
+          description={t('emptyFilteredBody')}
+          action={
+            onClearFilters
+              ? { label: t('clearFilters'), onClick: onClearFilters, variant: 'outline' }
+              : undefined
+          }
+        />
+      );
+    }
     return (
-      <div className="flex flex-1 items-center justify-center px-4 py-8 text-center text-xs text-[var(--color-mushu-faint)]">
-        {t('empty')}
-      </div>
+      <EmptyState
+        size="compact"
+        icon={Inbox}
+        title={t('emptyTitle')}
+        description={t('emptyBody')}
+      />
     );
   }
 
@@ -58,6 +85,7 @@ export function ConversationList({
                 </span>
               </div>
               <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[var(--color-mushu-faint)]">
+                <ChannelBadge channel={conv.channel} />
                 <span className="truncate">@{conv.igAccountUsername}</span>
                 <span>·</span>
                 <span>#{conv.displayId}</span>
@@ -92,6 +120,21 @@ export function ConversationList({
         </li>
       ))}
     </ul>
+  );
+}
+
+function ChannelBadge({ channel }: { channel: InboxConversationRow['channel'] }) {
+  return (
+    <span
+      className={cn(
+        'rounded-sm px-1 py-px text-[8px] font-semibold uppercase tracking-wider',
+        channel === 'threads'
+          ? 'bg-[var(--color-mushu-ink)]/10 text-[var(--color-mushu-ink)]'
+          : 'bg-[var(--color-mushu-scarlet)]/10 text-[var(--color-mushu-scarlet)]',
+      )}
+    >
+      {channel === 'threads' ? 'TH' : 'IG'}
+    </span>
   );
 }
 

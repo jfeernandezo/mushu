@@ -386,6 +386,7 @@
       "progress": "{done} de {total} concluídos",
       "dismissAria": "Fechar",
       "dismissForever": "Não mostrar mais",
+      "continue": "Continuar",
       "items": {
         "verifyEmail": {
           "label": "Confirmar e-mail",
@@ -393,15 +394,18 @@
         },
         "connectIg": {
           "label": "Conectar conta do Instagram",
-          "why": "Mushu precisa de acesso à sua conta Business pra ler comentários/DMs e responder em seu nome."
+          "why": "Mushu precisa de acesso à sua conta Business pra ler comentários/DMs e responder em seu nome.",
+          "cta": "Conectar"
         },
         "createFlow": {
           "label": "Criar seu primeiro fluxo",
-          "why": "Use um modelo (boas-vindas, comment-to-DM…) ou comece do zero. Sem fluxo, nada dispara."
+          "why": "Use um modelo (boas-vindas, comment-to-DM…) ou comece do zero. Sem fluxo, nada dispara.",
+          "cta": "Criar fluxo"
         },
         "publishFlow": {
           "label": "Publicar o fluxo",
-          "why": "Rascunhos não respondem. Clique em \"Publicar\" pra deixar o fluxo ativo."
+          "why": "Rascunhos não respondem. Clique em \"Publicar\" pra deixar o fluxo ativo.",
+          "cta": "Publicar"
         },
         "receiveEvent": {
           "label": "Receber o primeiro evento real",
@@ -504,11 +508,23 @@
     "live": "Ativo",
     "draft": "Rascunho",
     "publishFailed": "Falha ao publicar: {error}",
+    "undo": "Desfazer",
+    "undoTooltip": "Desfazer (Ctrl+Z)",
+    "redo": "Refazer",
+    "redoTooltip": "Refazer (Ctrl+Shift+Z)",
     "save": {
       "saving": "Salvando…",
       "saved": "Todas as alterações salvas",
       "error": "Falha ao salvar",
       "draft": "Rascunho"
+    },
+    "issues": {
+      "ready": "Pronto pra publicar",
+      "readyAriaLabel": "Fluxo válido, pronto pra publicar",
+      "issuesCount": "{count, plural, one {# problema} other {# problemas}}",
+      "issuesAriaLabel": "{count} problema(s) impedindo a publicação. Clique para ver detalhes.",
+      "listTitle": "Resolva antes de publicar",
+      "jumpToNode": "Abrir bloco com problema"
     },
     "palette": {
       "title": "Etapas disponíveis",
@@ -524,6 +540,8 @@
       "fields": {
         "instagramPostId": "Publicação que dispara",
         "keywordsCommaSeparated": "Palavras-chave",
+        "matchMode": "Como casar",
+        "caseSensitive": "Diferenciar maiúsculas de minúsculas",
         "messageText": "Texto da mensagem",
         "durationSeconds": "Duração (segundos)",
         "questionText": "Pergunta",
@@ -535,6 +553,26 @@
         "tagOperation": "Ação",
         "quickReplies": "Botões de resposta rápida"
       },
+      "sections": {
+        "question": "Pergunta",
+        "answer": "Resposta",
+        "validation": "Validação"
+      },
+      "matchModes": {
+        "contains": "Contém a palavra",
+        "exact": "Igual à palavra",
+        "starts_with": "Começa com a palavra",
+        "any": "Qualquer mensagem"
+      },
+      "matchModeHint": {
+        "contains": "Dispara se a palavra-chave aparecer em qualquer lugar do texto.",
+        "exact": "Dispara só se o texto inteiro for exatamente a palavra-chave (após remover espaços).",
+        "starts_with": "Dispara quando o texto começa com a palavra-chave.",
+        "any": "Dispara em qualquer mensagem, ignorando as palavras-chave."
+      },
+      "caseSensitiveHint": "Por padrão, 'PROMO', 'promo' e 'Promo' são considerados iguais. Marque pra exigir o caso exato.",
+      "fallbackHint": "Mensagem que o bot manda quando a resposta não bate com o tipo escolhido (ex: pediu e-mail mas veio texto).",
+      "maxAttemptsHint": "Quantas vezes o bot tenta pedir uma resposta válida antes de desistir e cancelar o fluxo.",
       "placeholders": {
         "messageText": "Olá! Aqui está o link…",
         "delaySeconds": "30",
@@ -715,6 +753,13 @@
     "subtitle": "Conversas em tempo real. Atribua, responda manualmente ou deixe a automação seguir.",
     "noPermission": "Você não tem permissão para ver o inbox. Peça ao admin do workspace.",
     "selectConversation": "Selecione uma conversa pra ver o histórico.",
+    "selectConversationTitle": "Nenhuma conversa selecionada",
+    "selectConversationBody": "Escolha uma conversa na lista pra ver o histórico, responder ou deixar uma nota interna.",
+    "noAccountTitle": "Conecte sua primeira conta",
+    "noAccountBody": "Conecta sua conta do Instagram ou Threads pra começar a receber conversas aqui automaticamente.",
+    "noAccountConnect": "Conectar conta",
+    "detailsTitle": "Detalhes da conversa",
+    "closeDetails": "Fechar detalhes",
     "filters": {
       "status": "Status",
       "assignee": "Responsável",
@@ -735,6 +780,11 @@
     },
     "list": {
       "empty": "Nenhuma conversa nesse filtro.",
+      "emptyTitle": "Sem conversas ainda",
+      "emptyBody": "Quando alguém comentar num post ou mandar DM, a conversa aparece aqui automaticamente.",
+      "emptyFilteredTitle": "Nada bate com esses filtros",
+      "emptyFilteredBody": "Tenta limpar os filtros ou ajustar os critérios pra ver mais conversas.",
+      "clearFilters": "Limpar filtros",
       "unknownContact": "Contato sem nome",
       "humanTookOver": "humano"
     },
@@ -745,6 +795,7 @@
       "windowOpen": "{hours}h{minutes}m de janela",
       "windowExpired": "Janela 24h fechada",
       "windowClosed": "A janela de 24h do Instagram fechou. Você não pode mandar DM até o contato responder. Notas internas continuam funcionando.",
+      "threadsNoDm": "DMs no Threads ainda não estão disponíveis via API da Meta. Use respostas públicas em comentários ou notas internas.",
       "noReplyPermission": "Você não tem permissão pra responder. Peça ao admin do workspace.",
       "publicPlaceholder": "Escreva sua resposta…",
       "privatePlaceholder": "Nota interna (visível só pro time)…",
@@ -759,7 +810,9 @@
       "you": "Você",
       "teammate": "Time",
       "queuedStatus": "enviando…",
-      "failedStatus": "falhou"
+      "failedStatus": "falhou",
+      "backToList": "Voltar para a lista",
+      "openDetails": "Abrir detalhes da conversa"
     },
     "details": {
       "loading": "Carregando…",
@@ -767,10 +820,16 @@
       "unknownContact": "Contato sem nome",
       "actions": "Ações",
       "assignToMe": "Pegar pra mim",
+      "assignToMeAriaLabel": "Atribuir essa conversa a mim",
       "unassignMe": "Soltar conversa",
+      "unassignMeAriaLabel": "Desatribuir essa conversa de mim",
       "reopen": "Reabrir",
       "resolve": "Resolver",
       "snooze": "Adiar",
+      "snoozeForAriaLabel": "Adiar essa conversa por {duration}",
+      "snooze1hLabel": "1 hora",
+      "snooze1dLabel": "1 dia",
+      "snooze3dLabel": "3 dias",
       "tags": "Tags",
       "noTags": "Sem tags ainda.",
       "addTagPlaceholder": "nova-tag",
@@ -838,8 +897,12 @@
       "pendingCard": "{count, plural, =1 {1 convite pendente} other {# convites pendentes}}",
       "youBadge": "Você",
       "joined": "Entrou em {date}",
-      "remove": "Remover membro",
-      "removeConfirm": "Tem certeza que quer remover {name} deste workspace?",
+      "remove": "Remover",
+      "removeAriaLabel": "Remover membro {name}",
+      "removeTitle": "Remover {name} do workspace?",
+      "removeConfirm": "{name} perde o acesso a este workspace imediatamente. Conteúdo criado por essa pessoa permanece.",
+      "removing": "Removendo…",
+      "cancel": "Cancelar",
       "removed": "Membro removido.",
       "removeFailed": "Não foi possível remover: {error}",
       "roleChanged": "Role atualizado.",
@@ -847,7 +910,11 @@
       "smtpRequired": "Configure o SMTP no .env para habilitar o convite de novos membros.",
       "expiresAt": "Expira em {date}",
       "cancelInvitation": "Cancelar convite",
-      "cancelInvitationConfirm": "Cancelar convite enviado para {email}?",
+      "cancelInvitationAriaLabel": "Cancelar convite enviado para {email}",
+      "cancelInvitationTitle": "Cancelar este convite?",
+      "cancelInvitationConfirm": "O convite enviado para {email} deixa de ser válido. Você pode reenviar a qualquer momento.",
+      "cancelling": "Cancelando…",
+      "keepInvitation": "Manter convite",
       "invitationCancelled": "Convite cancelado.",
       "cancelFailed": "Não foi possível cancelar: {error}",
       "roleLabel": {
@@ -930,7 +997,10 @@
       "thisSession": "Esta sessão",
       "revoke": "Revogar",
       "revokeAllOthers": "Revogar todas as outras",
-      "revokeAllOthersConfirm": "Sair de todas as outras sessões?",
+      "revokeAllOthersTitle": "Sair de todos os outros dispositivos?",
+      "revokeAllOthersConfirm": "Você vai ser desconectado em todos os outros navegadores e dispositivos. A sessão atual continua ativa.",
+      "revoking": "Revogando…",
+      "cancel": "Cancelar",
       "revoked": "Sessão revogada",
       "couldNotRevoke": "Não foi possível revogar: {error}",
       "othersRevoked": "Outras sessões desconectadas",
@@ -946,12 +1016,22 @@
       "title": "Workspace",
       "subtitle": "Contas do Instagram e integrações desta organização.",
       "card": "Contas do Instagram",
-      "empty": "Nenhuma conta do Instagram conectada ainda.",
+      "emptyTitle": "Nenhuma conta conectada",
+      "empty": "Conecte uma conta do Instagram ou Threads abaixo para começar a receber conversas e disparar flows.",
       "active": "Ativa",
       "webhookPending": "Conectando ao Instagram…",
       "expiresOn": "Expira {date}",
       "neverExpires": "—",
-      "connect": "Conectar conta do Instagram"
+      "connect": "Conectar conta do Instagram",
+      "connectThreads": "Conectar conta do Threads",
+      "disconnect": "Desconectar",
+      "disconnecting": "Desconectando…",
+      "disconnectCancel": "Cancelar",
+      "disconnectTitle": "Desconectar conta do {label}?",
+      "disconnectAriaLabel": "Desconectar conta {label} @{username}",
+      "disconnectConfirm": "Tem certeza que quer desconectar a conta {label} @{username}? Conversas, mensagens e flows associados serão removidos. Essa ação não pode ser desfeita.",
+      "disconnected": "Conta @{username} desconectada.",
+      "disconnectFailed": "Falha ao desconectar: {error}"
     },
     "preferences": {
       "title": "Preferências",

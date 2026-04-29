@@ -12,8 +12,17 @@ import {
 import { organization, user } from './auth.ts';
 
 /**
- * Instagram account connected to an organization.
- * Equivalent to Chatwoot's Channel::Instagram, simplified for IG-only.
+ * Connected Meta account (Instagram or Threads).
+ *
+ * Table is named `instagram_account` for historical reasons — it predates the
+ * Threads channel. Semantically it now stores accounts of any channel listed
+ * in the `channel` column. New code should reference accounts via this schema
+ * (or the `account` alias exported from index.ts) and inspect `channel` to
+ * branch on provider.
+ *
+ * For IG: igUserId = Instagram user id (page-scoped), igUsername = handle.
+ * For Threads: igUserId = Threads user id, igUsername = Threads handle.
+ *
  * Token is encrypted at rest using TOKEN_ENCRYPTION_KEY (AES-256-GCM).
  */
 export const instagramAccount = pgTable(
@@ -23,6 +32,9 @@ export const instagramAccount = pgTable(
     organizationId: text('organization_id')
       .notNull()
       .references(() => organization.id, { onDelete: 'cascade' }),
+    channel: text('channel', { enum: ['instagram', 'threads'] })
+      .notNull()
+      .default('instagram'),
     igUserId: text('ig_user_id').notNull(),
     igUsername: text('ig_username').notNull(),
     pageId: text('page_id'),
@@ -35,8 +47,14 @@ export const instagramAccount = pgTable(
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (t) => ({
-    igUserIdUnique: uniqueIndex('instagram_account_ig_user_id_unique').on(t.igUserId),
+    // Same external user id can exist on different channels (rare but possible),
+    // so the unique constraint must include channel.
+    externalUserIdUnique: uniqueIndex('instagram_account_external_user_unique').on(
+      t.channel,
+      t.igUserId,
+    ),
     orgIdx: index('instagram_account_org_idx').on(t.organizationId),
+    channelIdx: index('instagram_account_channel_idx').on(t.channel),
   }),
 );
 

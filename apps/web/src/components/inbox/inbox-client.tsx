@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronLeft, MessageSquare, MessagesSquare } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -9,10 +10,16 @@ import {
   getInboxThread,
   listInboxConversations,
 } from '@/actions/inbox';
-import { ConversationList } from './conversation-list';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { EmptyState } from '@/components/ui/empty-state';
+import { cn } from '@/lib/utils';
 import { ConversationDetailsPanel } from './conversation-details-panel';
+import { ConversationList } from './conversation-list';
+import { ConversationListSkeleton } from './conversation-list-skeleton';
 import { InboxFilters, type InboxFiltersValue } from './inbox-filters';
 import { ThreadView } from './thread-view';
+import { ThreadViewSkeleton } from './thread-view-skeleton';
 
 interface InboxCapabilities {
   canView: boolean;
@@ -24,7 +31,7 @@ interface InboxCapabilities {
 
 interface InboxClientProps {
   initialConversations: InboxConversationRow[];
-  igAccounts: Array<{ id: string; username: string }>;
+  igAccounts: Array<{ id: string; username: string; channel: 'instagram' | 'threads' }>;
   capabilities: InboxCapabilities;
   initialFilters: InboxFiltersValue;
   initialConversationId: string | null;
@@ -32,9 +39,24 @@ interface InboxClientProps {
 
 const POLL_INTERVAL_MS = 10_000;
 
+const DEFAULT_FILTERS: InboxFiltersValue = {
+  status: 'all',
+  igAccountId: null,
+  assignee: 'any',
+};
+
 /**
  * Top-level inbox UI. Owns the list, the selected conversation, and the
  * polling loop. Children are pure renderers.
+ *
+ * Responsive layout:
+ *   - lg+    : 3 columns (filters/list 320px, thread 1fr, details 280px)
+ *   - md     : 2 columns (filters/list 320px, thread 1fr). Details panel is
+ *              accessible via a "Detalhes" button in the thread header that
+ *              opens a right-side drawer (Dialog repositioned via cn).
+ *   - <md    : 1 column. selectedId drives which pane is visible — list when
+ *              null, thread when set. A "voltar" button in the thread header
+ *              clears selectedId.
  *
  * Polling rather than SSE for v0.3: simpler infra, no extra long-lived
  * connections to manage, and 10s latency is acceptable for a CSM-style inbox.
@@ -60,6 +82,8 @@ export function InboxClient({
   const [thread, setThread] = useState<InboxThreadDetails | null>(null);
   const [threadLoading, setThreadLoading] = useState(false);
   const [filters, setFilters] = useState<InboxFiltersValue>(initialFilters);
+  const [listLoading, setListLoading] = useState(false);
+  const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
 
   // Sync filters → URL so the page is shareable / refresh-stable.
   useEffect(() => {
@@ -96,9 +120,18 @@ export function InboxClient({
     if (r.ok) setThread(r.data);
   }, [selectedId]);
 
-  // Re-fetch list when filters change.
+  // Re-fetch list when filters change. Show skeleton during the in-flight
+  // window IF we have nothing useful to show (avoid flicker when filtering
+  // already-loaded data).
   useEffect(() => {
-    void refreshList();
+    let cancelled = false;
+    setListLoading(true);
+    refreshList().finally(() => {
+      if (!cancelled) setListLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [refreshList]);
 
   // Re-fetch thread when selection changes.
@@ -108,13 +141,6 @@ export function InboxClient({
 
   // Realtime: SSE first, polling as fallback. Both pause while the tab is
   // hidden so we don't waste resources when nobody's watching.
-  //
-  // SSE strategy:
-  //   - Open EventSource('/api/inbox/stream') on mount. On message, refresh.
-  //   - If 3 reconnects fail within 30s, give up and fall back to polling.
-  //     Common cause: Redis down, or proxy mishandling text/event-stream.
-  //   - Polling is the safety net even when SSE works (tabs that briefly
-  //     missed an event due to flaky network catch up on next tick).
   useEffect(() => {
     let cancelled = false;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -124,8 +150,6 @@ export function InboxClient({
     const SSE_FAIL_THRESHOLD = 3;
     let sseGivenUp = false;
 
-    // Debounce refreshes — bursty publishes (insert msg + update conv in
-    // quick succession) collapse into one round-trip.
     let refreshPending: ReturnType<typeof setTimeout> | null = null;
     function scheduleRefresh() {
       if (refreshPending) return;
@@ -165,10 +189,8 @@ export function InboxClient({
           scheduleRefresh();
         };
         es.onerror = () => {
-          // Track failures within the rolling window; if we cross threshold,
-          // give up and let polling carry the rest of the session.
           const now = Date.now();
-          sseFailWindow = [...sseFailWindow.filter((t) => now - t < SSE_FAIL_WINDOW_MS), now];
+          sseFailWindow = [...sseFailWindow.filter((tt) => now - tt < SSE_FAIL_WINDOW_MS), now];
           if (sseFailWindow.length >= SSE_FAIL_THRESHOLD) {
             sseGivenUp = true;
             try {
@@ -198,7 +220,6 @@ export function InboxClient({
 
     function onVisibility() {
       if (document.visibilityState === 'visible') {
-        // Catch up immediately on return.
         void refreshList();
         if (selectedId) void refreshThread();
         startPolling();
@@ -227,40 +248,82 @@ export function InboxClient({
     [conversations, selectedId],
   );
 
+  const hasActiveFilters =
+    filters.status !== 'all' || filters.igAccountId !== null || filters.assignee !== 'any';
+  const onClearFilters = useCallback(() => setFilters(DEFAULT_FILTERS), []);
+
+  // Show the list skeleton ONLY when we have no rows AND we're loading. If
+  // we already have rows from a previous query, keep them visible while the
+  // new query is in flight — feels snappier and avoids skeleton flicker.
+  const showListSkeleton = listLoading && conversations.length === 0;
+
+  // Show thread skeleton when we don't have thread data yet for the selected
+  // id. After the first fetch we keep showing the previous thread to avoid
+  // flicker on repolls.
+  const showThreadSkeleton = threadLoading && (!thread || thread.conversation.id !== selectedId);
+
   return (
-    <div className="grid h-full min-h-0 grid-cols-[320px_1fr_280px] overflow-hidden rounded-lg border border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)]">
-      <aside className="flex h-full min-h-0 flex-col border-r border-[var(--color-mushu-border)]">
-        <InboxFilters
-          value={filters}
-          onChange={setFilters}
-          igAccounts={igAccounts}
-        />
-        <ConversationList
-          conversations={conversations}
-          selectedId={selectedId}
-          onSelect={(id) => setSelectedId(id)}
-        />
+    <div className="flex h-full min-h-0 overflow-hidden rounded-lg border border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)]">
+      {/* List + filters pane */}
+      <aside
+        className={cn(
+          'h-full min-h-0 flex-col border-r border-[var(--color-mushu-border)]',
+          // Mobile: full width when no selection, hidden when selected.
+          // md+: fixed width, always visible.
+          'w-full md:w-80 md:shrink-0',
+          selectedId ? 'hidden md:flex' : 'flex',
+        )}
+      >
+        <InboxFilters value={filters} onChange={setFilters} igAccounts={igAccounts} />
+        {showListSkeleton ? (
+          <ConversationListSkeleton />
+        ) : (
+          <ConversationList
+            conversations={conversations}
+            selectedId={selectedId}
+            onSelect={(id) => setSelectedId(id)}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={onClearFilters}
+          />
+        )}
       </aside>
 
-      <section className="flex h-full min-h-0 flex-col">
+      {/* Thread pane */}
+      <section
+        className={cn(
+          'h-full min-h-0 flex-1 flex-col',
+          // Mobile: hidden when no selection; flex when selected.
+          // md+: always flex.
+          selectedId ? 'flex' : 'hidden md:flex',
+        )}
+      >
         {selectedId ? (
-          <ThreadView
-            thread={thread}
-            loading={threadLoading}
-            myUserId={capabilities.myUserId}
-            onSent={() => {
-              void refreshThread();
-              void refreshList();
-            }}
-          />
+          showThreadSkeleton ? (
+            <ThreadViewSkeleton />
+          ) : (
+            <ThreadView
+              thread={thread}
+              loading={threadLoading}
+              myUserId={capabilities.myUserId}
+              onSent={() => {
+                void refreshThread();
+                void refreshList();
+              }}
+              onBack={() => setSelectedId(null)}
+              onShowDetails={() => setShowDetailsDrawer(true)}
+            />
+          )
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-[var(--color-mushu-mute)]">
-            {t('selectConversation')}
-          </div>
+          <EmptyState
+            icon={MessagesSquare}
+            title={t('selectConversationTitle')}
+            description={t('selectConversationBody')}
+          />
         )}
       </section>
 
-      <aside className="flex h-full min-h-0 flex-col border-l border-[var(--color-mushu-border)]">
+      {/* Details pane: inline only on lg+. md and below use the drawer below. */}
+      <aside className="hidden h-full min-h-0 w-72 shrink-0 flex-col border-l border-[var(--color-mushu-border)] lg:flex">
         <ConversationDetailsPanel
           thread={thread}
           summary={selectedSummary}
@@ -271,6 +334,39 @@ export function InboxClient({
           }}
         />
       </aside>
+
+      {/* Details drawer for md and below — Dialog repositioned to slide from
+          the right with full height. Trigger is the "Detalhes" button in
+          ThreadView's header (only rendered on <lg). */}
+      <Dialog open={showDetailsDrawer} onOpenChange={setShowDetailsDrawer}>
+        <DialogContent className="left-auto right-0 top-0 h-full w-80 max-w-[90vw] -translate-x-0 -translate-y-0 rounded-none rounded-l-lg p-0 lg:hidden">
+          <div className="flex h-full flex-col">
+            <header className="flex items-center justify-between border-b border-[var(--color-mushu-border)] px-4 py-3">
+              <h2 className="flex items-center gap-2 text-sm font-medium text-[var(--color-mushu-ink)]">
+                <MessageSquare className="h-4 w-4" />
+                {t('detailsTitle')}
+              </h2>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowDetailsDrawer(false)}
+                aria-label={t('closeDetails')}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </header>
+            <ConversationDetailsPanel
+              thread={thread}
+              summary={selectedSummary}
+              capabilities={capabilities}
+              onChanged={() => {
+                void refreshThread();
+                void refreshList();
+              }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

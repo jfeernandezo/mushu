@@ -1,6 +1,6 @@
 import { instagramAccount, withOrgTx } from '@mushu/db';
 import { eq } from 'drizzle-orm';
-import { Inbox } from 'lucide-react';
+import { Inbox, Plug } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -11,6 +11,7 @@ import {
 import { InboxClient } from '@/components/inbox/inbox-client';
 import { AppShell } from '@/components/shell/app-shell';
 import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { auth } from '@/lib/auth';
 
 interface InboxPageProps {
@@ -58,6 +59,7 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
         .select({
           id: instagramAccount.id,
           username: instagramAccount.igUsername,
+          channel: instagramAccount.channel,
         })
         .from(instagramAccount)
         .where(eq(instagramAccount.organizationId, orgId)),
@@ -73,17 +75,30 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
           <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
           <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
         </div>
-        <InboxClient
-          initialConversations={initialConversations}
-          igAccounts={accounts}
-          capabilities={capabilities}
-          initialFilters={{
-            status: normalizeStatus(params.status) ?? 'all',
-            igAccountId: params.account ?? null,
-            assignee: normalizeAssignee(params.assignee) ?? 'any',
-          }}
-          initialConversationId={params.c ?? null}
-        />
+        {accounts.length === 0 ? (
+          <Card className="flex-1">
+            <CardContent className="h-full p-0">
+              <EmptyState
+                icon={Plug}
+                title={t('noAccountTitle')}
+                description={t('noAccountBody')}
+                action={{ label: t('noAccountConnect'), href: '/settings/workspace' }}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <InboxClient
+            initialConversations={initialConversations}
+            igAccounts={accounts}
+            capabilities={capabilities}
+            initialFilters={{
+              status: normalizeStatus(params.status) ?? 'all',
+              igAccountId: params.account ?? null,
+              assignee: normalizeAssignee(params.assignee) ?? 'any',
+            }}
+            initialConversationId={params.c ?? null}
+          />
+        )}
       </div>
     </AppShell>
   );

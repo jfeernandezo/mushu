@@ -1,11 +1,22 @@
 'use client';
 
-import { Check, Circle, Instagram, Mail, Send, Sparkles, Workflow, X } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  Circle,
+  Instagram,
+  Mail,
+  Send,
+  Sparkles,
+  Workflow,
+  X,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { type OnboardingState, dismissOnboarding } from '@/actions/onboarding';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -25,16 +36,17 @@ interface Item {
  * items are ✅ — but the user can also dismiss permanently (persisted in
  * `user.additional_attributes.onboardingDismissed`).
  *
- * The component is a client component because dismiss is interactive AND
- * because we want optimistic visibility toggle. State comes from the server
- * via props, so the polling/refresh story stays simple.
+ * UX intent: at any moment exactly one step is the user's "current" — the
+ * first not-done step with an actionable href. We surface that one with a
+ * highlighted card and a primary CTA, and the others read as quiet rows so
+ * the eye doesn't have to scan five equal-weight items to figure out what
+ * to do next.
  */
 export function OnboardingChecklist({ state }: OnboardingChecklistProps) {
   const t = useTranslations('dashboard.onboarding');
   const [hidden, setHidden] = useState(false);
   const [, startTransition] = useTransition();
 
-  // Auto-hide rules: dismissed, all complete, OR optimistic local hide.
   if (
     hidden ||
     state.dismissed ||
@@ -53,7 +65,7 @@ export function OnboardingChecklist({ state }: OnboardingChecklistProps) {
     {
       key: 'connectIg',
       done: state.hasIgAccount,
-      href: '/api/oauth/instagram/start',
+      href: '/settings/workspace',
       icon: Instagram,
     },
     {
@@ -75,6 +87,11 @@ export function OnboardingChecklist({ state }: OnboardingChecklistProps) {
       icon: Sparkles,
     },
   ];
+
+  // Next actionable step: first not-done item that has a link to act on.
+  // verifyEmail and receiveEvent have no href — they're observations, not
+  // actions, so they never qualify as the "next" step.
+  const nextStepIndex = items.findIndex((it) => !it.done && it.href);
 
   function onDismiss() {
     setHidden(true);
@@ -112,7 +129,12 @@ export function OnboardingChecklist({ state }: OnboardingChecklistProps) {
 
         <ol className="flex flex-col gap-1.5">
           {items.map((item, idx) => (
-            <ChecklistRow key={item.key} item={item} index={idx + 1} />
+            <ChecklistRow
+              key={item.key}
+              item={item}
+              index={idx + 1}
+              isNext={idx === nextStepIndex}
+            />
           ))}
         </ol>
 
@@ -128,12 +150,59 @@ export function OnboardingChecklist({ state }: OnboardingChecklistProps) {
   );
 }
 
-function ChecklistRow({ item, index }: { item: Item; index: number }) {
+function ChecklistRow({
+  item,
+  index,
+  isNext,
+}: {
+  item: Item;
+  index: number;
+  isNext: boolean;
+}) {
   const t = useTranslations('dashboard.onboarding.items');
+  const tShared = useTranslations('dashboard.onboarding');
   const Icon = item.icon;
   const label = t(`${item.key}.label`);
   const why = t(`${item.key}.why`);
+  const cta = t.has(`${item.key}.cta`) ? t(`${item.key}.cta`) : tShared('continue');
 
+  // Highlighted "next step" row: amber-tinted background, border, and a
+  // primary CTA button. Tappable area is wider than just the label.
+  if (isNext && item.href) {
+    return (
+      <li>
+        <Link
+          href={item.href}
+          className="group flex items-center gap-3 rounded-md border border-[var(--color-mushu-amber)]/40 bg-[var(--color-mushu-amber)]/5 px-3 py-2.5 transition-colors hover:bg-[var(--color-mushu-amber)]/10"
+        >
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--color-mushu-amber)] bg-[var(--color-mushu-amber)]/15 text-[var(--color-mushu-amber)]">
+            <Icon className="h-3.5 w-3.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-[var(--color-mushu-ink)]">
+              <span className="text-[var(--color-mushu-faint)]">{index}.</span> {label}
+            </p>
+            <p className="truncate text-[11px] text-[var(--color-mushu-mute)]">{why}</p>
+          </div>
+          <Button
+            asChild
+            size="sm"
+            variant="default"
+            className="pointer-events-none shrink-0"
+            tabIndex={-1}
+          >
+            <span>
+              {cta}
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Button>
+        </Link>
+      </li>
+    );
+  }
+
+  // Compact row: completed (strikethrough green) or not-yet-actionable
+  // (verifyEmail / receiveEvent which auto-tick when their condition is met).
   const inner = (
     <div
       className={cn(

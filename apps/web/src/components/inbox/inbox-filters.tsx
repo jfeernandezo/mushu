@@ -11,7 +11,7 @@ export interface InboxFiltersValue {
 interface InboxFiltersProps {
   value: InboxFiltersValue;
   onChange: (next: InboxFiltersValue) => void;
-  igAccounts: Array<{ id: string; username: string }>;
+  igAccounts: Array<{ id: string; username: string; channel: 'instagram' | 'threads' }>;
 }
 
 export function InboxFilters({ value, onChange, igAccounts }: InboxFiltersProps) {
@@ -53,12 +53,19 @@ export function InboxFilters({ value, onChange, igAccounts }: InboxFiltersProps)
           onChange={(id) => onChange({ ...value, igAccountId: id || null })}
           options={[
             { value: '', label: t('allAccounts') },
-            ...igAccounts.map((a) => ({ value: a.id, label: `@${a.username}` })),
+            ...igAccounts.map((a) => ({
+              value: a.id,
+              label: `${channelPrefix(a.channel)} @${a.username}`,
+            })),
           ]}
         />
       ) : null}
     </div>
   );
+}
+
+function channelPrefix(channel: 'instagram' | 'threads'): string {
+  return channel === 'threads' ? '[Threads]' : '[Instagram]';
 }
 
 function SelectField({

@@ -33,6 +33,9 @@ export const incomingEvent = pgTable(
         'story_reply',
         'story_mention',
         'mention',
+        // Threads channel events
+        'threads_reply',
+        'threads_mention',
         'unknown',
       ],
     }).notNull(),

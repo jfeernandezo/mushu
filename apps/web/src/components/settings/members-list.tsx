@@ -8,6 +8,7 @@ import { type MemberRow, removeMember, updateMemberRole } from '@/actions/member
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmAlertDialog } from '@/components/ui/confirm-alert-dialog';
 import { ASSIGNABLE_ROLES, type AssignableRole } from '@/lib/member-roles';
 
 interface MembersListProps {
@@ -30,13 +31,14 @@ export function MembersList({ members, capabilities, emailEnabled }: MembersList
     });
   }
 
-  function onRemove(memberId: string, name: string) {
-    if (!confirm(t('removeConfirm', { name }))) return;
-    startTransition(async () => {
-      const r = await removeMember(memberId);
-      if (r.ok) toast.success(t('removed'));
-      else toast.error(t('removeFailed', { error: r.error }));
-    });
+  async function onRemove(memberId: string) {
+    const r = await removeMember(memberId);
+    if (r.ok) {
+      toast.success(t('removed'));
+    } else {
+      toast.error(t('removeFailed', { error: r.error }));
+      throw new Error(r.error);
+    }
   }
 
   return (
@@ -90,15 +92,24 @@ export function MembersList({ members, capabilities, emailEnabled }: MembersList
             )}
 
             {showRemove ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={pending}
-                onClick={() => onRemove(m.memberId, m.name)}
-                aria-label={t('remove')}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              <ConfirmAlertDialog
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={pending}
+                    aria-label={t('removeAriaLabel', { name: m.name })}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                }
+                title={t('removeTitle', { name: m.name })}
+                description={t('removeConfirm', { name: m.name })}
+                confirmLabel={t('remove')}
+                pendingLabel={t('removing')}
+                cancelLabel={t('cancel')}
+                onConfirm={() => onRemove(m.memberId)}
+              />
             ) : null}
           </li>
         );

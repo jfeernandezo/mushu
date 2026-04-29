@@ -10,7 +10,7 @@ import {
   type Node,
   type NodeChange,
 } from '@xyflow/react';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Redo2, Undo2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -19,11 +19,14 @@ import type { FlowGraph, FlowNodeType } from '@mushu/shared/flow';
 import { publishFlow, saveFlowDraft } from '@/actions/flows';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { validateFlowForPublish } from '@/lib/validate-flow';
+import { Tooltip } from '@/components/ui/tooltip';
+import { validateFlow, validateFlowForPublish } from '@/lib/validate-flow';
 import { FlowCanvasShell } from './flow-canvas';
+import { FlowIssuesPopover } from './flow-issues-popover';
 import { NodeInspector } from './node-inspector';
 import { NodePalette } from './node-palette';
 import { TemplateBanner } from './template-banner';
+import { useFlowHistory } from './use-flow-history';
 
 interface FlowBuilderProps {
   flowId: string;
@@ -85,6 +88,89 @@ export function FlowBuilder({
     setSelected(null);
   }, []);
 
+  /**
+   * Clone the given node next to itself. Used by Ctrl+D and the future
+   * "duplicate" menu item. The new node gets a fresh id (so it doesn't share
+   * state with the original), an offset position so it doesn't perfectly
+   * overlap, and the same data shape — including any user-edited keywords,
+   * text, etc.
+   */
+  const onDuplicateNode = useCallback((id: string) => {
+    setNodes((ns) => {
+      const source = ns.find((n) => n.id === id);
+      if (!source) return ns;
+      const clone: Node = {
+        ...source,
+        id: crypto.randomUUID(),
+        position: {
+          x: source.position.x + 32,
+          y: source.position.y + 32,
+        },
+        selected: false,
+        // Drizzle/React Flow stores data as a plain object; shallow clone is
+        // enough — we don't have nested mutable state in node data today.
+        data: { ...(source.data as Record<string, unknown>) } as never,
+      };
+      return ns.concat(clone);
+    });
+  }, []);
+
+  // Local-only undo/redo. The hook watches nodes/edges and snapshots after
+  // a 600ms debounce. Snapshots are NOT persisted — reload starts a fresh
+  // history (the remote save is the source of truth for persistence).
+  const { canUndo, canRedo, undo, redo } = useFlowHistory({
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+  });
+
+  // Global keyboard shortcuts: delete node, duplicate node (Ctrl/Cmd+D),
+  // undo (Ctrl/Cmd+Z), redo (Ctrl/Cmd+Shift+Z OR Ctrl+Y on Windows).
+  // All shortcuts skip when focus is inside an editable element so typing
+  // in the inspector doesn't trigger them.
+  useEffect(() => {
+    function isEditableTarget(t: EventTarget | null): boolean {
+      const el = t as HTMLElement | null;
+      if (!el) return false;
+      if (el.isContentEditable) return true;
+      const tag = el.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (isEditableTarget(e.target)) return;
+      const meta = e.metaKey || e.ctrlKey;
+
+      // Undo/redo first — they don't depend on having a selection.
+      if (meta && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if (
+        (meta && e.shiftKey && (e.key === 'z' || e.key === 'Z')) ||
+        (meta && (e.key === 'y' || e.key === 'Y'))
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      if (selected && (e.key === 'Backspace' || e.key === 'Delete')) {
+        e.preventDefault();
+        onDeleteNode(selected.id);
+        return;
+      }
+      if (selected && meta && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        onDuplicateNode(selected.id);
+        return;
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selected, onDeleteNode, onDuplicateNode, undo, redo]);
+
   // Persist to backend whenever nodes/edges change. Debounced 400ms so a fast
   // drag of a node doesn't hammer the server.
   //
@@ -112,6 +198,24 @@ export function FlowBuilder({
 
   // Derived for validation + (future) preview features.
   const graph = useMemo<FlowGraph>(() => nodesEdgesToGraph(nodes, edges), [nodes, edges]);
+
+  // Live validation feeds the header pill. We re-run on every graph mutation;
+  // it's O(nodes + edges) so cheap even on big flows.
+  const issues = useMemo(() => validateFlow(graph), [graph]);
+
+  const issueNodeIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const issue of issues) if (issue.nodeId) set.add(issue.nodeId);
+    return set;
+  }, [issues]);
+
+  const onJumpToNode = useCallback(
+    (nodeId: string) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (node) setSelected(node);
+    },
+    [nodes],
+  );
 
   async function onPublish() {
     if (isPublishing) return;
@@ -151,6 +255,33 @@ export function FlowBuilder({
           </span>
         </div>
         <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <Tooltip content={t('undoTooltip')} side="bottom">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                disabled={!canUndo}
+                onClick={undo}
+                aria-label={t('undo')}
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+            <Tooltip content={t('redoTooltip')} side="bottom">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                disabled={!canRedo}
+                onClick={redo}
+                aria-label={t('redo')}
+              >
+                <Redo2 className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+          </div>
+          <FlowIssuesPopover issues={issues} onJumpToNode={onJumpToNode} />
           {publishedVersion !== null ? (
             <Badge variant="success">{t('publishedVersion', { version: publishedVersion })}</Badge>
           ) : isEnabled ? (
@@ -158,7 +289,7 @@ export function FlowBuilder({
           ) : (
             <Badge variant="outline">{t('draft')}</Badge>
           )}
-          <Button onClick={onPublish} disabled={isPublishing}>
+          <Button onClick={onPublish} disabled={isPublishing || issues.length > 0}>
             {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             {isPublishing ? t('publishing') : t('publish')}
           </Button>
@@ -178,6 +309,7 @@ export function FlowBuilder({
           onAddNode={onAddNode}
           onSelect={setSelected}
           selectedId={selected?.id ?? null}
+          issueNodeIds={issueNodeIds}
         />
         <NodeInspector
           node={selected}

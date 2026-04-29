@@ -102,6 +102,33 @@ export function invitationEmail(opts: {
   };
 }
 
+export function tokenExpiringEmail(opts: {
+  username: string;
+  channel: 'instagram' | 'threads';
+  expiresAt: Date;
+  reconnectUrl: string;
+}): { subject: string; html: string } {
+  const channelLabel = opts.channel === 'threads' ? 'Threads' : 'Instagram';
+  const formattedDate = opts.expiresAt.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  return {
+    subject: `Reconecte sua conta do ${channelLabel} (@${opts.username}) — token vai expirar`,
+    html: shell({
+      title: `Reconecte ${channelLabel}`,
+      bodyHtml: `
+        <h1 style="${baseStyles.h1}">Sua conta do ${escape(channelLabel)} precisa ser reconectada ⚠️</h1>
+        <p style="${baseStyles.p}">O token de acesso da conta <strong>@${escape(opts.username)}</strong> está prestes a expirar (em <strong>${escape(formattedDate)}</strong>) e a renovação automática não foi possível — geralmente isso acontece quando a permissão foi revogada na Central de Contas da Meta.</p>
+        <p style="${baseStyles.p}">Pra continuar respondendo comentários e DMs automaticamente, reconecte a conta clicando no botão abaixo:</p>
+        <p style="margin:24px 0;"><a href="${opts.reconnectUrl}" style="${baseStyles.button}">Reconectar ${escape(channelLabel)}</a></p>
+        <p style="${baseStyles.p}">Se nada for feito até a data acima, os flows automáticos vinculados a essa conta param de funcionar. Histórico de conversas e configurações dos flows ficam preservados — basta reconectar pra retomar.</p>
+      `,
+    }),
+  };
+}
+
 function roleLabel(role: string): string {
   switch (role) {
     case 'owner':

@@ -13,7 +13,8 @@ import { eq } from 'drizzle-orm';
 import { type ExecuteFlowJob, executionQueue } from '../queues.ts';
 import { connection } from '../queues.ts';
 import { publishInboxEvent } from '../lib/inbox-broadcast.ts';
-import { IgError, createIgClient } from '../lib/instagram-client.ts';
+import { createChannelClient } from '../lib/channel-client.ts';
+import { IgError } from '../lib/instagram-client.ts';
 import { RateLimiter } from '../lib/rate-limiter.ts';
 import { findNextNodeId, getNodeById } from '../lib/trigger-matcher.ts';
 
@@ -109,7 +110,7 @@ export async function sendMessage({
     return;
   }
 
-  const ig = createIgClient(account);
+  const clients = createChannelClient(account);
   // Manual sends don't carry execution state — defaults are fine since
   // they're plain DM replies (no comment-to-DM bootstrap, no flow advance).
   const state = (exec?.state as Record<string, unknown>) ?? {};
@@ -127,15 +128,31 @@ export async function sendMessage({
     let metaMessageId = '';
 
     if (msg.messageType === 'activity') {
-      // reply_comment node — public reply on the original comment
+      // reply_comment node — public reply on the original comment.
+      // Both Instagram and Threads support this via ChannelClient.replyComment.
       if (!triggerCommentId) {
         await failMessage(outgoingMessageId, 'reply_comment requires triggerCommentId in state');
         return;
       }
-      const r = await ig.replyComment({ commentId: triggerCommentId, message: msg.content ?? '' });
+      const r = await clients.common.replyComment({
+        commentId: triggerCommentId,
+        message: msg.content ?? '',
+      });
       metaMessageId = r.id;
     } else {
-      // outgoing DM
+      // outgoing DM — only valid for Instagram. Threads has no DM API today.
+      if (!clients.instagram) {
+        await failMessage(
+          outgoingMessageId,
+          `dm_unsupported_for_channel: ${clients.channel} accounts cannot send DMs`,
+        );
+        if (!isManualSend) {
+          await failExecutionLater(flowExecutionId, 'dm_unsupported_for_channel');
+        }
+        return;
+      }
+      const ig = clients.instagram;
+
       const inWindow =
         conv.lastIncomingAt && Date.now() - conv.lastIncomingAt.getTime() < TWENTY_FOUR_HOURS_MS;
       const useCommentRecipient = !!triggerCommentId && !state.firstDmSent;

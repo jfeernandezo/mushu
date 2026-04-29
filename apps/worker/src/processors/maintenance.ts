@@ -1,5 +1,6 @@
 import { createLogger } from '@mushu/shared/logger';
 import type { MaintenanceJob } from '../queues.ts';
+import { refreshMetaTokens } from './refresh-tokens.ts';
 import { sweepIncomingEvents } from './sweep-events.ts';
 
 const logger = createLogger('worker.maintenance');
@@ -18,6 +19,9 @@ export async function runMaintenance(job: MaintenanceJob): Promise<void> {
       // the queue may receive this job from a future migration but there's
       // nothing to do yet — log and move on.
       logger.info('sweep_email_delivery: not implemented yet, skipping');
+      return;
+    case 'refresh_meta_tokens':
+      await refreshMetaTokens();
       return;
     default: {
       const _exhaustive: never = job;

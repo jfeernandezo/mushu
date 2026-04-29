@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import { AppToaster } from '@/components/app-toaster';
 import { ThemeProvider } from '@/components/theme-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { isTheme, type ResolvedTheme, type Theme, THEME_COOKIE } from '@/lib/theme';
 import './globals.css';
 
@@ -38,8 +39,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider initialTheme={initialTheme}>
-            {children}
-            <AppToaster />
+            <TooltipProvider>
+              {children}
+              <AppToaster />
+            </TooltipProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

@@ -1,3 +1,18 @@
+import * as Sentry from '@sentry/node';
+
+// Initialize Sentry as the very first thing so any throw during bootstrap
+// is captured. SENTRY_DSN is opt-in — when unset (local dev, CI), Sentry
+// becomes a no-op and we save the network calls.
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV ?? 'production',
+    release: process.env.SENTRY_RELEASE,
+    tracesSampleRate: Number.parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE ?? '0.1'),
+    serverName: 'mushu-worker',
+  });
+}
+
 import { createLogger } from '@mushu/shared/logger';
 import {
   type ExecuteFlowJob,
@@ -46,6 +61,22 @@ async function scheduleRecurringJobs() {
       removeOnFail: 50,
     },
   );
+
+  // Hourly token refresh sweep. The processor narrows to accounts whose
+  // expires_at is within 7 days — most ticks find zero candidates, which is
+  // cheap. Hourly cadence ensures we never miss the refresh window even if
+  // the worker was down for a stretch.
+  await maintenanceQueue.add(
+    'refresh_meta_tokens',
+    { kind: 'refresh_meta_tokens' },
+    {
+      repeat: { pattern: '17 * * * *' },
+      jobId: 'recurring:refresh_meta_tokens',
+      removeOnComplete: 50,
+      removeOnFail: 50,
+    },
+  );
+
   logger.info('scheduled recurring jobs');
 }
 

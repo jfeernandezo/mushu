@@ -9,14 +9,14 @@ import {
 } from '@mushu/db';
 import { type FlowGraph, flowGraphSchema } from '@mushu/shared/flow';
 import { createLogger } from '@mushu/shared/logger';
-import { eq, sql } from 'drizzle-orm';
-import { type ExecuteFlowJob, executionQueue } from '../queues.ts';
-import { connection } from '../queues.ts';
-import { publishInboxEvent } from '../lib/inbox-broadcast.ts';
+import { and, eq, notInArray, sql } from 'drizzle-orm';
 import { createChannelClient } from '../lib/channel-client.ts';
+import { setStepOutcome } from '../lib/flow-metrics.ts';
+import { publishInboxEvent } from '../lib/inbox-broadcast.ts';
 import { IgError } from '../lib/instagram-client.ts';
 import { RateLimiter } from '../lib/rate-limiter.ts';
 import { findNextNodeId, getNodeById } from '../lib/trigger-matcher.ts';
+import { connection, type ExecuteFlowJob, executionQueue } from '../queues.ts';
 
 const logger = createLogger('worker.send-message');
 const rateLimiter = new RateLimiter(connection);
@@ -213,6 +213,10 @@ export async function sendMessage({
       })
       .where(eq(message.id, outgoingMessageId));
 
+    if (exec && typeof attrs.nodeId === 'string') {
+      await setStepOutcome(exec.id, attrs.nodeId, 'ok');
+    }
+
     // Notify SSE subscribers — operator sees the bubble flip from "queued"
     // to delivered without waiting for the polling tick.
     await publishInboxEvent(account.organizationId, {
@@ -269,7 +273,10 @@ async function advanceExecution(
 
   // Prefer the snapshot stored on the execution to avoid mid-flight republish surprises.
   const [exec] = await db
-    .select({ graphSnapshot: flowExecution.graphSnapshot, visitedNodes: flowExecution.visitedNodes })
+    .select({
+      graphSnapshot: flowExecution.graphSnapshot,
+      visitedNodes: flowExecution.visitedNodes,
+    })
     .from(flowExecution)
     .where(eq(flowExecution.id, executionId))
     .limit(1);
@@ -318,14 +325,20 @@ async function advanceExecution(
 }
 
 async function failMessage(messageId: string, reason: string): Promise<void> {
-  await db
+  const [failed] = await db
     .update(message)
     .set({
       status: 'failed',
       errorMessage: reason,
       updatedAt: new Date(),
     })
-    .where(eq(message.id, messageId));
+    .where(eq(message.id, messageId))
+    .returning();
+  const nodeId = (failed?.contentAttributes as { nodeId?: string } | null)?.nodeId;
+  if (failed?.createdByAutomationId && nodeId) {
+    await setStepOutcome(failed.createdByAutomationId, nodeId, 'failed');
+    await failExecutionLater(failed.createdByAutomationId, reason);
+  }
 }
 
 async function failExecutionLater(executionId: string, reason: string): Promise<void> {
@@ -338,5 +351,20 @@ async function failExecutionLater(executionId: string, reason: string): Promise<
       isReplying: false,
       updatedAt: new Date(),
     })
-    .where(eq(flowExecution.id, executionId));
+    .where(
+      and(
+        eq(flowExecution.id, executionId),
+        notInArray(flowExecution.status, ['done', 'cancelled']),
+      ),
+    );
+}
+
+/** Called only after BullMQ exhausts send retries. */
+export async function failExhaustedMessage(args: SendMessageArgs, error: Error): Promise<void> {
+  const [msg] = await db
+    .select()
+    .from(message)
+    .where(eq(message.id, args.outgoingMessageId))
+    .limit(1);
+  if (msg && msg.status !== 'sent') await failMessage(msg.id, error.message);
 }

@@ -1,16 +1,16 @@
+import { createLogger } from '@mushu/shared/logger';
+import { QUEUES, type QueueName } from '@mushu/shared/queue';
 import * as Sentry from '@sentry/node';
 import { Queue, QueueEvents, Worker, type WorkerOptions } from 'bullmq';
 import IORedis from 'ioredis';
-import { createLogger } from '@mushu/shared/logger';
-import { QUEUES, type QueueName } from '@mushu/shared/queue';
 
 const logger = createLogger('worker.queues');
 
 export {
-  QUEUES,
   type ExecuteFlowJob,
   type MaintenanceJob,
   type ProcessEventJob,
+  QUEUES,
   type QueueName,
   type SendMessageJob,
 } from '@mushu/shared/queue';
@@ -31,11 +31,19 @@ export function createWorker<T>(
   queueName: QueueName,
   processor: (jobData: T) => Promise<void>,
   options: Partial<WorkerOptions> = {},
+  onExhausted?: (jobData: T, error: Error) => Promise<void>,
 ) {
   const worker = new Worker<T>(
     queueName,
     async (job) => {
-      await processor(job.data);
+      try {
+        await processor(job.data);
+      } catch (error) {
+        if (onExhausted && job.attemptsMade + 1 >= (job.opts.attempts ?? 1)) {
+          await onExhausted(job.data, error instanceof Error ? error : new Error(String(error)));
+        }
+        throw error;
+      }
     },
     {
       connection,

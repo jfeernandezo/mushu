@@ -876,9 +876,50 @@
     "empty": "Sem gatilhos ainda — publique um fluxo com uma etapa de gatilho para popular essa lista."
   },
   "analytics": {
-    "title": "Análises",
-    "subtitle": "Análises detalhadas de desempenho dos seus fluxos. Em breve.",
-    "roadmap": "Funis de conversão, testes A/B, LTV de contato — em breve."
+    "title": "Métricas dos fluxos",
+    "subtitle": "Acompanhe execuções, cliques nos botões e o avanço em cada fluxo.",
+    "period": "Período",
+    "days": "Últimos {days} dias",
+    "cohortNote": "Todas as métricas consideram execuções iniciadas no período selecionado, com seu status atual. Cliques incluem visitas repetidas e prévias automáticas; não representam pessoas únicas.",
+    "noOrg": "Selecione uma organização para ver as métricas.",
+    "empty": "Nenhum fluxo ainda. Crie um fluxo para começar a coletar métricas.",
+    "started": "Iniciadas",
+    "completed": "Concluídas",
+    "failed": "Com falha",
+    "completionRate": "Taxa de conclusão",
+    "clicks": "Cliques em links",
+    "funnel": "Funil por etapa",
+    "funnelNote": "Execuções que chegaram a cada etapa, incluindo ramificações. Eventos são coletados a partir desta versão; execuções anteriores não têm histórico de etapas. Nós de versões anteriores mantêm seus IDs.",
+    "noSteps": "Nenhuma etapa registrada ainda.",
+    "step": "Etapa",
+    "reached": "Alcançaram",
+    "outcome": "Resultado",
+    "branch": "Ramo {number}",
+    "outcomes": {
+      "ok": "Concluída",
+      "failed": "Falhou",
+      "skipped": "Ignorada",
+      "pending": "Em execução",
+      "queued": "Na fila",
+      "follows": "Segue",
+      "not_follows": "Não segue"
+    },
+    "nodes": {
+      "trigger_comment_keyword": "Palavra no comentário",
+      "trigger_dm_keyword": "Palavra na DM",
+      "trigger_first_dm": "Primeira DM",
+      "trigger_story_reply": "Resposta ao story",
+      "trigger_story_mention": "Menção em story",
+      "action_send_dm": "Enviar DM",
+      "action_reply_comment": "Responder comentário",
+      "action_set_tag": "Alterar tag",
+      "action_set_custom_field": "Definir campo",
+      "action_ask_question": "Perguntar",
+      "logic_condition": "Condição",
+      "logic_check_follow": "Checar se segue",
+      "logic_delay": "Espera",
+      "control_end": "Fim"
+    }
   },
   "settings": {
     "section": "Configurações",

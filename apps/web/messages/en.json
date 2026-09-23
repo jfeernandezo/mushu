@@ -876,9 +876,50 @@
     "empty": "No triggers yet — publish a flow with a trigger step to populate this list."
   },
   "analytics": {
-    "title": "Analytics",
-    "subtitle": "Deeper performance breakdowns for your flows. Coming soon.",
-    "roadmap": "Conversion funnels, A/B testing, contact LTV — all coming soon."
+    "title": "Flow analytics",
+    "subtitle": "Track execution results, button clicks and progress through each flow.",
+    "period": "Period",
+    "days": "Last {days} days",
+    "cohortNote": "All metrics refer to executions started in the selected period, using their current status. Clicks include repeated visits and automated previews; they are not unique people.",
+    "noOrg": "Select a workspace to view analytics.",
+    "empty": "No flows yet. Create a flow to start collecting metrics.",
+    "started": "Started",
+    "completed": "Completed",
+    "failed": "Failed",
+    "completionRate": "Completion rate",
+    "clicks": "Link clicks",
+    "funnel": "Step funnel",
+    "funnelNote": "Executions reaching each step, including branches. New events are collected from this release onward; older executions have no step history. Nodes from earlier versions retain their IDs.",
+    "noSteps": "No steps recorded yet.",
+    "step": "Step",
+    "reached": "Reached",
+    "outcome": "Result",
+    "branch": "Branch {number}",
+    "outcomes": {
+      "ok": "Completed",
+      "failed": "Failed",
+      "skipped": "Skipped",
+      "pending": "Running",
+      "queued": "Queued",
+      "follows": "Follows",
+      "not_follows": "Does not follow"
+    },
+    "nodes": {
+      "trigger_comment_keyword": "Comment keyword",
+      "trigger_dm_keyword": "DM keyword",
+      "trigger_first_dm": "First DM",
+      "trigger_story_reply": "Story reply",
+      "trigger_story_mention": "Story mention",
+      "action_send_dm": "Send DM",
+      "action_reply_comment": "Reply to comment",
+      "action_set_tag": "Set tag",
+      "action_set_custom_field": "Set custom field",
+      "action_ask_question": "Ask question",
+      "logic_condition": "Condition",
+      "logic_check_follow": "Check follow",
+      "logic_delay": "Delay",
+      "control_end": "End"
+    }
   },
   "settings": {
     "section": "Settings",

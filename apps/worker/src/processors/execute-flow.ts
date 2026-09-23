@@ -6,26 +6,31 @@ import {
   conversation,
   dbAdmin as db,
   flowExecution,
+  flowStepEvent,
   instagramAccount,
   message,
+  trackedLink,
 } from '@mushu/db';
-import {
-  type FlowGraph,
-  type FlowNode,
-  flowGraphSchema,
-  renderTemplate,
-} from '@mushu/shared/flow';
+import { type FlowGraph, type FlowNode, flowGraphSchema, renderTemplate } from '@mushu/shared/flow';
 import { createLogger } from '@mushu/shared/logger';
 import { and, eq, sql } from 'drizzle-orm';
 
 const logger = createLogger('worker.execute-flow');
-import { type ExecuteFlowJob, type SendMessageJob, executionQueue, messageQueue } from '../queues.ts';
-import { findNextNodeId, getNodeById } from '../lib/trigger-matcher.ts';
+
 import { createChannelClient } from '../lib/channel-client.ts';
+import { findNextNodeId, getNodeById } from '../lib/trigger-matcher.ts';
+import {
+  type ExecuteFlowJob,
+  executionQueue,
+  messageQueue,
+  type SendMessageJob,
+} from '../queues.ts';
 
 interface ExecuteFlowArgs {
   flowExecutionId: string;
 }
+
+import { setStepOutcome } from '../lib/flow-metrics.ts';
 
 const SAFETY_NODE_LIMIT = 100;
 
@@ -95,184 +100,215 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
     }
     visited.add(currentNodeId);
 
-    // ---- Terminal ----
-    if (node.type === 'control.end') {
+    const asyncSend =
+      node.type === 'action.send_dm' ||
+      node.type === 'action.reply_comment' ||
+      node.type === 'action.ask_question';
+    let outcome = asyncSend ? 'queued' : 'ok';
+    try {
+      // Insert before enqueueing: the send worker can finish immediately.
+      // The partial unique index prevents retries from inflating the funnel.
       await db
-        .update(flowExecution)
-        .set({
-          status: 'done',
-          isReplying: false,
-          finishedAt: new Date(),
-          currentNodeId,
-          visitedNodes: [...visited],
-          state,
-          updatedAt: new Date(),
+        .insert(flowStepEvent)
+        .values({
+          id: randomUUID(),
+          organizationId: exec.organizationId,
+          flowId: exec.flowId,
+          executionId: exec.id,
+          nodeId: node.id,
+          nodeType: node.type,
+          outcome: asyncSend ? 'queued' : 'pending',
         })
-        .where(eq(flowExecution.id, flowExecutionId));
-      return;
-    }
+        .onConflictDoNothing();
 
-    // ---- Trigger nodes are entry points; just walk past them ----
-    if (
-      node.type === 'trigger.comment_keyword' ||
-      node.type === 'trigger.dm_keyword' ||
-      node.type === 'trigger.first_dm' ||
-      node.type === 'trigger.story_reply' ||
-      node.type === 'trigger.story_mention'
-    ) {
-      currentNodeId = findNextNodeId(graph, currentNodeId);
-      continue;
-    }
+      // ---- Terminal ----
+      if (node.type === 'control.end') {
+        await db
+          .update(flowExecution)
+          .set({
+            status: 'done',
+            isReplying: false,
+            finishedAt: new Date(),
+            currentNodeId,
+            visitedNodes: [...visited],
+            state,
+            updatedAt: new Date(),
+          })
+          .where(eq(flowExecution.id, flowExecutionId));
+        return;
+      }
 
-    // ---- Side-effect nodes (synchronous) ----
-    if (node.type === 'action.set_tag') {
-      await applySetTag(exec.contactId, exec.organizationId, node.data.tag, node.data.operation);
-      currentNodeId = findNextNodeId(graph, currentNodeId);
-      continue;
-    }
+      // ---- Trigger nodes are entry points; just walk past them ----
+      if (
+        node.type === 'trigger.comment_keyword' ||
+        node.type === 'trigger.dm_keyword' ||
+        node.type === 'trigger.first_dm' ||
+        node.type === 'trigger.story_reply' ||
+        node.type === 'trigger.story_mention'
+      ) {
+        currentNodeId = findNextNodeId(graph, currentNodeId);
+        continue;
+      }
 
-    if (node.type === 'action.set_custom_field') {
-      await applySetCustomField(exec.contactId, node.data.field, node.data.value);
-      // Mirror into in-flight state so subsequent {{var}} substitutions in
-      // the same execution see the new value without a re-fetch.
-      const variables = (state.variables as Record<string, unknown>) ?? {};
-      variables[node.data.field] = node.data.value;
-      state.variables = variables;
-      currentNodeId = findNextNodeId(graph, currentNodeId);
-      continue;
-    }
+      // ---- Side-effect nodes (synchronous) ----
+      if (node.type === 'action.set_tag') {
+        await applySetTag(exec.contactId, exec.organizationId, node.data.tag, node.data.operation);
+        currentNodeId = findNextNodeId(graph, currentNodeId);
+        continue;
+      }
 
-    if (node.type === 'logic.condition') {
-      const handle = await evaluateCondition(node, state, exec.contactId);
-      currentNodeId = findNextNodeId(graph, currentNodeId, handle);
-      continue;
-    }
+      if (node.type === 'action.set_custom_field') {
+        await applySetCustomField(exec.contactId, node.data.field, node.data.value);
+        // Mirror into in-flight state so subsequent {{var}} substitutions in
+        // the same execution see the new value without a re-fetch.
+        const variables = (state.variables as Record<string, unknown>) ?? {};
+        variables[node.data.field] = node.data.value;
+        state.variables = variables;
+        currentNodeId = findNextNodeId(graph, currentNodeId);
+        continue;
+      }
 
-    if (node.type === 'logic.check_follow') {
-      const follows = await checkFollow(exec, state);
-      currentNodeId = findNextNodeId(graph, currentNodeId, follows ? 'follows' : 'not_follows');
-      continue;
-    }
+      if (node.type === 'logic.condition') {
+        const handle = await evaluateCondition(node, state, exec.contactId);
+        outcome = handle;
+        currentNodeId = findNextNodeId(graph, currentNodeId, handle);
+        continue;
+      }
 
-    if (node.type === 'action.ask_question') {
-      // Send the question DM, then pause execution awaiting the user's reply.
-      // process-event picks the reply up via flowExecution.status='awaiting_input'.
-      const renderedQuestion = renderTemplate(node.data.questionText, {
-        variables: (state.variables as Record<string, unknown>) ?? {},
-        customFields: await fetchContactCustomFields(exec.contactId),
-      });
-      const quickReplies = (node.data.quickReplies ?? []).map((q) => q.trim()).filter(Boolean);
-      // holdCursor: send-message must NOT advance past this node — the run
-      // stays parked in awaiting_input until the contact answers.
-      const outgoingId = await persistOutgoingTextMessage(
-        exec,
-        renderedQuestion,
-        node.id,
-        'action.send_dm',
-        { quickReplies, holdCursor: true },
-      );
-      // Park the run BEFORE enqueueing the send, so send-message's
-      // firstDmSent merge can't be clobbered by this write.
-      const newState = {
-        ...state,
-        awaitingFor: {
-          variableName: node.data.variableName,
-          inputType: node.data.inputType,
-          fallbackText: node.data.fallbackText ?? null,
-          maxAttempts: node.data.maxAttempts,
-          attempts: 0,
+      if (node.type === 'logic.check_follow') {
+        const follows = await checkFollow(exec, state);
+        outcome = follows ? 'follows' : 'not_follows';
+        currentNodeId = findNextNodeId(graph, currentNodeId, follows ? 'follows' : 'not_follows');
+        continue;
+      }
+
+      if (node.type === 'action.ask_question') {
+        // Send the question DM, then pause execution awaiting the user's reply.
+        // process-event picks the reply up via flowExecution.status='awaiting_input'.
+        const renderedQuestion = renderTemplate(node.data.questionText, {
+          variables: (state.variables as Record<string, unknown>) ?? {},
+          customFields: await fetchContactCustomFields(exec.contactId),
+        });
+        const quickReplies = (node.data.quickReplies ?? []).map((q) => q.trim()).filter(Boolean);
+        // holdCursor: send-message must NOT advance past this node — the run
+        // stays parked in awaiting_input until the contact answers.
+        const outgoingId = await persistOutgoingTextMessage(
+          exec,
+          renderedQuestion,
+          node.id,
+          'action.send_dm',
+          { quickReplies, holdCursor: true },
+        );
+        // Park the run BEFORE enqueueing the send, so send-message's
+        // firstDmSent merge can't be clobbered by this write.
+        const newState = {
+          ...state,
+          awaitingFor: {
+            variableName: node.data.variableName,
+            inputType: node.data.inputType,
+            fallbackText: node.data.fallbackText ?? null,
+            maxAttempts: node.data.maxAttempts,
+            attempts: 0,
+          },
+        };
+        await db
+          .update(flowExecution)
+          .set({
+            status: 'awaiting_input',
+            isReplying: false,
+            currentNodeId,
+            visitedNodes: [...visited],
+            state: newState,
+            updatedAt: new Date(),
+          })
+          .where(eq(flowExecution.id, flowExecutionId));
+        const sendJob: SendMessageJob = { outgoingMessageId: outgoingId, flowExecutionId };
+        await messageQueue.add('send', sendJob, {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 3000 },
+          removeOnComplete: 100,
+        });
+        return;
+      }
+
+      // ---- Blocking steps: enqueue work and save state ----
+      if (node.type === 'logic.delay') {
+        const wakeAt = new Date(Date.now() + node.data.durationSeconds * 1000);
+        await db
+          .update(flowExecution)
+          .set({
+            status: 'waiting',
+            isReplying: false,
+            wakeAt,
+            currentNodeId,
+            visitedNodes: [...visited],
+            state,
+            updatedAt: new Date(),
+          })
+          .where(eq(flowExecution.id, flowExecutionId));
+        // After delay, advance one node so the next execution starts on what
+        // comes AFTER the delay. We do that before scheduling the wake-up.
+        const next = findNextNodeId(graph, currentNodeId);
+        await db
+          .update(flowExecution)
+          .set({ currentNodeId: next })
+          .where(eq(flowExecution.id, flowExecutionId));
+        const job: ExecuteFlowJob = { flowExecutionId };
+        await executionQueue.add('execute', job, {
+          delay: node.data.durationSeconds * 1000,
+          attempts: 5,
+          backoff: { type: 'exponential', delay: 5000 },
+          removeOnComplete: 100,
+        });
+        return;
+      }
+
+      if (node.type === 'action.send_dm' || node.type === 'action.reply_comment') {
+        const outgoingId = await persistOutgoingMessage(exec, node, state);
+        const job: SendMessageJob = {
+          outgoingMessageId: outgoingId,
+          flowExecutionId,
+        };
+        // Stay on this node; send-message will advance currentNodeId on success.
+        await db
+          .update(flowExecution)
+          .set({
+            status: 'active',
+            isReplying: false,
+            currentNodeId,
+            visitedNodes: [...visited],
+            state,
+            updatedAt: new Date(),
+          })
+          .where(eq(flowExecution.id, flowExecutionId));
+        await messageQueue.add('send', job, {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 3000 },
+          removeOnComplete: 100,
+        });
+        return;
+      }
+
+      // Unknown node type — advance past it. TS narrows `node` to `never` here
+      // because every variant is handled above; cast to read the runtime type
+      // when an old graph snapshot has a node we don't recognize.
+      logger.warn(
+        {
+          flow_execution_id: flowExecutionId,
+          node_id: currentNodeId,
+          node_type: (node as { type?: string }).type,
         },
-      };
-      await db
-        .update(flowExecution)
-        .set({
-          status: 'awaiting_input',
-          isReplying: false,
-          currentNodeId,
-          visitedNodes: [...visited],
-          state: newState,
-          updatedAt: new Date(),
-        })
-        .where(eq(flowExecution.id, flowExecutionId));
-      const sendJob: SendMessageJob = { outgoingMessageId: outgoingId, flowExecutionId };
-      await messageQueue.add('send', sendJob, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 3000 },
-        removeOnComplete: 100,
-      });
-      return;
+        'unknown node type, skipping',
+      );
+      outcome = 'skipped';
+      currentNodeId = findNextNodeId(graph, currentNodeId);
+    } catch (err) {
+      outcome = 'failed';
+      await releaseLock(flowExecutionId);
+      throw err;
+    } finally {
+      if (outcome !== 'queued') await setStepOutcome(exec.id, node.id, outcome);
     }
-
-    // ---- Blocking steps: enqueue work and save state ----
-    if (node.type === 'logic.delay') {
-      const wakeAt = new Date(Date.now() + node.data.durationSeconds * 1000);
-      await db
-        .update(flowExecution)
-        .set({
-          status: 'waiting',
-          isReplying: false,
-          wakeAt,
-          currentNodeId,
-          visitedNodes: [...visited],
-          state,
-          updatedAt: new Date(),
-        })
-        .where(eq(flowExecution.id, flowExecutionId));
-      // After delay, advance one node so the next execution starts on what
-      // comes AFTER the delay. We do that before scheduling the wake-up.
-      const next = findNextNodeId(graph, currentNodeId);
-      await db
-        .update(flowExecution)
-        .set({ currentNodeId: next })
-        .where(eq(flowExecution.id, flowExecutionId));
-      const job: ExecuteFlowJob = { flowExecutionId };
-      await executionQueue.add('execute', job, {
-        delay: node.data.durationSeconds * 1000,
-        attempts: 5,
-        backoff: { type: 'exponential', delay: 5000 },
-        removeOnComplete: 100,
-      });
-      return;
-    }
-
-    if (node.type === 'action.send_dm' || node.type === 'action.reply_comment') {
-      const outgoingId = await persistOutgoingMessage(exec, node, state);
-      const job: SendMessageJob = {
-        outgoingMessageId: outgoingId,
-        flowExecutionId,
-      };
-      await messageQueue.add('send', job, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 3000 },
-        removeOnComplete: 100,
-      });
-      // Stay on this node; send-message will advance currentNodeId on success.
-      await db
-        .update(flowExecution)
-        .set({
-          status: 'active',
-          isReplying: false,
-          currentNodeId,
-          visitedNodes: [...visited],
-          state,
-          updatedAt: new Date(),
-        })
-        .where(eq(flowExecution.id, flowExecutionId));
-      return;
-    }
-
-    // Unknown node type — advance past it. TS narrows `node` to `never` here
-    // because every variant is handled above; cast to read the runtime type
-    // when an old graph snapshot has a node we don't recognize.
-    logger.warn(
-      {
-        flow_execution_id: flowExecutionId,
-        node_id: currentNodeId,
-        node_type: (node as { type?: string }).type,
-      },
-      'unknown node type, skipping',
-    );
-    currentNodeId = findNextNodeId(graph, currentNodeId);
   }
 
   // Walked off the end of the graph without an explicit End node.
@@ -312,7 +348,22 @@ async function persistOutgoingMessage(
     node.type === 'action.send_dm'
       ? (node.data.quickReplies ?? []).map((s) => s.trim()).filter(Boolean)
       : [];
-  const buttons = node.type === 'action.send_dm' ? (node.data.buttons ?? []) : [];
+  const buttons = [];
+  for (const button of node.type === 'action.send_dm' ? (node.data.buttons ?? []) : []) {
+    const appUrl = new URL(
+      process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+    );
+    if (!['http:', 'https:'].includes(appUrl.protocol)) throw new Error('invalid APP_URL');
+    const id = randomUUID();
+    await db.insert(trackedLink).values({
+      id,
+      organizationId: exec.organizationId,
+      executionId: exec.id,
+      nodeId: node.id,
+      url: button.url,
+    });
+    buttons.push({ title: button.title, url: new URL(`/r/${id}`, appUrl).href });
+  }
   return persistOutgoingTextMessage(exec, rendered, node.id, node.type, { quickReplies, buttons });
 }
 
@@ -367,7 +418,12 @@ async function persistOutgoingTextMessage(
  * the worst case is asking someone who already follows to follow.
  */
 async function checkFollow(
-  exec: { id: string; conversationId: string | null; contactId: string; instagramAccountId: string },
+  exec: {
+    id: string;
+    conversationId: string | null;
+    contactId: string;
+    instagramAccountId: string;
+  },
   state: Record<string, unknown>,
 ): Promise<boolean> {
   try {
@@ -420,10 +476,7 @@ async function applySetTag(
   operation: 'add' | 'remove',
 ): Promise<void> {
   if (operation === 'add') {
-    await db
-      .insert(contactTag)
-      .values({ contactId, organizationId, tag })
-      .onConflictDoNothing();
+    await db.insert(contactTag).values({ contactId, organizationId, tag }).onConflictDoNothing();
   } else {
     await db
       .delete(contactTag)
@@ -493,8 +546,7 @@ function evalLeaf(
   if (c.operator === 'not_has_tag') return !tagSet.has(String(c.value ?? ''));
 
   // Resolve field from variables first, falling back to persistent custom fields.
-  const fieldValue =
-    variables[c.field] !== undefined ? variables[c.field] : customFields[c.field];
+  const fieldValue = variables[c.field] !== undefined ? variables[c.field] : customFields[c.field];
 
   if (c.operator === 'is_set') {
     return fieldValue !== undefined && fieldValue !== null && fieldValue !== '';
@@ -543,3 +595,8 @@ async function failExecution(executionId: string, reason: string): Promise<void>
 }
 
 void sql;
+
+/** Final queue failure: retain retries for transient database/queue errors. */
+export async function failExhaustedExecution(args: ExecuteFlowArgs, error: Error): Promise<void> {
+  await failExecution(args.flowExecutionId, error.message);
+}

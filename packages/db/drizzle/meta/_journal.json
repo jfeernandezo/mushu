@@ -71,6 +71,13 @@
       "when": 1778544000000,
       "tag": "0009_threads_channel",
       "breakpoints": false
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778630400000,
+      "tag": "0010_flow_analytics",
+      "breakpoints": false
     }
   ]
 }

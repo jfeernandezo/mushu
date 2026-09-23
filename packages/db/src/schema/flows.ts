@@ -96,10 +96,7 @@ export const trigger = pgTable(
   (t) => ({
     flowIdx: index('trigger_flow_idx').on(t.flowId),
     accountTypeIdx: index('trigger_account_type_idx').on(t.instagramAccountId, t.type),
-    accountPostIdx: index('trigger_account_post_idx').on(
-      t.instagramAccountId,
-      t.instagramPostId,
-    ),
+    accountPostIdx: index('trigger_account_post_idx').on(t.instagramAccountId, t.instagramPostId),
     orgIdx: index('trigger_org_idx').on(t.organizationId),
   }),
 );
@@ -168,5 +165,52 @@ export const flowExecution = pgTable(
     contactFlowUnique: uniqueIndex('flow_execution_active_unique')
       .on(t.flowId, t.contactId)
       .where(sql`status IN ('active','waiting','awaiting_input')`),
+  }),
+);
+
+/** One row per executed node; clicks are separate, repeatable events. */
+export const flowStepEvent = pgTable(
+  'flow_step_event',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    flowId: text('flow_id')
+      .notNull()
+      .references(() => flow.id, { onDelete: 'cascade' }),
+    executionId: text('execution_id')
+      .notNull()
+      .references(() => flowExecution.id, { onDelete: 'cascade' }),
+    nodeId: text('node_id').notNull(),
+    nodeType: text('node_type').notNull(),
+    outcome: text('outcome').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => ({
+    flowCreatedIdx: index('flow_step_event_flow_created_idx').on(t.flowId, t.createdAt),
+    orgIdx: index('flow_step_event_org_idx').on(t.organizationId),
+    stepUnique: uniqueIndex('flow_step_event_step_unique')
+      .on(t.executionId, t.nodeId)
+      .where(sql`outcome <> 'click'`),
+  }),
+);
+
+export const trackedLink = pgTable(
+  'tracked_link',
+  {
+    id: text('id').primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    executionId: text('execution_id')
+      .notNull()
+      .references(() => flowExecution.id, { onDelete: 'cascade' }),
+    nodeId: text('node_id').notNull(),
+    url: text('url').notNull(),
+  },
+  (t) => ({
+    orgIdx: index('tracked_link_org_idx').on(t.organizationId),
+    executionIdx: index('tracked_link_execution_idx').on(t.executionId),
   }),
 );

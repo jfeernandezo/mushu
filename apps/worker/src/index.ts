@@ -14,35 +14,43 @@ if (process.env.SENTRY_DSN) {
 }
 
 import { createLogger } from '@mushu/shared/logger';
+import { executeFlow, failExhaustedExecution } from './processors/execute-flow.ts';
+import { runMaintenance } from './processors/maintenance.ts';
+import { processEvent } from './processors/process-event.ts';
+import { failExhaustedMessage, sendMessage } from './processors/send-message.ts';
 import {
+  createWorker,
   type ExecuteFlowJob,
   type MaintenanceJob,
+  maintenanceQueue,
   type ProcessEventJob,
   QUEUES,
   type SendMessageJob,
-  createWorker,
-  maintenanceQueue,
 } from './queues.ts';
-import { executeFlow } from './processors/execute-flow.ts';
-import { runMaintenance } from './processors/maintenance.ts';
-import { processEvent } from './processors/process-event.ts';
-import { sendMessage } from './processors/send-message.ts';
 
 const logger = createLogger('worker.bootstrap');
 
 logger.info({ redis: process.env.REDIS_URL ?? 'redis://localhost:6379' }, 'starting');
 
 const eventWorker = createWorker<ProcessEventJob>(QUEUES.events, processEvent);
-const executionWorker = createWorker<ExecuteFlowJob>(QUEUES.executions, executeFlow);
-const messageWorker = createWorker<SendMessageJob>(QUEUES.messages, sendMessage);
+const executionWorker = createWorker<ExecuteFlowJob>(
+  QUEUES.executions,
+  executeFlow,
+  {},
+  failExhaustedExecution,
+);
+const messageWorker = createWorker<SendMessageJob>(
+  QUEUES.messages,
+  sendMessage,
+  {},
+  failExhaustedMessage,
+);
 // Maintenance worker has concurrency 1 — sweeps are sequential and slow
 // (heavy DELETEs); no benefit from parallelism and we'd just contend on
 // table locks.
-const maintenanceWorker = createWorker<MaintenanceJob>(
-  QUEUES.maintenance,
-  runMaintenance,
-  { concurrency: 1 },
-);
+const maintenanceWorker = createWorker<MaintenanceJob>(QUEUES.maintenance, runMaintenance, {
+  concurrency: 1,
+});
 
 await scheduleRecurringJobs();
 

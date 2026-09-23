@@ -13,6 +13,7 @@ import {
   Sparkles,
   Square,
   Tag,
+  UserCheck,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { DragEvent } from 'react';
@@ -38,6 +39,7 @@ const ITEMS: PaletteItem[] = [
   { type: 'action.set_tag', icon: Tag, category: 'actions' },
   { type: 'logic.delay', icon: Clock, category: 'logic' },
   { type: 'logic.condition', icon: GitBranch, category: 'logic' },
+  { type: 'logic.check_follow', icon: UserCheck, category: 'logic' },
   { type: 'control.end', icon: Square, category: 'control' },
 ];
 

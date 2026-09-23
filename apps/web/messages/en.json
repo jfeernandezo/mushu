@@ -497,6 +497,19 @@
         "tag": "mentioned-in-story",
         "dmMessage": "Thanks for tagging us in your story! 💛 We really appreciate it."
       }
+    },
+    "linkForFollowers": {
+      "name": "Link for followers only",
+      "description": "Whoever comments the keyword gets a DM with a button. On tap, Mushu checks whether they follow you: followers get the link; non-followers are asked to follow and comment again.",
+      "defaults": {
+        "triggerKeywords": "link, want",
+        "replyMessage": "Sent you a DM! 📩",
+        "questionText": "Hi! Glad you're interested 💛 Tap the button below and I'll send you the link.",
+        "quickReply": "Send me the link",
+        "dmMessage": "Here you go 👇",
+        "buttonTitle": "Open",
+        "notFollowMessage": "Almost there! The link is for followers only. Follow the profile and comment the keyword again on the post — I'll send it right away 😉"
+      }
     }
   },
   "flowBuilder": {
@@ -551,7 +564,8 @@
         "maxAttempts": "Max attempts",
         "tag": "Tag",
         "tagOperation": "Action",
-        "quickReplies": "Quick reply buttons"
+        "quickReplies": "Quick reply buttons",
+        "buttons": "Link buttons"
       },
       "sections": {
         "question": "Question",
@@ -596,7 +610,10 @@
         "email": "Email",
         "number": "Number",
         "phone": "Phone"
-      }
+      },
+      "buttonsHint": "Up to 3 link buttons (20 chars max per title). Instagram shows them as tappable buttons under the message.",
+      "askQuickRepliesHint": "Optional. Buttons the contact can tap instead of typing — the tap counts as the answer.",
+      "checkFollowDescription": "Asks Instagram and continues through \"Follows\" or \"Doesn't follow\". Note: Meta only exposes this after the contact has messaged the account — put a question with a button (e.g. \"Send me the link\") before this step. If the lookup fails, it continues through \"Doesn't follow\"."
     },
     "nodes": {
       "trigger": {
@@ -622,7 +639,8 @@
       "action": {
         "send_dm": {
           "title": "Send a private message",
-          "quickReplyCount": "{count, plural, one {# button attached} other {# buttons attached}}"
+          "quickReplyCount": "{count, plural, one {# button attached} other {# buttons attached}}",
+          "buttonCount": "{count, plural, one {# link attached} other {# links attached}}"
         },
         "reply_comment": {
           "title": "Reply to the comment publicly"
@@ -645,6 +663,12 @@
         },
         "condition": {
           "title": "Choose between two paths"
+        },
+        "check_follow": {
+          "title": "Check if follows",
+          "hint": "Splits followers from non-followers.",
+          "follows": "Follows",
+          "notFollows": "Doesn't follow"
         }
       },
       "control": {
@@ -671,7 +695,8 @@
       "triggerWithoutKeywords": "There's a trigger with no keywords. Click the step and fill in the words that should fire the automation.",
       "actionWithoutText": "There's an action with an empty message. Click the step and write what to send.",
       "askQuestionIncomplete": "There's an \"Ask\" step missing the question or the variable name. Click it and fill both.",
-      "triggerHasNoPath": "There's a trigger that goes nowhere. Connect it to an action by dragging from its bottom dot to the next step."
+      "triggerHasNoPath": "There's a trigger that goes nowhere. Connect it to an action by dragging from its bottom dot to the next step.",
+      "linkButtonIncomplete": "There's a link button missing its text or with an invalid address (must start with https://). Click the \"Send message\" step and fix it."
     },
     "condition": {
       "emptyHint": "This step decides which path to follow based on saved variables or contact tags.",
@@ -741,6 +766,11 @@
       "noAccountBody": "To pick a specific post you need to connect an Instagram Business account.",
       "connectAccount": "Connect account →",
       "error": "We couldn't load your posts right now. Try again in a few seconds."
+    },
+    "urlButtons": {
+      "titlePlaceholder": "Button text",
+      "add": "Add link button",
+      "remove": "Remove button"
     }
   },
   "contacts": {

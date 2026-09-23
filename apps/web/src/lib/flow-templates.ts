@@ -4,7 +4,9 @@ export interface FlowTemplate {
   id: string;
   nameKey: string;
   descriptionKey: string;
-  iconName: 'comment' | 'lead' | 'wave' | 'sparkles' | 'tag' | 'image';
+  iconName: 'comment' | 'lead' | 'wave' | 'sparkles' | 'tag' | 'image' | 'lock';
+  /** Extra default texts read from flowTemplates.<id>.defaults.<key> into `texts.extras`. */
+  extraKeys?: string[];
   /**
    * Builds a FlowGraph for this template, generating fresh node/edge UUIDs so
    * multiple flows from the same template don't share IDs.
@@ -23,6 +25,8 @@ export interface TemplateTexts {
   dmMessage: string;
   /** Optional tag set on the contact (set_tag node template). */
   tag?: string;
+  /** Template-specific texts, keyed by the template's `extraKeys`. */
+  extras?: Record<string, string>;
 }
 
 const POS_TRIGGER = { x: 80, y: 80 };
@@ -258,6 +262,97 @@ export const FLOW_TEMPLATES: FlowTemplate[] = [
           { id: uid(), source: triggerId, target: tagId },
           { id: uid(), source: tagId, target: dmId },
           { id: uid(), source: dmId, target: endId },
+        ],
+      };
+    },
+  },
+  {
+    id: 'link-for-followers',
+    nameKey: 'flowTemplates.linkForFollowers.name',
+    descriptionKey: 'flowTemplates.linkForFollowers.description',
+    iconName: 'lock',
+    extraKeys: ['questionText', 'quickReply', 'buttonTitle', 'notFollowMessage'],
+    build: (texts) => {
+      // comment → public reply → DM with a tap button → follow check.
+      // The tap is required: Meta only exposes is_user_follow_business after
+      // the contact has messaged the account. Non-followers are asked to
+      // follow and comment again, which restarts the flow from the trigger.
+      const x = texts.extras ?? {};
+      const triggerId = uid();
+      const replyId = uid();
+      const askId = uid();
+      const checkId = uid();
+      const linkId = uid();
+      const nudgeId = uid();
+      const endId = uid();
+      const nodes: FlowNode[] = [
+        {
+          id: triggerId,
+          type: 'trigger.comment_keyword',
+          position: POS_TRIGGER,
+          data: {
+            instagramPostId: null,
+            keywords: splitKeywords(texts.triggerKeywords),
+            matchMode: 'contains',
+            caseSensitive: false,
+          },
+        },
+        {
+          id: replyId,
+          type: 'action.reply_comment',
+          position: POS_ACTION_1,
+          data: { text: texts.replyMessage ?? '' },
+        },
+        {
+          id: askId,
+          type: 'action.ask_question',
+          position: POS_ACTION_2,
+          data: {
+            questionText: x.questionText ?? '',
+            variableName: 'pediu_link',
+            inputType: 'text',
+            maxAttempts: 1,
+            quickReplies: x.quickReply ? [x.quickReply] : [],
+          },
+        },
+        {
+          id: checkId,
+          type: 'logic.check_follow',
+          position: POS_END,
+          data: {},
+        },
+        {
+          id: linkId,
+          type: 'action.send_dm',
+          position: { x: -80, y: 720 },
+          data: {
+            text: texts.dmMessage,
+            buttons: [{ title: x.buttonTitle || 'Link', url: 'https://exemplo.com' }],
+          },
+        },
+        {
+          id: nudgeId,
+          type: 'action.send_dm',
+          position: { x: 240, y: 720 },
+          data: { text: x.notFollowMessage ?? '' },
+        },
+        {
+          id: endId,
+          type: 'control.end',
+          position: { x: 80, y: 880 },
+          data: {},
+        },
+      ];
+      return {
+        nodes,
+        edges: [
+          { id: uid(), source: triggerId, target: replyId },
+          { id: uid(), source: replyId, target: askId },
+          { id: uid(), source: askId, target: checkId },
+          { id: uid(), source: checkId, sourceHandle: 'follows', target: linkId },
+          { id: uid(), source: checkId, sourceHandle: 'not_follows', target: nudgeId },
+          { id: uid(), source: linkId, target: endId },
+          { id: uid(), source: nudgeId, target: endId },
         ],
       };
     },

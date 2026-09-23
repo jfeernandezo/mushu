@@ -23,6 +23,7 @@ import { useTheme } from '@/components/theme-provider';
 import { THEME_COLORS } from '@/lib/theme-colors';
 import {
   AskQuestionNode,
+  CheckFollowNode,
   ConditionNode,
   DelayNode,
   EndNode,
@@ -48,6 +49,7 @@ const nodeTypes: NodeTypes = {
   'action.set_tag': SetTagNode,
   'logic.delay': DelayNode,
   'logic.condition': ConditionNode,
+  'logic.check_follow': CheckFollowNode,
   'control.end': EndNode,
 };
 
@@ -174,7 +176,7 @@ function defaultDataForType(type: FlowNodeType): Record<string, unknown> {
     case 'trigger.story_mention':
       return {};
     case 'action.send_dm':
-      return { text: '', quickReplies: [] };
+      return { text: '', quickReplies: [], buttons: [] };
     case 'action.reply_comment':
       return { text: '' };
     case 'action.ask_question':
@@ -183,6 +185,7 @@ function defaultDataForType(type: FlowNodeType): Record<string, unknown> {
         variableName: 'resposta',
         inputType: 'text',
         maxAttempts: 3,
+        quickReplies: [],
       };
     case 'action.set_tag':
       return { tag: '', operation: 'add' };
@@ -192,6 +195,8 @@ function defaultDataForType(type: FlowNodeType): Record<string, unknown> {
       return { durationSeconds: 30 };
     case 'logic.condition':
       return { branches: [{ name: 'default', conditions: [], logical: 'and' }] };
+    case 'logic.check_follow':
+      return {};
     case 'control.end':
       return {};
     default:

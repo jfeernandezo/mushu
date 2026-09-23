@@ -16,6 +16,7 @@ export type FlowValidationIssueKind =
   | 'triggerWithoutKeywords'
   | 'actionWithoutText'
   | 'askQuestionIncomplete'
+  | 'linkButtonIncomplete'
   | 'triggerHasNoPath';
 
 export interface FlowValidationIssue {
@@ -67,6 +68,12 @@ export function validateFlow(graph: FlowGraph): FlowValidationIssue[] {
       const text = (n.data as { text?: string }).text ?? '';
       if (!text.trim()) {
         issues.push({ kind: 'actionWithoutText', nodeId: n.id });
+      }
+    }
+    if (n.type === 'action.send_dm') {
+      const buttons = (n.data as { buttons?: { title?: string; url?: string }[] }).buttons ?? [];
+      if (buttons.some((b) => !b.title?.trim() || !/^https?:\/\/\S+\.\S+/.test(b.url ?? ''))) {
+        issues.push({ kind: 'linkButtonIncomplete', nodeId: n.id });
       }
     }
     if (n.type === 'action.ask_question') {

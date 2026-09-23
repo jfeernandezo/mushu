@@ -1,5 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { contact, contactTag, dbAdmin as db, flowExecution, message } from '@mushu/db';
+import {
+  contact,
+  contactInbox,
+  contactTag,
+  conversation,
+  dbAdmin as db,
+  flowExecution,
+  instagramAccount,
+  message,
+} from '@mushu/db';
 import {
   type FlowGraph,
   type FlowNode,
@@ -12,6 +21,7 @@ import { and, eq, sql } from 'drizzle-orm';
 const logger = createLogger('worker.execute-flow');
 import { type ExecuteFlowJob, type SendMessageJob, executionQueue, messageQueue } from '../queues.ts';
 import { findNextNodeId, getNodeById } from '../lib/trigger-matcher.ts';
+import { createChannelClient } from '../lib/channel-client.ts';
 
 interface ExecuteFlowArgs {
   flowExecutionId: string;
@@ -138,6 +148,12 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
       continue;
     }
 
+    if (node.type === 'logic.check_follow') {
+      const follows = await checkFollow(exec, state);
+      currentNodeId = findNextNodeId(graph, currentNodeId, follows ? 'follows' : 'not_follows');
+      continue;
+    }
+
     if (node.type === 'action.ask_question') {
       // Send the question DM, then pause execution awaiting the user's reply.
       // process-event picks the reply up via flowExecution.status='awaiting_input'.
@@ -145,19 +161,18 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
         variables: (state.variables as Record<string, unknown>) ?? {},
         customFields: await fetchContactCustomFields(exec.contactId),
       });
+      const quickReplies = (node.data.quickReplies ?? []).map((q) => q.trim()).filter(Boolean);
+      // holdCursor: send-message must NOT advance past this node — the run
+      // stays parked in awaiting_input until the contact answers.
       const outgoingId = await persistOutgoingTextMessage(
         exec,
         renderedQuestion,
         node.id,
         'action.send_dm',
+        { quickReplies, holdCursor: true },
       );
-      const sendJob: SendMessageJob = { outgoingMessageId: outgoingId, flowExecutionId };
-      await messageQueue.add('send', sendJob, {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 3000 },
-        removeOnComplete: 100,
-      });
-
+      // Park the run BEFORE enqueueing the send, so send-message's
+      // firstDmSent merge can't be clobbered by this write.
       const newState = {
         ...state,
         awaitingFor: {
@@ -179,6 +194,12 @@ export async function executeFlow({ flowExecutionId }: ExecuteFlowArgs): Promise
           updatedAt: new Date(),
         })
         .where(eq(flowExecution.id, flowExecutionId));
+      const sendJob: SendMessageJob = { outgoingMessageId: outgoingId, flowExecutionId };
+      await messageQueue.add('send', sendJob, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 3000 },
+        removeOnComplete: 100,
+      });
       return;
     }
 
@@ -291,13 +312,8 @@ async function persistOutgoingMessage(
     node.type === 'action.send_dm'
       ? (node.data.quickReplies ?? []).map((s) => s.trim()).filter(Boolean)
       : [];
-  return persistOutgoingTextMessage(
-    exec,
-    rendered,
-    node.id,
-    node.type,
-    quickReplies.length > 0 ? quickReplies : undefined,
-  );
+  const buttons = node.type === 'action.send_dm' ? (node.data.buttons ?? []) : [];
+  return persistOutgoingTextMessage(exec, rendered, node.id, node.type, { quickReplies, buttons });
 }
 
 async function persistOutgoingTextMessage(
@@ -310,8 +326,13 @@ async function persistOutgoingTextMessage(
   text: string,
   nodeId: string,
   nodeType: 'action.send_dm' | 'action.reply_comment',
-  quickReplies?: string[],
+  opts: {
+    quickReplies?: string[];
+    buttons?: { title: string; url: string }[];
+    holdCursor?: boolean;
+  } = {},
 ): Promise<string> {
+  const { quickReplies, buttons, holdCursor } = opts;
   const id = randomUUID();
   if (!exec.conversationId) {
     throw new Error('flow_execution has no conversation linked');
@@ -331,10 +352,56 @@ async function persistOutgoingTextMessage(
       nodeType,
       nodeId,
       ...(quickReplies && quickReplies.length > 0 ? { quickReplies } : {}),
+      ...(buttons && buttons.length > 0 ? { buttons } : {}),
+      ...(holdCursor ? { holdCursor: true } : {}),
     },
     createdByAutomationId: exec.id,
   });
   return id;
+}
+
+/**
+ * Ask Meta whether the contact follows the account. Stores `is_follower` and
+ * `username` on the contact (and in-flight variables) so later nodes can use
+ * {{username}} or branch on is_follower. Any failure counts as "not follows":
+ * the worst case is asking someone who already follows to follow.
+ */
+async function checkFollow(
+  exec: { id: string; conversationId: string | null; contactId: string; instagramAccountId: string },
+  state: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    if (!exec.conversationId) throw new Error('flow_execution has no conversation linked');
+    const [row] = await db
+      .select({ igsid: contactInbox.sourceId, account: instagramAccount })
+      .from(conversation)
+      .innerJoin(contactInbox, eq(contactInbox.id, conversation.contactInboxId))
+      .innerJoin(instagramAccount, eq(instagramAccount.id, exec.instagramAccountId))
+      .where(eq(conversation.id, exec.conversationId))
+      .limit(1);
+    if (!row) throw new Error('contact inbox not found');
+    const ig = createChannelClient(row.account).instagram;
+    if (!ig) throw new Error('check_follow is instagram-only');
+
+    const profile = await ig.getUserProfile(row.igsid);
+    const fields: Record<string, unknown> = { is_follower: profile.isFollower };
+    if (profile.username) fields.username = profile.username;
+    await db
+      .update(contact)
+      .set({
+        customFields: sql`${contact.customFields} || ${JSON.stringify(fields)}::jsonb`,
+        updatedAt: new Date(),
+      })
+      .where(eq(contact.id, exec.contactId));
+    state.variables = { ...((state.variables as Record<string, unknown>) ?? {}), ...fields };
+    return profile.isFollower;
+  } catch (err) {
+    logger.warn(
+      { flow_execution_id: exec.id, err: err instanceof Error ? err.message : String(err) },
+      'check_follow failed, taking not_follows',
+    );
+    return false;
+  }
 }
 
 async function fetchContactCustomFields(contactId: string): Promise<Record<string, unknown>> {

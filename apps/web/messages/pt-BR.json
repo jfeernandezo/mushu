@@ -497,6 +497,19 @@
         "tag": "mencionou-no-story",
         "dmMessage": "Vi que você me marcou no seu story! 💛 Muito obrigado(a) pelo carinho — significa muito pra gente."
       }
+    },
+    "linkForFollowers": {
+      "name": "Link só pra quem segue",
+      "description": "Quem comentar a palavra-chave recebe um DM com botão. Ao tocar, o Mushu confere se a pessoa segue: quem segue recebe o link; quem não segue é convidado a seguir e comentar de novo.",
+      "defaults": {
+        "triggerKeywords": "link, quero",
+        "replyMessage": "Te chamei no direct! 📩",
+        "questionText": "Oi! Que bom que você se interessou 💛 Toca no botão aqui embaixo que eu te mando o link.",
+        "quickReply": "Quero o link",
+        "dmMessage": "Prontinho! Aqui está o seu acesso 👇",
+        "buttonTitle": "Acessar",
+        "notFollowMessage": "Quase lá! O link é exclusivo pra quem segue o perfil. Me segue e comenta a palavra de novo no post que eu te mando na hora 😉"
+      }
     }
   },
   "flowBuilder": {
@@ -551,7 +564,8 @@
         "maxAttempts": "Máximo de tentativas",
         "tag": "Tag",
         "tagOperation": "Ação",
-        "quickReplies": "Botões de resposta rápida"
+        "quickReplies": "Botões de resposta rápida",
+        "buttons": "Botões de link"
       },
       "sections": {
         "question": "Pergunta",
@@ -596,7 +610,10 @@
         "email": "E-mail",
         "number": "Número",
         "phone": "Telefone"
-      }
+      },
+      "buttonsHint": "Até 3 botões com link (máx 20 caracteres no título). O Instagram mostra como botões clicáveis abaixo da mensagem.",
+      "askQuickRepliesHint": "Opcional. Botões pra pessoa tocar em vez de digitar — o toque conta como resposta.",
+      "checkFollowDescription": "Consulta o Instagram e segue pela saída \"Segue\" ou \"Não segue\". Importante: a Meta só informa isso depois que a pessoa mandou alguma mensagem pra conta — coloque antes uma pergunta com botão (ex.: \"Quero o link\"). Se a consulta falhar, segue por \"Não segue\"."
     },
     "nodes": {
       "trigger": {
@@ -622,7 +639,8 @@
       "action": {
         "send_dm": {
           "title": "Enviar mensagem privada",
-          "quickReplyCount": "{count, plural, one {# botão anexado} other {# botões anexados}}"
+          "quickReplyCount": "{count, plural, one {# botão anexado} other {# botões anexados}}",
+          "buttonCount": "{count, plural, one {# link anexado} other {# links anexados}}"
         },
         "reply_comment": {
           "title": "Responder o comentário publicamente"
@@ -645,6 +663,12 @@
         },
         "condition": {
           "title": "Decidir entre dois caminhos"
+        },
+        "check_follow": {
+          "title": "Checar se segue",
+          "hint": "Separa quem segue a conta de quem ainda não segue.",
+          "follows": "Segue",
+          "notFollows": "Não segue"
         }
       },
       "control": {
@@ -671,7 +695,8 @@
       "triggerWithoutKeywords": "Tem um gatilho sem palavra-chave. Clique no bloco e preencha as palavras que devem disparar a automação.",
       "actionWithoutText": "Tem uma ação com mensagem em branco. Clique no bloco e escreva o que enviar.",
       "askQuestionIncomplete": "Tem um bloco \"Perguntar\" sem pergunta ou nome de variável. Clique no bloco e preencha os dois.",
-      "triggerHasNoPath": "Tem um gatilho desconectado. Ligue ele a uma ação arrastando do ponto inferior pro próximo bloco."
+      "triggerHasNoPath": "Tem um gatilho desconectado. Ligue ele a uma ação arrastando do ponto inferior pro próximo bloco.",
+      "linkButtonIncomplete": "Tem um botão de link sem texto ou com endereço inválido (precisa começar com https://). Clique no bloco \"Enviar mensagem\" e corrija."
     },
     "condition": {
       "emptyHint": "Esta etapa decide pra qual caminho seguir com base em variáveis salvas ou tags do contato.",
@@ -741,6 +766,11 @@
       "noAccountBody": "Pra escolher um post específico você precisa conectar uma conta Instagram Business.",
       "connectAccount": "Conectar conta →",
       "error": "Não conseguimos carregar seus posts agora. Tente de novo em alguns segundos."
+    },
+    "urlButtons": {
+      "titlePlaceholder": "Texto do botão",
+      "add": "Adicionar botão de link",
+      "remove": "Remover botão"
     }
   },
   "contacts": {

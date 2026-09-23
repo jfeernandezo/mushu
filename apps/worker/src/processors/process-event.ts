@@ -549,7 +549,7 @@ async function tryResumeAwaitingFlow(args: {
           contentType: 'text',
           status: 'queued',
           content: fallback,
-          contentAttributes: { reason: 'ask_question_fallback' },
+          contentAttributes: { reason: 'ask_question_fallback', holdCursor: true },
           createdByAutomationId: exec.id,
         });
         const sendJob: SendMessageJob = {

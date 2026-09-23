@@ -14,6 +14,8 @@ interface BaseNodeProps {
   selected?: boolean;
   hasInput?: boolean;
   hasOutput?: boolean;
+  /** Named outputs (branching nodes). Each id becomes the edge sourceHandle. */
+  outputs?: { id: string; label: string }[];
 }
 
 const CATEGORY_BORDER: Record<BaseNodeProps['category'], string> = {
@@ -32,6 +34,7 @@ export function BaseNode({
   selected,
   hasInput = true,
   hasOutput = true,
+  outputs,
 }: BaseNodeProps) {
   return (
     <div
@@ -56,7 +59,21 @@ export function BaseNode({
           className="!h-2 !w-2 !border-[var(--color-mushu-border)] !bg-[var(--color-mushu-bg)]"
         />
       ) : null}
-      {hasOutput ? (
+      {outputs?.length ? (
+        <div className="flex justify-around border-t border-[var(--color-mushu-border)] px-2 pt-1 pb-2">
+          {outputs.map((o) => (
+            <div key={o.id} className="relative flex flex-col items-center">
+              <span className="text-[10px] text-[var(--color-mushu-faint)]">{o.label}</span>
+              <Handle
+                id={o.id}
+                type="source"
+                position={Position.Bottom}
+                className="!-bottom-2 !h-2 !w-2 !border-[var(--color-mushu-border)] !bg-[var(--color-mushu-bg)]"
+              />
+            </div>
+          ))}
+        </div>
+      ) : hasOutput ? (
         <Handle
           type="source"
           position={Position.Bottom}

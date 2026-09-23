@@ -13,6 +13,7 @@ import {
   Sparkles,
   Square,
   Tag,
+  UserCheck,
   Zap,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -128,8 +129,13 @@ export function TriggerStoryMentionNode({ selected }: NodeProps) {
 
 export function SendDmNode({ data, selected }: NodeProps) {
   const t = useTranslations('flowBuilder.nodes');
-  const d = (data ?? {}) as { text?: string; quickReplies?: string[] };
+  const d = (data ?? {}) as {
+    text?: string;
+    quickReplies?: string[];
+    buttons?: { title?: string; url?: string }[];
+  };
   const quickCount = (d.quickReplies ?? []).filter(Boolean).length;
+  const buttonCount = (d.buttons ?? []).filter((b) => b.title && b.url).length;
   return (
     <BaseNode
       icon={Send}
@@ -146,6 +152,11 @@ export function SendDmNode({ data, selected }: NodeProps) {
       {quickCount > 0 ? (
         <p className="mt-1 text-[10px] text-[var(--color-mushu-amber)]">
           {t('action.send_dm.quickReplyCount', { count: quickCount })}
+        </p>
+      ) : null}
+      {buttonCount > 0 ? (
+        <p className="mt-1 text-[10px] text-[var(--color-mushu-amber)]">
+          {t('action.send_dm.buttonCount', { count: buttonCount })}
         </p>
       ) : null}
     </BaseNode>
@@ -245,6 +256,26 @@ export function ConditionNode({ selected }: NodeProps) {
   return (
     <BaseNode icon={GitBranch} title={t('logic.condition.title')} category="logic" selected={selected}>
       <span className="italic">{t('branchesV2')}</span>
+    </BaseNode>
+  );
+}
+
+export function CheckFollowNode({ selected }: NodeProps) {
+  const t = useTranslations('flowBuilder.nodes');
+  return (
+    <BaseNode
+      icon={UserCheck}
+      title={t('logic.check_follow.title')}
+      category="logic"
+      selected={selected}
+      outputs={[
+        { id: 'follows', label: t('logic.check_follow.follows') },
+        { id: 'not_follows', label: t('logic.check_follow.notFollows') },
+      ]}
+    >
+      <span className="block text-[10px] text-[var(--color-mushu-faint)]">
+        {t('logic.check_follow.hint')}
+      </span>
     </BaseNode>
   );
 }

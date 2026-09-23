@@ -70,11 +70,19 @@ const storyMentionTriggerNode = baseNode.extend({
 
 // ---------- Action nodes ----------
 
+/** URL button (Meta `button` template). Title capped at 20 chars by Meta. */
+export const urlButtonSchema = z.object({
+  title: z.string().min(1).max(20),
+  url: z.url({ protocol: /^https?$/ }),
+});
+
 const sendDmNode = baseNode.extend({
   type: z.literal('action.send_dm'),
   data: z.object({
     text: z.string().min(1).max(1000),
     quickReplies: z.array(z.string().max(20)).max(13).optional(),
+    // Up to 3 link buttons. With buttons, Meta caps the text at 640 chars.
+    buttons: z.array(urlButtonSchema).max(3).optional(),
   }),
 });
 
@@ -119,6 +127,9 @@ const askQuestionNode = baseNode.extend({
     inputType: z.enum(['text', 'email', 'number', 'phone']).default('text'),
     fallbackText: z.string().max(500).optional(),
     maxAttempts: z.number().int().min(1).max(5).default(3),
+    // Tap-to-answer chips. A tap is also the user's first message, which is
+    // what unlocks the follow check (logic.check_follow) on Meta's side.
+    quickReplies: z.array(z.string().max(20)).max(13).optional(),
   }),
 });
 
@@ -163,6 +174,20 @@ const conditionNode = baseNode.extend({
   }),
 });
 
+/**
+ * Asks Meta whether the contact follows the connected account and branches
+ * on the `follows` / `not_follows` handles. Also stores `is_follower` and
+ * `username` in the contact's custom fields. Meta only answers after the
+ * contact has messaged the account — put it after an ask_question tap or a
+ * DM trigger, not straight after a comment trigger.
+ */
+const checkFollowNode = baseNode.extend({
+  type: z.literal('logic.check_follow'),
+  data: z.object({}),
+});
+
+export const CHECK_FOLLOW_HANDLES = ['follows', 'not_follows'] as const;
+
 const endNode = baseNode.extend({
   type: z.literal('control.end'),
   data: z.object({
@@ -183,6 +208,7 @@ export const flowNodeSchema = z.discriminatedUnion('type', [
   askQuestionNode,
   delayNode,
   conditionNode,
+  checkFollowNode,
   endNode,
 ]);
 

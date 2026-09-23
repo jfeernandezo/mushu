@@ -45,18 +45,37 @@ export interface QuickReply {
   payload: string;
 }
 
+/** URL button rendered by the `button` template. Meta caps at 3 per message. */
+export interface UrlButton {
+  /** Label shown on the button. Meta caps at 20 chars. */
+  title: string;
+  url: string;
+}
+
+/** Subset of the IG user profile the Messaging API exposes to a business. */
+export interface IgUserProfile {
+  username: string | null;
+  name: string | null;
+  /** Only readable after the user has messaged the business (consent). */
+  isFollower: boolean;
+  followerCount: number | null;
+}
+
 export interface IgClient {
   replyComment(args: { commentId: string; message: string }): Promise<{ id: string }>;
   sendDmByIgsid(args: {
     igsid: string;
     text: string;
     quickReplies?: QuickReply[];
+    buttons?: UrlButton[];
   }): Promise<{ messageId: string }>;
   sendDmByCommentId(args: {
     commentId: string;
     text: string;
     quickReplies?: QuickReply[];
+    buttons?: UrlButton[];
   }): Promise<{ messageId: string }>;
+  getUserProfile(igsid: string): Promise<IgUserProfile>;
 }
 
 export function createIgClient(account: InstagramAccount): IgClient {
@@ -122,27 +141,40 @@ export function createIgClient(account: InstagramAccount): IgClient {
       return { id: String(r.id ?? '') };
     },
 
-    async sendDmByIgsid({ igsid, text, quickReplies }) {
+    async sendDmByIgsid({ igsid, text, quickReplies, buttons }) {
       const r = await call('/me/messages', {
         body: {
           recipient: { id: igsid },
-          message: buildMessageBody(text, quickReplies),
+          message: buildMessageBody(text, quickReplies, buttons),
         },
       });
       return { messageId: String(r.message_id ?? '') };
     },
 
-    async sendDmByCommentId({ commentId, text, quickReplies }) {
+    async sendDmByCommentId({ commentId, text, quickReplies, buttons }) {
       // Sending DM in response to a comment uses recipient.comment_id —
       // this is the only way to start a DM in-thread without violating the
       // 24h messaging window.
       const r = await call('/me/messages', {
         body: {
           recipient: { comment_id: commentId },
-          message: buildMessageBody(text, quickReplies),
+          message: buildMessageBody(text, quickReplies, buttons),
         },
       });
       return { messageId: String(r.message_id ?? '') };
+    },
+
+    async getUserProfile(igsid) {
+      // Meta only returns is_user_follow_business once the user has sent the
+      // business a message — flows get that consent via a quick-reply tap.
+      const fields = 'username,name,is_user_follow_business,follower_count';
+      const r = await call(`/${igsid}?fields=${fields}`, { method: 'GET' });
+      return {
+        username: typeof r.username === 'string' ? r.username : null,
+        name: typeof r.name === 'string' ? r.name : null,
+        isFollower: r.is_user_follow_business === true,
+        followerCount: typeof r.follower_count === 'number' ? r.follower_count : null,
+      };
     },
   };
 }
@@ -152,9 +184,32 @@ export function createIgClient(account: InstagramAccount): IgClient {
  * attach them as `content_type: 'text'` chips. Meta caps each title at 20
  * chars and the array at 13 entries — the inspector enforces these too, but
  * we re-clamp here as defense in depth.
+ *
+ * URL buttons switch the body to a `button` template (text capped at 640
+ * chars, max 3 `web_url` buttons). Quick replies still ride along.
  */
-function buildMessageBody(text: string, quickReplies?: QuickReply[]): Record<string, unknown> {
-  const body: Record<string, unknown> = { text };
+export function buildMessageBody(
+  text: string,
+  quickReplies?: QuickReply[],
+  buttons?: UrlButton[],
+): Record<string, unknown> {
+  const body: Record<string, unknown> =
+    buttons && buttons.length > 0
+      ? {
+          attachment: {
+            type: 'template',
+            payload: {
+              template_type: 'button',
+              text: text.slice(0, 640),
+              buttons: buttons.slice(0, 3).map((b) => ({
+                type: 'web_url',
+                url: b.url,
+                title: b.title.slice(0, 20),
+              })),
+            },
+          },
+        }
+      : { text };
   if (quickReplies && quickReplies.length > 0) {
     body.quick_replies = quickReplies.slice(0, 13).map((qr) => ({
       content_type: 'text',

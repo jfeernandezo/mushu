@@ -1,6 +1,6 @@
 'use client';
 
-import { Hand, Image, MessageCircle, MessageSquare, Sparkles, Tag } from 'lucide-react';
+import { Hand, Image, Lock, MessageCircle, MessageSquare, Sparkles, Tag } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -29,6 +29,7 @@ const ICONS: Record<FlowTemplate['iconName'], LucideIcon> = {
   sparkles: Sparkles,
   tag: Tag,
   image: Image,
+  lock: Lock,
 };
 
 export function TemplatePickerDialog({ trigger }: TemplatePickerDialogProps) {
@@ -57,6 +58,11 @@ export function TemplatePickerDialog({ trigger }: TemplatePickerDialogProps) {
           }
           if (hasTag(templateId)) {
             texts.tag = t(`${defaultsKey}.tag`);
+          }
+          if (template.extraKeys) {
+            texts.extras = Object.fromEntries(
+              template.extraKeys.map((k) => [k, t(`${defaultsKey}.${k}`)]),
+            );
           }
           result = await createFlow(t(template.nameKey), {
             templateId,
@@ -154,7 +160,7 @@ function idCamel(id: string): string {
 }
 
 function hasReplyMessage(id: string): boolean {
-  return id === 'comment-to-dm' || id === 'comment-first-time';
+  return id === 'comment-to-dm' || id === 'comment-first-time' || id === 'link-for-followers';
 }
 
 function hasTriggerKeywords(id: string): boolean {

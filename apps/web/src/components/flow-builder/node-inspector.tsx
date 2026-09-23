@@ -1,7 +1,7 @@
 'use client';
 
 import type { Node } from '@xyflow/react';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, Plus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type KeyboardEvent, type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -76,6 +76,7 @@ function nodeTitle(type: string | undefined, tNodes: (key: string) => string): s
     case 'action.set_tag':
     case 'logic.delay':
     case 'logic.condition':
+    case 'logic.check_follow':
     case 'control.end':
       return tNodes(`${type}.title`);
     default:
@@ -181,6 +182,17 @@ function Form({
             </p>
           </Field>
         ) : null}
+        {isDm ? (
+          <Field label={tFields('buttons')}>
+            <UrlButtonsEditor
+              value={Array.isArray(data.buttons) ? (data.buttons as UrlButton[]) : []}
+              onChange={(next) => update('buttons', next)}
+            />
+            <p className="text-[10px] text-[var(--color-mushu-faint)]">
+              {tInspector('buttonsHint')}
+            </p>
+          </Field>
+        ) : null}
       </>
     );
   }
@@ -202,6 +214,15 @@ function Form({
               className="w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-2 text-sm text-[var(--color-mushu-ink)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)]"
               placeholder={tPh('questionText')}
             />
+          </Field>
+          <Field label={tFields('quickReplies')}>
+            <QuickRepliesEditor
+              value={Array.isArray(data.quickReplies) ? (data.quickReplies as string[]) : []}
+              onChange={(next) => update('quickReplies', next)}
+            />
+            <p className="text-[10px] text-[var(--color-mushu-faint)]">
+              {tInspector('askQuickRepliesHint')}
+            </p>
           </Field>
         </Section>
 
@@ -309,6 +330,14 @@ function Form({
 
   if (type === 'logic.condition') {
     return <ConditionForm data={data} update={update} />;
+  }
+
+  if (type === 'logic.check_follow') {
+    return (
+      <p className="text-xs leading-relaxed text-[var(--color-mushu-mute)]">
+        {tInspector('checkFollowDescription')}
+      </p>
+    );
   }
 
   return null;
@@ -523,6 +552,78 @@ function QuickRepliesEditor({
       <p className="px-1 text-[10px] text-[var(--color-mushu-faint)]">
         {t('counter', { count: value.length, max: QUICK_REPLY_MAX_COUNT })}
       </p>
+    </div>
+  );
+}
+
+interface UrlButton {
+  title: string;
+  url: string;
+}
+
+const URL_BUTTON_MAX_COUNT = 3;
+
+/**
+ * Editor for `action.send_dm.buttons` — up to 3 link buttons (Meta button
+ * template limit), title capped at 20 chars. URL validity is enforced by the
+ * shared schema on save; here we only nudge with type="url".
+ */
+function UrlButtonsEditor({
+  value,
+  onChange,
+}: {
+  value: UrlButton[];
+  onChange: (next: UrlButton[]) => void;
+}) {
+  const t = useTranslations('flowBuilder.urlButtons');
+
+  function patch(i: number, field: keyof UrlButton, v: string) {
+    onChange(value.map((b, idx) => (idx === i ? { ...b, [field]: v } : b)));
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {value.map((b, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id
+          key={i}
+          className="flex flex-col gap-1 rounded-md border border-[var(--color-mushu-border)] p-2"
+        >
+          <div className="flex items-center gap-1">
+            <Input
+              value={b.title}
+              maxLength={QUICK_REPLY_MAX_LEN}
+              onChange={(e) => patch(i, 'title', e.target.value.slice(0, QUICK_REPLY_MAX_LEN))}
+              placeholder={t('titlePlaceholder')}
+            />
+            <button
+              type="button"
+              onClick={() => onChange(value.filter((_, idx) => idx !== i))}
+              aria-label={t('remove')}
+              className="text-[var(--color-mushu-mute)] hover:text-[var(--color-mushu-ink)]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <Input
+            type="url"
+            value={b.url}
+            onChange={(e) => patch(i, 'url', e.target.value.trim())}
+            placeholder="https://"
+          />
+        </div>
+      ))}
+      {value.length < URL_BUTTON_MAX_COUNT ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange([...value, { title: '', url: '' }])}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t('add')}
+        </Button>
+      ) : null}
     </div>
   );
 }

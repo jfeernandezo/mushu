@@ -9,7 +9,7 @@ import {
 } from '@mushu/db';
 import { type FlowGraph, flowGraphSchema } from '@mushu/shared/flow';
 import { createLogger } from '@mushu/shared/logger';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { type ExecuteFlowJob, executionQueue } from '../queues.ts';
 import { connection } from '../queues.ts';
 import { publishInboxEvent } from '../lib/inbox-broadcast.ts';
@@ -123,6 +123,14 @@ export async function sendMessage({
     ? (attrs.quickReplies as unknown[]).map((s) => String(s)).filter(Boolean)
     : [];
   const quickReplies = quickReplyTitles.map((title) => ({ title, payload: title }));
+  const buttons = Array.isArray(attrs.buttons)
+    ? (attrs.buttons as { title?: unknown; url?: unknown }[])
+        .map((b) => ({ title: String(b.title ?? ''), url: String(b.url ?? '') }))
+        .filter((b) => b.title && b.url)
+    : [];
+  // Messages that belong to a node which waits for the contact (ask_question
+  // and its fallback) must not move the cursor — process-event resumes them.
+  const holdCursor = attrs.holdCursor === true;
 
   try {
     let metaMessageId = '';
@@ -170,6 +178,7 @@ export async function sendMessage({
           commentId: triggerCommentId,
           text: msg.content ?? '',
           ...(quickReplies.length > 0 ? { quickReplies } : {}),
+          ...(buttons.length > 0 ? { buttons } : {}),
         });
         metaMessageId = r.messageId;
         // Mark first-dm-sent so subsequent DMs go via IGSID.
@@ -188,6 +197,7 @@ export async function sendMessage({
           igsid: inbox.sourceId,
           text: msg.content ?? '',
           ...(quickReplies.length > 0 ? { quickReplies } : {}),
+          ...(buttons.length > 0 ? { buttons } : {}),
         });
         metaMessageId = r.messageId;
       }
@@ -211,7 +221,15 @@ export async function sendMessage({
       messageId: outgoingMessageId,
     });
 
-    if (exec) {
+    if (exec && holdCursor) {
+      // Merge (not overwrite): execute-flow may have written awaitingFor meanwhile.
+      if (state.firstDmSent) {
+        await db
+          .update(flowExecution)
+          .set({ state: sql`${flowExecution.state} || '{"firstDmSent":true}'::jsonb` })
+          .where(eq(flowExecution.id, exec.id));
+      }
+    } else if (exec) {
       await advanceExecution(exec.id, exec.flowId, exec.currentNodeId, state);
     }
   } catch (err) {

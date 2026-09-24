@@ -6,12 +6,13 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignore": [
-      "**/.next",
-      "**/dist",
-      "**/node_modules",
-      "**/drizzle",
-      "**/*.generated.ts"
+    "includes": [
+      "**",
+      "!**/.next",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/drizzle",
+      "!**/*.generated.ts"
     ]
   },
   "formatter": {
@@ -29,7 +30,7 @@
         "useNodejsImportProtocol": "warn"
       },
       "suspicious": {
-        "noConsoleLog": "off"
+        "noConsole": "off"
       }
     }
   },
@@ -44,6 +45,11 @@
   "json": {
     "formatter": {
       "trailingCommas": "none"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   }
 }

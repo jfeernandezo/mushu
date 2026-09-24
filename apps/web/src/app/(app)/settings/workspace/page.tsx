@@ -1,23 +1,41 @@
 import { instagramAccount, withOrgTx } from '@mushu/db';
 import { eq } from 'drizzle-orm';
 import { AtSign, Instagram, Plug } from 'lucide-react';
-import { getFormatter, getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getFormatter, getTranslations } from 'next-intl/server';
+import { DisconnectAccountButton } from '@/components/settings/disconnect-account-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { DisconnectAccountButton } from '@/components/settings/disconnect-account-button';
 import { auth } from '@/lib/auth';
 
-export default async function WorkspaceSettingsPage() {
+export default async function WorkspaceSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ig_error?: string; ig_connected?: string }>;
+}) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/login');
   const orgId = session.session.activeOrganizationId;
 
   const t = await getTranslations('settings.workspace');
   const formatter = await getFormatter();
+  const params = await searchParams;
+  const errorKeys = [
+    'access_denied',
+    'no_code',
+    'state_mismatch',
+    'app_not_configured',
+    'token_exchange_failed',
+    'long_token_failed',
+    'me_failed',
+    'missing_permissions',
+    'account_already_connected',
+  ] as const;
+  const errorKey = errorKeys.find((key) => key === params.ig_error) ?? 'unknown';
+  const now = Date.now();
 
   const accounts = orgId
     ? await withOrgTx(orgId, (tx) =>
@@ -41,6 +59,25 @@ export default async function WorkspaceSettingsPage() {
         <p className="text-sm text-[var(--color-mushu-mute)]">{t('subtitle')}</p>
       </div>
 
+      {params.ig_error ? (
+        <div
+          role="alert"
+          className="rounded-md border border-[var(--color-mushu-danger)]/40 bg-[var(--color-mushu-surface)] p-4 text-sm"
+        >
+          <p className="font-medium text-[var(--color-mushu-danger)]">{t('connectionFailed')}</p>
+          <p className="mt-1 text-[var(--color-mushu-mute)]">{t(`oauthErrors.${errorKey}`)}</p>
+        </div>
+      ) : params.ig_connected ? (
+        <div
+          role="status"
+          className="rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] p-4 text-sm"
+        >
+          {params.ig_connected === 'webhook_pending'
+            ? t('connectedPending')
+            : t('connectedSuccess')}
+        </div>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">{t('card')}</CardTitle>
@@ -57,9 +94,9 @@ export default async function WorkspaceSettingsPage() {
             accounts.map((a) => (
               <div
                 key={a.id}
-                className="flex items-center justify-between rounded-md border border-[var(--color-mushu-border)] px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--color-mushu-border)] px-3 py-2"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-3">
                   {a.channel === 'threads' ? (
                     <AtSign className="h-4 w-4 text-[var(--color-mushu-ink)]" />
                   ) : (
@@ -70,11 +107,13 @@ export default async function WorkspaceSettingsPage() {
                     {a.channel === 'threads' ? 'Threads' : 'Instagram'}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-2">
-                  {a.webhookSubscribed ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {a.expiresAt && a.expiresAt.getTime() <= now ? (
+                    <Badge variant="danger">{t('expired')}</Badge>
+                  ) : a.webhookSubscribed ? (
                     <Badge variant="success">{t('active')}</Badge>
                   ) : (
-                    <Badge variant="outline">{t('webhookPending')}</Badge>
+                    <Badge variant="warning">{t('webhookPending')}</Badge>
                   )}
                   <span className="text-xs text-[var(--color-mushu-faint)]">
                     {a.expiresAt
@@ -83,6 +122,23 @@ export default async function WorkspaceSettingsPage() {
                         })
                       : t('neverExpires')}
                   </span>
+                  {a.expiresAt && a.expiresAt.getTime() <= now ? (
+                    <Button asChild variant="secondary" size="sm">
+                      <a
+                        href={
+                          a.channel === 'threads'
+                            ? '/api/oauth/threads/start'
+                            : '/api/oauth/instagram/start'
+                        }
+                      >
+                        {t('reconnect')}
+                      </a>
+                    </Button>
+                  ) : !a.webhookSubscribed ? (
+                    <span className="max-w-64 text-xs text-[var(--color-mushu-mute)]">
+                      {t('webhookHelp')}
+                    </span>
+                  ) : null}
                   <DisconnectAccountButton
                     accountId={a.id}
                     username={a.igUsername}

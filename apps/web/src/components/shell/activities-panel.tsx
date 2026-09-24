@@ -1,14 +1,11 @@
 'use client';
 
 import { Activity, AlertCircle, UserPlus } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { type ReactNode, useEffect, useState } from 'react';
 import { getRecentContacts, type RecentContact } from '@/actions/contacts';
-import {
-  listNotifications,
-  type NotificationRow,
-} from '@/actions/notifications';
+import { listNotifications, type NotificationRow } from '@/actions/notifications';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { colorFromString, initialsFromName } from '@/lib/utils';
@@ -89,9 +86,7 @@ export function ActivitiesPanel({ orgId }: ActivitiesPanelProps) {
                     {c.name ?? c.igUsername ?? tPanel('unnamed')}
                   </p>
                   {c.igUsername ? (
-                    <p className="text-xs text-[var(--color-mushu-faint)]">
-                      @{c.igUsername}
-                    </p>
+                    <p className="text-xs text-[var(--color-mushu-faint)]">@{c.igUsername}</p>
                   ) : null}
                 </div>
               </div>
@@ -108,16 +103,12 @@ function NotificationLine({ item }: { item: NotificationRow }) {
     <div className="flex items-start gap-3">
       <AlertCircle
         className={`mt-0.5 h-4 w-4 shrink-0 ${
-          item.readAt
-            ? 'text-[var(--color-mushu-faint)]'
-            : 'text-[var(--color-mushu-amber)]'
+          item.readAt ? 'text-[var(--color-mushu-faint)]' : 'text-[var(--color-mushu-link)]'
         }`}
       />
       <div className="flex-1 leading-tight">
         <p className="text-sm text-[var(--color-mushu-ink)]">{item.title}</p>
-        {item.body ? (
-          <p className="text-xs text-[var(--color-mushu-faint)]">{item.body}</p>
-        ) : null}
+        {item.body ? <p className="text-xs text-[var(--color-mushu-faint)]">{item.body}</p> : null}
       </div>
     </div>
   );

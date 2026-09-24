@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button';
 
 interface ConfirmAlertDialogProps {
   /** Element that opens the dialog (button, menu item, etc.). Wrapped via
@@ -33,7 +34,7 @@ interface ConfirmAlertDialogProps {
   /** Async callback invoked when the user confirms. Dialog stays open until
    *  the promise resolves; if the callback returns false, dialog stays open
    *  (caller is responsible for showing an error toast). */
-  onConfirm: () => void | Promise<unknown>;
+  onConfirm: () => unknown;
 }
 
 /**
@@ -69,11 +70,6 @@ export function ConfirmAlertDialog({
     }
   }
 
-  const actionClass =
-    variant === 'destructive'
-      ? 'bg-[var(--color-mushu-danger)] text-white hover:opacity-90'
-      : '';
-
   return (
     <AlertDialog open={open} onOpenChange={(next) => (pending ? null : setOpen(next))}>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
@@ -90,7 +86,7 @@ export function ConfirmAlertDialog({
               void handleConfirm();
             }}
             disabled={pending}
-            className={actionClass}
+            className={buttonVariants({ variant })}
           >
             {pending ? (pendingLabel ?? confirmLabel) : confirmLabel}
           </AlertDialogAction>

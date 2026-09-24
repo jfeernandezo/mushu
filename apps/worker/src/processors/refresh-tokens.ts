@@ -10,6 +10,7 @@ import { decryptToken, encryptToken } from '@mushu/shared/crypto';
 import { createLogger } from '@mushu/shared/logger';
 import { and, eq, gt, inArray, lt, sql } from 'drizzle-orm';
 import { sendEmail } from '../lib/email.ts';
+import { refreshMetaToken } from '../lib/refresh-meta-token.ts';
 
 const logger = createLogger('worker.refresh-tokens');
 
@@ -34,12 +35,6 @@ const logger = createLogger('worker.refresh-tokens');
 
 const REFRESH_WINDOW_DAYS = 7;
 
-interface RefreshResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}
-
 export async function refreshMetaTokens(): Promise<void> {
   const now = new Date();
   const windowEnd = new Date(now.getTime() + REFRESH_WINDOW_DAYS * 24 * 60 * 60 * 1000);
@@ -57,12 +52,7 @@ export async function refreshMetaTokens(): Promise<void> {
       expiresAt: instagramAccount.expiresAt,
     })
     .from(instagramAccount)
-    .where(
-      and(
-        gt(instagramAccount.expiresAt, now),
-        lt(instagramAccount.expiresAt, windowEnd),
-      ),
-    );
+    .where(and(gt(instagramAccount.expiresAt, now), lt(instagramAccount.expiresAt, windowEnd)));
 
   logger.info({ count: candidates.length }, 'refreshing tokens');
 
@@ -83,8 +73,13 @@ export async function refreshMetaTokens(): Promise<void> {
       continue;
     }
 
-    const result = await callRefresh(acc.channel, token);
-    if (!result) {
+    const result = await refreshMetaToken(acc.channel, token);
+    if (result.status === 'retry') {
+      // A timeout, rate limit or provider outage does not revoke a subscription.
+      failed += 1;
+      continue;
+    }
+    if (result.status === 'invalid') {
       // The most common reason refresh fails is that the user already
       // revoked permissions on Meta's side. Mark webhook as not subscribed
       // (we don't have a valid token anymore) and notify the org so they
@@ -108,14 +103,14 @@ export async function refreshMetaTokens(): Promise<void> {
       continue;
     }
 
-    const encrypted = encryptToken(result.access_token);
+    const encrypted = encryptToken(result.accessToken);
     await db
       .update(instagramAccount)
       .set({
         accessTokenEncrypted: encrypted.ciphertext,
         accessTokenIv: encrypted.iv,
         accessTokenAuthTag: encrypted.authTag,
-        expiresAt: new Date(Date.now() + result.expires_in * 1000),
+        expiresAt: new Date(Date.now() + result.expiresIn * 1000),
         updatedAt: new Date(),
       })
       .where(sql`${instagramAccount.id} = ${acc.id}`);
@@ -230,31 +225,5 @@ async function notifyExpiringAccount(args: {
       subject: `Reconecte sua conta do ${channelLabel} (@${args.username}) — token expirando`,
       html,
     });
-  }
-}
-
-async function callRefresh(
-  channel: 'instagram' | 'threads' | string,
-  token: string,
-): Promise<RefreshResponse | null> {
-  const base =
-    channel === 'threads' ? 'https://graph.threads.net' : 'https://graph.instagram.com';
-  const grantType = channel === 'threads' ? 'th_refresh_token' : 'ig_refresh_token';
-
-  const url = new URL(`${base}/refresh_access_token`);
-  url.searchParams.set('grant_type', grantType);
-  url.searchParams.set('access_token', token);
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      logger.error({ http_status: res.status, body, channel }, 'refresh call failed');
-      return null;
-    }
-    return (await res.json()) as RefreshResponse;
-  } catch (err) {
-    logger.error({ err, channel }, 'refresh call threw');
-    return null;
   }
 }

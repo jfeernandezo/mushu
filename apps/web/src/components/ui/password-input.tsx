@@ -2,8 +2,8 @@
 
 import { Eye, EyeOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { forwardRef, useState } from 'react';
 import type { InputHTMLAttributes } from 'react';
+import { forwardRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -29,7 +29,7 @@ export const PasswordInput = forwardRef<
         ref={ref}
         disabled={disabled}
         className={cn(
-          'flex h-9 w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-1 pr-10 text-sm text-[var(--color-mushu-ink)] placeholder:text-[var(--color-mushu-faint)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-amber)] disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-9 w-full rounded-md border border-[var(--color-mushu-border)] bg-[var(--color-mushu-surface)] px-3 py-1 pr-10 text-sm text-[var(--color-mushu-ink)] placeholder:text-[var(--color-mushu-faint)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-mushu-focus)] disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         {...props}

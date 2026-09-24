@@ -1,6 +1,6 @@
-import { getTranslations } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { SettingsNav } from '@/components/settings/settings-nav';
 import { AppShell } from '@/components/shell/app-shell';
@@ -17,8 +17,8 @@ export default async function SettingsLayout({ children }: { children: ReactNode
 
   return (
     <AppShell breadcrumb={[{ label: tNav('settings'), href: '/settings' }]}>
-      <div className="flex gap-8">
-        <aside className="flex w-56 shrink-0 flex-col">
+      <div className="flex min-w-0 flex-col gap-6 xl:flex-row xl:gap-8">
+        <aside className="flex min-w-0 shrink-0 flex-col xl:w-56">
           <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-[var(--color-mushu-faint)]">
             {tSettings('section')}
           </p>
@@ -27,7 +27,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
             <SignOutButton />
           </div>
         </aside>
-        <main className="min-w-0 flex-1">{children}</main>
+        <div className="min-w-0 flex-1">{children}</div>
       </div>
     </AppShell>
   );

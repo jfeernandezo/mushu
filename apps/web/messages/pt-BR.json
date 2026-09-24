@@ -327,12 +327,17 @@
     "contacts": "Contatos",
     "triggers": "Gatilhos",
     "analytics": "Análises",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "openNavigation": "Abrir navegação",
+    "closeNavigation": "Fechar navegação",
+    "navigation": "Navegação principal",
+    "skipToContent": "Ir para o conteúdo"
   },
   "topnav": {
     "search": "Buscar… (⌘/)",
     "toggleTheme": "Alternar tema",
-    "notifications": "Notificações"
+    "notifications": "Notificações",
+    "breadcrumb": "Localização atual"
   },
   "userMenu": {
     "openMenu": "Abrir menu da conta",
@@ -932,7 +937,8 @@
       "billing": "Plano e cobrança",
       "preferences": "Preferências",
       "privacy": "Privacidade",
-      "danger": "Zona de risco"
+      "danger": "Zona de risco",
+      "navigation": "Navegação de configurações"
     },
     "billing": {
       "title": "Plano e cobrança",
@@ -1086,11 +1092,11 @@
     "workspace": {
       "title": "Workspace",
       "subtitle": "Contas do Instagram e integrações desta organização.",
-      "card": "Contas do Instagram",
+      "card": "Contas conectadas",
       "emptyTitle": "Nenhuma conta conectada",
       "empty": "Conecte uma conta do Instagram ou Threads abaixo para começar a receber conversas e disparar flows.",
       "active": "Ativa",
-      "webhookPending": "Conectando ao Instagram…",
+      "webhookPending": "Recebimento de eventos pendente",
       "expiresOn": "Expira {date}",
       "neverExpires": "—",
       "connect": "Conectar conta do Instagram",
@@ -1102,7 +1108,25 @@
       "disconnectAriaLabel": "Desconectar conta {label} @{username}",
       "disconnectConfirm": "Tem certeza que quer desconectar a conta {label} @{username}? Conversas, mensagens e flows associados serão removidos. Essa ação não pode ser desfeita.",
       "disconnected": "Conta @{username} desconectada.",
-      "disconnectFailed": "Falha ao desconectar: {error}"
+      "disconnectFailed": "Falha ao desconectar: {error}",
+      "expired": "Conexão expirada",
+      "reconnect": "Reconectar",
+      "webhookHelp": "A configuração de eventos precisa ser concluída pelo administrador da integração.",
+      "connectionFailed": "Não foi possível conectar o Instagram",
+      "connectedSuccess": "Conta conectada e assinatura de eventos aceita. Você já pode testar sua primeira automação.",
+      "connectedPending": "Conta conectada, mas o recebimento de eventos ainda precisa ser configurado.",
+      "oauthErrors": {
+        "access_denied": "A autorização foi cancelada. Tente novamente e permita os acessos solicitados.",
+        "no_code": "O Instagram não enviou a autorização. Inicie a conexão novamente.",
+        "state_mismatch": "Esta tentativa de conexão expirou ou não corresponde à sua sessão. Tente novamente.",
+        "app_not_configured": "A integração ainda não está configurada. Peça ao administrador para concluir a configuração do Instagram.",
+        "token_exchange_failed": "Não foi possível concluir a autorização com o Instagram. Tente conectar novamente.",
+        "long_token_failed": "Não foi possível manter a autorização do Instagram. Tente conectar novamente.",
+        "me_failed": "Não foi possível consultar a conta do Instagram. Confira se ela é uma conta profissional e tente novamente.",
+        "missing_permissions": "Autorize o acesso ao perfil, às mensagens e aos comentários para conectar a conta.",
+        "account_already_connected": "Esta conta já está vinculada a outro workspace. Entre em contato com o administrador para organizar a transferência.",
+        "unknown": "Ocorreu um erro ao conectar. Tente novamente ou entre em contato com o administrador."
+      }
     },
     "preferences": {
       "title": "Preferências",

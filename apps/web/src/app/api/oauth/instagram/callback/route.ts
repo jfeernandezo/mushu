@@ -1,10 +1,16 @@
 import { dbAdmin as db, instagramAccount, notification, session as sessionTable } from '@mushu/db';
 import { createLogger } from '@mushu/shared/logger';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { AUDIT_ACTIONS, recordAudit } from '@/lib/audit';
 import { auth, ensureUserOrg } from '@/lib/auth';
 import { encryptToken } from '@/lib/crypto';
+import {
+  hasInstagramPermissions,
+  instagramLongTokenSchema,
+  parseInstagramToken,
+} from '@/lib/instagram-oauth';
 import { subscribeInstagramWebhook } from '@/lib/meta-subscriptions';
 
 const logger = createLogger('web.oauth.instagram');
@@ -17,8 +23,7 @@ function appUrl(path: string): URL {
 /**
  * OAuth callback for connecting an Instagram Business/Creator account.
  *
- * Auth URL the user starts at (built by /api/oauth/instagram/start or a
- * Server Action — TODO):
+ * Auth URL the user starts at (built by /api/oauth/instagram/start):
  *
  *   https://www.instagram.com/oauth/authorize
  *     ?client_id=<INSTAGRAM_APP_ID>
@@ -32,37 +37,19 @@ function appUrl(path: string): URL {
  * and persist.
  */
 
-interface ShortTokenResponse {
-  access_token: string;
-  user_id: number | string;
-  permissions?: string[];
-}
-
-interface LongTokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}
-
-interface IgUser {
-  id: string;
-  username: string;
-  account_type?: string;
-}
-
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code');
   const stateParam = req.nextUrl.searchParams.get('state');
   const error = req.nextUrl.searchParams.get('error');
 
   if (error || !code) {
-    return NextResponse.redirect(appUrl(`/dashboard?ig_error=${error ?? 'no_code'}`));
+    return oauthResult('ig_error', error ? 'access_denied' : 'no_code');
   }
 
   // CSRF check: the state must match the cookie set in /start.
   const stateCookie = req.cookies.get('mushu_ig_oauth_state')?.value;
   if (!stateParam || !stateCookie || stateParam !== stateCookie) {
-    return NextResponse.redirect(appUrl('/dashboard?ig_error=state_mismatch'));
+    return oauthResult('ig_error', 'state_mismatch');
   }
 
   const session = await auth.api.getSession({ headers: req.headers });
@@ -86,11 +73,11 @@ export async function GET(req: NextRequest) {
   const appSecret = process.env.INSTAGRAM_APP_SECRET;
   const redirectUri = process.env.INSTAGRAM_OAUTH_REDIRECT_URI;
   if (!appId || !appSecret || !redirectUri) {
-    return NextResponse.json({ error: 'app_not_configured' }, { status: 500 });
+    return oauthResult('ig_error', 'app_not_configured');
   }
 
   // 1. Exchange code → short-lived token
-  const shortRes = await fetch('https://api.instagram.com/oauth/access_token', {
+  const shortRes = await metaRequest('https://api.instagram.com/oauth/access_token', {
     method: 'POST',
     body: new URLSearchParams({
       client_id: appId,
@@ -100,33 +87,47 @@ export async function GET(req: NextRequest) {
       code,
     }),
   });
-  if (!shortRes.ok) {
-    logger.error({ http_status: shortRes.status }, 'short token exchange failed');
-    return NextResponse.redirect(appUrl('/dashboard?ig_error=token_exchange_failed'));
+  if (!shortRes?.ok) {
+    logger.error({ http_status: shortRes?.status }, 'short token exchange failed');
+    return oauthResult('ig_error', 'token_exchange_failed');
   }
-  const short = (await shortRes.json()) as ShortTokenResponse;
+  let short: ReturnType<typeof parseInstagramToken>;
+  try {
+    short = parseInstagramToken(await shortRes.json());
+  } catch {
+    return oauthResult('ig_error', 'token_exchange_failed');
+  }
+  if (!hasInstagramPermissions(short.permissions)) {
+    return oauthResult('ig_error', 'missing_permissions');
+  }
 
   // 2. Upgrade short → long-lived (60 days)
   const longUrl = new URL('https://graph.instagram.com/access_token');
   longUrl.searchParams.set('grant_type', 'ig_exchange_token');
   longUrl.searchParams.set('client_secret', appSecret);
   longUrl.searchParams.set('access_token', short.access_token);
-  const longRes = await fetch(longUrl);
-  if (!longRes.ok) {
-    logger.error({ http_status: longRes.status }, 'long token exchange failed');
-    return NextResponse.redirect(appUrl('/dashboard?ig_error=long_token_failed'));
+  const longRes = await metaRequest(longUrl);
+  if (!longRes?.ok) {
+    logger.error({ http_status: longRes?.status }, 'long token exchange failed');
+    return oauthResult('ig_error', 'long_token_failed');
   }
-  const long = (await longRes.json()) as LongTokenResponse;
+  const longResult = instagramLongTokenSchema.safeParse(await longRes.json().catch(() => null));
+  if (!longResult.success) return oauthResult('ig_error', 'long_token_failed');
+  const long = longResult.data;
 
   // 3. Fetch IG account info
   const meUrl = new URL('https://graph.instagram.com/me');
   meUrl.searchParams.set('fields', 'id,username,account_type');
   meUrl.searchParams.set('access_token', long.access_token);
-  const meRes = await fetch(meUrl);
-  if (!meRes.ok) {
-    return NextResponse.redirect(appUrl('/dashboard?ig_error=me_failed'));
+  const meRes = await metaRequest(meUrl);
+  if (!meRes?.ok) {
+    return oauthResult('ig_error', 'me_failed');
   }
-  const me = (await meRes.json()) as IgUser;
+  const meResult = z
+    .object({ username: z.string().min(1), account_type: z.string().optional() })
+    .safeParse(await meRes.json().catch(() => null));
+  if (!meResult.success) return oauthResult('ig_error', 'me_failed');
+  const me = meResult.data;
 
   // 4. Encrypt + upsert
   const encrypted = encryptToken(long.access_token);
@@ -134,28 +135,31 @@ export async function GET(req: NextRequest) {
   const igUserId = String(short.user_id);
 
   const existing = await db
-    .select({ id: instagramAccount.id })
+    .select({ id: instagramAccount.id, organizationId: instagramAccount.organizationId })
     .from(instagramAccount)
-    .where(eq(instagramAccount.igUserId, igUserId))
+    .where(and(eq(instagramAccount.igUserId, igUserId), eq(instagramAccount.channel, 'instagram')))
     .limit(1);
+
+  // Connecting must never move an account (and its history) between workspaces.
+  if (existing[0] && existing[0].organizationId !== orgId) {
+    return oauthResult('ig_error', 'account_already_connected');
+  }
 
   // Subscribe webhook BEFORE persisting so we can stamp webhookSubscribed
   // accurately on the new/updated row. A failed subscribe is non-fatal —
-  // the user can retry from the workspace settings page (subscription is
-  // idempotent on Meta's side).
+  // account can be reconnected after configuring the app-level webhook.
   const subscribed = await subscribeInstagramWebhook({
     externalUserId: igUserId,
     accessToken: long.access_token,
   });
   if (!subscribed) {
-    logger.warn({ ig_user_id: igUserId }, 'webhook subscribe failed — user can retry');
+    logger.warn({ ig_user_id: igUserId }, 'webhook subscribe failed — integration needs attention');
   }
 
   if (existing[0]) {
     await db
       .update(instagramAccount)
       .set({
-        organizationId: orgId,
         igUsername: me.username,
         accessTokenEncrypted: encrypted.ciphertext,
         accessTokenIv: encrypted.iv,
@@ -164,7 +168,9 @@ export async function GET(req: NextRequest) {
         webhookSubscribed: subscribed,
         updatedAt: new Date(),
       })
-      .where(eq(instagramAccount.id, existing[0].id));
+      .where(
+        and(eq(instagramAccount.id, existing[0].id), eq(instagramAccount.organizationId, orgId)),
+      );
   } else {
     await db.insert(instagramAccount).values({
       id: crypto.randomUUID(),
@@ -186,7 +192,9 @@ export async function GET(req: NextRequest) {
     userId: session.user.id,
     type: 'ig_connected',
     title: `Instagram connected: @${me.username}`,
-    body: 'Token saved (encrypted). Webhooks subscribe automatically once the public URL is configured.',
+    body: subscribed
+      ? 'Instagram connected.'
+      : 'Account connected. Event delivery needs attention in workspace settings.',
     link: '/settings/workspace',
   });
 
@@ -201,5 +209,23 @@ export async function GET(req: NextRequest) {
     userAgent: req.headers.get('user-agent'),
   });
 
-  return NextResponse.redirect(appUrl('/dashboard?ig_connected=1'));
+  return oauthResult('ig_connected', subscribed ? '1' : 'webhook_pending');
+}
+
+function oauthResult(key: 'ig_error' | 'ig_connected', value: string) {
+  const url = appUrl('/settings/workspace');
+  url.searchParams.set(key, value);
+  const response = NextResponse.redirect(url);
+  response.cookies.delete('mushu_ig_oauth_state');
+  return response;
+}
+
+async function metaRequest(url: string | URL, init?: RequestInit): Promise<Response | null> {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(15_000), cache: 'no-store' });
+  } catch {
+    // A fetch error can contain the URL (and token). Never log it verbatim.
+    logger.warn({}, 'Instagram request failed or timed out');
+    return null;
+  }
 }

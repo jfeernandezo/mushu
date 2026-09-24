@@ -30,7 +30,7 @@ import {
 
 const logger = createLogger('worker.bootstrap');
 
-logger.info({ redis: process.env.REDIS_URL ?? 'redis://localhost:6379' }, 'starting');
+logger.info('starting');
 
 const eventWorker = createWorker<ProcessEventJob>(QUEUES.events, processEvent);
 const executionWorker = createWorker<ExecuteFlowJob>(

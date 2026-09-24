@@ -1,7 +1,10 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
-  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 }
 
 /* Theme tokens are runtime-switchable via [data-theme] on <html>.
@@ -9,7 +12,7 @@
    whichever value is active for the current theme. Default (no attr) = dark. */
 
 :root,
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   --color-mushu-scarlet: #c73e1d;
   --color-mushu-scarlet-soft: #e15a3a;
   --color-mushu-amber: #ffc107;
@@ -22,15 +25,25 @@
   --color-mushu-border-subtle: #1d1d20;
   --color-mushu-ink: #f5f5f4;
   --color-mushu-mute: #8b8b8e;
-  --color-mushu-faint: #5a5a5e;
+  --color-mushu-faint: #85858b;
 
   --color-mushu-success: #4ade80;
   --color-mushu-danger: #f87171;
 
+  --color-mushu-action: #c73e1d;
+  --color-mushu-action-hover: #ab3418;
+  --color-mushu-on-action: #ffffff;
+  --color-mushu-action-danger: #b91c1c;
+  --color-mushu-action-danger-hover: #991b1b;
+  --color-mushu-focus: #ffc107;
+  --color-mushu-warning: #ffc107;
+  --color-mushu-accent-text: #ff9b7f;
+  --color-mushu-link: #ffc107;
+
   color-scheme: dark;
 }
 
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   --color-mushu-scarlet: #c73e1d;
   --color-mushu-scarlet-soft: #e15a3a;
   --color-mushu-amber: #f59e0b;
@@ -43,10 +56,20 @@
   --color-mushu-border-subtle: #ededee;
   --color-mushu-ink: #18181b;
   --color-mushu-mute: #52525b;
-  --color-mushu-faint: #a1a1aa;
+  --color-mushu-faint: #6b6b74;
 
-  --color-mushu-success: #16a34a;
-  --color-mushu-danger: #dc2626;
+  --color-mushu-success: #166534;
+  --color-mushu-danger: #b91c1c;
+
+  --color-mushu-action: #c73e1d;
+  --color-mushu-action-hover: #ab3418;
+  --color-mushu-on-action: #ffffff;
+  --color-mushu-action-danger: #b91c1c;
+  --color-mushu-action-danger-hover: #991b1b;
+  --color-mushu-focus: #9a3412;
+  --color-mushu-warning: #854d0e;
+  --color-mushu-accent-text: #9a3412;
+  --color-mushu-link: #854d0e;
 
   color-scheme: light;
 }
@@ -91,8 +114,9 @@ html {
    pulse calls attention without being so loud the user can't read the node.
    Reduced-motion users get a steady amber outline instead. */
 @keyframes mushu-issue-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.0);
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
   }
   50% {
     box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.35);
@@ -107,6 +131,10 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   .mushu-node-issue {
     animation: none;
   }

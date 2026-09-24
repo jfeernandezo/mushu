@@ -9,7 +9,7 @@ const logger = createLogger('web.meta-subscriptions');
  * Returns true if Meta accepted the subscription. The caller flips
  * `instagram_account.webhook_subscribed` based on this. We don't throw on
  * failure — a failed subscription should NOT roll back the OAuth flow,
- * because the user can manually retry from the workspace settings page.
+ * because the account can be reconnected after the integration is configured.
  */
 
 const IG_FIELDS = [
@@ -17,7 +17,6 @@ const IG_FIELDS = [
   'messages',
   'messaging_postbacks',
   'messaging_seen',
-  'messaging_reactions',
   'messaging_referral',
   'message_reactions',
 ];
@@ -47,17 +46,17 @@ export async function subscribeInstagramWebhook(args: SubscribeArgs): Promise<bo
   try {
     const res = await fetch(url, {
       method: 'POST',
+      signal: AbortSignal.timeout(15_000),
       headers: { Authorization: `Bearer ${args.accessToken}` },
     });
     if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      logger.error({ http_status: res.status, body }, 'IG subscribe failed');
+      logger.error({ http_status: res.status }, 'IG subscribe failed');
       return false;
     }
     const json = (await res.json()) as { success?: boolean };
-    return json.success !== false;
-  } catch (err) {
-    logger.error({ err }, 'IG subscribe threw');
+    return json.success === true;
+  } catch {
+    logger.error({}, 'IG subscribe threw');
     return false;
   }
 }
@@ -76,17 +75,17 @@ export async function subscribeThreadsWebhook(args: SubscribeArgs): Promise<bool
   try {
     const res = await fetch(url, {
       method: 'POST',
+      signal: AbortSignal.timeout(15_000),
       headers: { Authorization: `Bearer ${args.accessToken}` },
     });
     if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      logger.error({ http_status: res.status, body }, 'Threads subscribe failed');
+      logger.error({ http_status: res.status }, 'Threads subscribe failed');
       return false;
     }
     const json = (await res.json()) as { success?: boolean };
-    return json.success !== false;
-  } catch (err) {
-    logger.error({ err }, 'Threads subscribe threw');
+    return json.success === true;
+  } catch {
+    logger.error({}, 'Threads subscribe threw');
     return false;
   }
 }
@@ -102,10 +101,11 @@ export async function unsubscribeInstagramWebhook(args: SubscribeArgs): Promise<
   try {
     await fetch(url, {
       method: 'DELETE',
+      signal: AbortSignal.timeout(15_000),
       headers: { Authorization: `Bearer ${args.accessToken}` },
     });
-  } catch (err) {
-    logger.warn({ err }, 'IG unsubscribe failed (continuing)');
+  } catch {
+    logger.warn({}, 'IG unsubscribe failed (continuing)');
   }
 }
 
@@ -114,9 +114,10 @@ export async function unsubscribeThreadsWebhook(args: SubscribeArgs): Promise<vo
   try {
     await fetch(url, {
       method: 'DELETE',
+      signal: AbortSignal.timeout(15_000),
       headers: { Authorization: `Bearer ${args.accessToken}` },
     });
-  } catch (err) {
-    logger.warn({ err }, 'Threads unsubscribe failed (continuing)');
+  } catch {
+    logger.warn({}, 'Threads unsubscribe failed (continuing)');
   }
 }

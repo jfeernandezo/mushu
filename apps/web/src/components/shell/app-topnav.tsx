@@ -1,13 +1,14 @@
 'use client';
 
-import { Moon, Search, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { startTransition } from 'react';
 import { updateUserPreferences } from '@/actions/preferences';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { MobileNavigation } from './mobile-navigation';
 import { NotificationsBell } from './notifications-bell';
 import { UserMenu } from './user-menu';
 
@@ -30,35 +31,32 @@ export function AppTopNav({ breadcrumb, user, orgId }: AppTopNavProps) {
   }
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] px-6">
-      <nav aria-label="breadcrumb" className="flex items-center gap-2 text-sm">
+    <header className="flex min-h-14 min-w-0 items-center gap-2 sm:gap-4 border-b border-[var(--color-mushu-border)] bg-[var(--color-mushu-bg)] px-3 sm:px-6">
+      <MobileNavigation />
+      <nav
+        aria-label={t('breadcrumb')}
+        className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-sm"
+      >
         {breadcrumb.map((b, i) => (
-          <span key={`${b.label}-${i}`} className="flex items-center gap-2">
+          <span key={b.href ?? b.label} className="flex min-w-0 items-center gap-2">
             {i > 0 && <span className="text-[var(--color-mushu-faint)]">/</span>}
             {b.href ? (
-              <a
-                className="text-[var(--color-mushu-mute)] hover:text-[var(--color-mushu-ink)]"
+              <Link
+                className="truncate text-[var(--color-mushu-mute)] hover:text-[var(--color-mushu-ink)]"
                 href={b.href}
               >
                 {b.label}
-              </a>
+              </Link>
             ) : (
-              <span className="text-[var(--color-mushu-ink)]">{b.label}</span>
+              <span aria-current="page" className="truncate text-[var(--color-mushu-ink)]">
+                {b.label}
+              </span>
             )}
           </span>
         ))}
       </nav>
 
-      <div className="ml-auto flex items-center gap-3">
-        <div className="relative w-72">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-mushu-faint)]" />
-          <Input
-            placeholder={t('search')}
-            className="h-8 pl-8 text-xs"
-            disabled
-          />
-        </div>
-
+      <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-3">
         <Button
           variant="ghost"
           size="icon"

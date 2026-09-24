@@ -1,8 +1,8 @@
 'use client';
 
 import { Bell, Check } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState, useTransition } from 'react';
 import {
   listNotifications,
@@ -38,10 +38,7 @@ export function NotificationsBell({ orgId }: NotificationsBellProps) {
     let stopped = false;
 
     async function tick() {
-      const [c, list] = await Promise.all([
-        unreadCount(),
-        listNotifications({ limit: 5 }),
-      ]);
+      const [c, list] = await Promise.all([unreadCount(), listNotifications({ limit: 5 })]);
       if (stopped) return;
       setCount(c);
       if (list.ok) setItems(list.data);
@@ -99,7 +96,7 @@ export function NotificationsBell({ orgId }: NotificationsBellProps) {
             <button
               type="button"
               onClick={onMarkAllRead}
-              className="flex items-center gap-1 text-xs text-[var(--color-mushu-amber)] hover:underline"
+              className="flex items-center gap-1 text-xs text-[var(--color-mushu-link)] hover:underline"
             >
               <Check className="h-3 w-3" />
               {t('markAllRead')}
@@ -125,7 +122,7 @@ export function NotificationsBell({ orgId }: NotificationsBellProps) {
           <Link
             href="/notifications"
             onClick={() => setOpen(false)}
-            className="text-xs text-[var(--color-mushu-amber)] hover:underline"
+            className="text-xs text-[var(--color-mushu-link)] hover:underline"
           >
             {t('viewAll')}
           </Link>
@@ -135,13 +132,7 @@ export function NotificationsBell({ orgId }: NotificationsBellProps) {
   );
 }
 
-function NotificationItem({
-  item,
-  onSeen,
-}: {
-  item: NotificationRow;
-  onSeen: () => void;
-}) {
+function NotificationItem({ item, onSeen }: { item: NotificationRow; onSeen: () => void }) {
   const t = useTranslations('notifications.relative');
   const unread = item.readAt === null;
   const content = (
@@ -184,10 +175,7 @@ function NotificationItem({
   );
 }
 
-type RelT = (
-  key: string,
-  values?: Record<string, string | number | Date>,
-) => string;
+type RelT = (key: string, values?: Record<string, string | number | Date>) => string;
 
 function formatRelative(date: Date | string, t: RelT): string {
   const d = typeof date === 'string' ? new Date(date) : date;

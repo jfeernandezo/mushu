@@ -12,9 +12,9 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 type NavKey =
@@ -57,7 +57,10 @@ export function SettingsNav({ isHosted }: SettingsNavProps) {
   const t = useTranslations('settings.nav');
   const visibleItems = ITEMS.filter((i) => !i.hostedOnly || isHosted);
   return (
-    <nav className="flex flex-col gap-0.5">
+    <nav
+      aria-label={t('navigation')}
+      className="flex gap-1 overflow-x-auto pb-1 xl:flex-col xl:gap-0.5 xl:overflow-visible"
+    >
       {visibleItems.map((item) => {
         const Icon = item.icon;
         const active = pathname === item.href;
@@ -65,8 +68,9 @@ export function SettingsNav({ isHosted }: SettingsNavProps) {
           <Link
             key={item.href}
             href={item.href}
+            aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors',
+              'flex min-h-11 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-mushu-focus)] focus-visible:ring-inset xl:min-h-9',
               active
                 ? 'bg-[var(--color-mushu-surface)] text-[var(--color-mushu-ink)]'
                 : 'text-[var(--color-mushu-mute)] hover:bg-[var(--color-mushu-surface)] hover:text-[var(--color-mushu-ink)]',

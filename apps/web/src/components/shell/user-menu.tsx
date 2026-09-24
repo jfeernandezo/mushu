@@ -1,9 +1,9 @@
 'use client';
 
 import { LogOut, Settings as SettingsIcon, User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -50,7 +50,7 @@ export function UserMenu({ user }: UserMenuProps) {
         <button
           type="button"
           aria-label={t('openMenu')}
-          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-mushu-amber)]"
+          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-mushu-focus)]"
         >
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-[var(--color-mushu-scarlet)] text-white">
@@ -63,13 +63,9 @@ export function UserMenu({ user }: UserMenuProps) {
         {user ? (
           <>
             <DropdownMenuLabel className="flex flex-col gap-0.5 py-2">
-              <span className="text-sm font-medium text-[var(--color-mushu-ink)]">
-                {display}
-              </span>
+              <span className="text-sm font-medium text-[var(--color-mushu-ink)]">{display}</span>
               {user.name?.trim() ? (
-                <span className="text-xs text-[var(--color-mushu-faint)]">
-                  {user.email}
-                </span>
+                <span className="text-xs text-[var(--color-mushu-faint)]">{user.email}</span>
               ) : null}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -109,6 +105,7 @@ export function UserMenu({ user }: UserMenuProps) {
 
 function toInitials(s: string): string {
   const parts = s.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+  const first = parts[0] ?? '';
+  if (parts.length === 1) return first.slice(0, 2).toUpperCase();
+  return `${first[0] ?? ''}${parts.at(-1)?.[0] ?? ''}`.toUpperCase();
 }

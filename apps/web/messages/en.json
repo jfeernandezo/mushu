@@ -327,12 +327,17 @@
     "contacts": "Contacts",
     "triggers": "Triggers",
     "analytics": "Analytics",
-    "settings": "Settings"
+    "settings": "Settings",
+    "openNavigation": "Open navigation",
+    "closeNavigation": "Close navigation",
+    "navigation": "Main navigation",
+    "skipToContent": "Skip to content"
   },
   "topnav": {
     "search": "Search… (⌘/)",
     "toggleTheme": "Toggle theme",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "breadcrumb": "Breadcrumb"
   },
   "userMenu": {
     "openMenu": "Open account menu",
@@ -932,7 +937,8 @@
       "billing": "Plan and billing",
       "preferences": "Preferences",
       "privacy": "Privacy",
-      "danger": "Danger zone"
+      "danger": "Danger zone",
+      "navigation": "Settings navigation"
     },
     "billing": {
       "title": "Plan and billing",
@@ -1086,11 +1092,11 @@
     "workspace": {
       "title": "Workspace",
       "subtitle": "Instagram accounts and integrations for this organization.",
-      "card": "Instagram accounts",
+      "card": "Connected accounts",
       "emptyTitle": "No accounts connected",
       "empty": "Connect an Instagram or Threads account below to start receiving conversations and triggering flows.",
       "active": "Active",
-      "webhookPending": "Connecting to Instagram…",
+      "webhookPending": "Event delivery pending",
       "expiresOn": "Expires {date}",
       "neverExpires": "—",
       "connect": "Connect Instagram account",
@@ -1102,7 +1108,25 @@
       "disconnectAriaLabel": "Disconnect {label} account @{username}",
       "disconnectConfirm": "Disconnect {label} account @{username}? Conversations, messages and flows tied to this account will be removed. This cannot be undone.",
       "disconnected": "Account @{username} disconnected.",
-      "disconnectFailed": "Disconnect failed: {error}"
+      "disconnectFailed": "Disconnect failed: {error}",
+      "expired": "Connection expired",
+      "reconnect": "Reconnect",
+      "webhookHelp": "The integration administrator needs to finish setting up event delivery.",
+      "connectionFailed": "Instagram could not be connected",
+      "connectedSuccess": "Account connected and event subscription accepted. You can now test your first automation.",
+      "connectedPending": "Account connected, but event delivery still needs to be configured.",
+      "oauthErrors": {
+        "access_denied": "Authorization was canceled. Try again and allow the requested access.",
+        "no_code": "Instagram did not return authorization. Start the connection again.",
+        "state_mismatch": "This connection attempt expired or does not match your session. Try again.",
+        "app_not_configured": "The integration is not configured yet. Ask your administrator to finish the Instagram setup.",
+        "token_exchange_failed": "Authorization with Instagram could not be completed. Try connecting again.",
+        "long_token_failed": "Instagram authorization could not be extended. Try connecting again.",
+        "me_failed": "Your Instagram account could not be retrieved. Check that it is a professional account and try again.",
+        "missing_permissions": "Allow access to your profile, messages and comments to connect the account.",
+        "account_already_connected": "This account is already connected to another workspace. Contact the administrator to arrange a transfer.",
+        "unknown": "The connection failed. Try again or contact your administrator."
+      }
     },
     "preferences": {
       "title": "Preferences",

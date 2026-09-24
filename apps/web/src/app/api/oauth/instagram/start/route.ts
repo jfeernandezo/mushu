@@ -1,17 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-
-const SCOPES = [
-  'instagram_business_basic',
-  'instagram_business_manage_messages',
-  'instagram_business_manage_comments',
-];
+import { INSTAGRAM_SCOPES } from '@/lib/instagram-oauth';
 
 /**
  * Start the Instagram OAuth flow. Redirects the user to Meta's authorize
- * page with our app id, scopes, and a CSRF state token (signed with the
- * Better Auth secret so the callback can verify it without a session
- * lookup).
+ * page with our app id, scopes, and a random CSRF state token. The callback
+ * compares it with the HttpOnly cookie and checks the authenticated session.
  */
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: req.headers });
@@ -23,19 +17,21 @@ export async function GET(req: NextRequest) {
   const appId = process.env.INSTAGRAM_APP_ID;
   const redirectUri = process.env.INSTAGRAM_OAUTH_REDIRECT_URI;
   if (!appId || !redirectUri) {
-    return NextResponse.json({ error: 'app_not_configured' }, { status: 500 });
+    return NextResponse.redirect(
+      new URL('/settings/workspace?ig_error=app_not_configured', req.url),
+    );
   }
 
   const state = generateState();
   const authorize = new URL('https://www.instagram.com/oauth/authorize');
   authorize.searchParams.set('client_id', appId);
   authorize.searchParams.set('redirect_uri', redirectUri);
-  authorize.searchParams.set('scope', SCOPES.join(','));
+  authorize.searchParams.set('scope', INSTAGRAM_SCOPES.join(','));
   authorize.searchParams.set('response_type', 'code');
   authorize.searchParams.set('state', state);
 
   const res = NextResponse.redirect(authorize);
-  // Short-lived signed cookie to verify state in the callback.
+  // Short-lived HttpOnly cookie to verify state in the callback.
   res.cookies.set('mushu_ig_oauth_state', state, {
     httpOnly: true,
     sameSite: 'lax',

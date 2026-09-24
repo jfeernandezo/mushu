@@ -1,20 +1,22 @@
 'use server';
 
 import { randomUUID } from 'node:crypto';
-import { db, flow, trigger, withOrgTx } from '@mushu/db';
+import { type db, flow, trigger, withOrgTx } from '@mushu/db';
 import { type FlowGraph, flowGraphSchema, isTriggerNode } from '@mushu/shared/flow';
 import { and, eq } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
 import { auth } from '@/lib/auth';
 import { getTemplate, type TemplateTexts } from '@/lib/flow-templates';
+import { requireWorkspacePermission } from '@/lib/workspace-permission';
 
-async function requireOrgId(): Promise<string> {
+async function requireOrgId(permission: string): Promise<string> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect('/login');
   const orgId = session.session.activeOrganizationId;
   if (!orgId) throw new Error('no_active_organization');
+  await requireWorkspacePermission(session.user.id, orgId, permission);
   return orgId;
 }
 
@@ -22,7 +24,7 @@ export async function createFlow(
   name: string,
   options?: { templateId?: string; templateTexts?: TemplateTexts },
 ): Promise<{ id: string }> {
-  const orgId = await requireOrgId();
+  const orgId = await requireOrgId('flow.create');
   const id = randomUUID();
 
   let draftGraph: FlowGraph | null = null;
@@ -46,18 +48,20 @@ export async function createFlow(
 }
 
 export async function deleteFlow(flowId: string): Promise<void> {
-  const orgId = await requireOrgId();
+  const orgId = await requireOrgId('flow.delete');
   // Triggers reference flow via FK; delete them first since the schema may not
   // declare ON DELETE CASCADE on every relation.
   await withOrgTx(orgId, async (tx) => {
-    await tx.delete(trigger).where(eq(trigger.flowId, flowId));
+    await tx
+      .delete(trigger)
+      .where(and(eq(trigger.flowId, flowId), eq(trigger.organizationId, orgId)));
     await tx.delete(flow).where(and(eq(flow.id, flowId), eq(flow.organizationId, orgId)));
   });
   revalidatePath('/flows');
 }
 
 export async function saveFlowDraft(flowId: string, graphJson: unknown): Promise<void> {
-  const orgId = await requireOrgId();
+  const orgId = await requireOrgId('flow.edit');
   const parsed = flowGraphSchema.safeParse(graphJson);
   if (!parsed.success) {
     throw new Error(`invalid_graph: ${parsed.error.message}`);
@@ -72,7 +76,7 @@ export async function saveFlowDraft(flowId: string, graphJson: unknown): Promise
 }
 
 export async function publishFlow(flowId: string): Promise<{ version: number }> {
-  const orgId = await requireOrgId();
+  const orgId = await requireOrgId('flow.publish');
 
   const newVersion = await withOrgTx(orgId, async (tx) => {
     const [row] = await tx
@@ -117,7 +121,7 @@ export async function publishFlow(flowId: string): Promise<{ version: number }> 
 }
 
 export async function setFlowEnabled(flowId: string, enabled: boolean): Promise<void> {
-  const orgId = await requireOrgId();
+  const orgId = await requireOrgId('flow.publish');
   await withOrgTx(orgId, (tx) =>
     tx
       .update(flow)
@@ -138,7 +142,9 @@ async function syncTriggersFromGraph(
 ): Promise<void> {
   // Strategy: delete all existing triggers for this flow, re-insert from graph.
   // Trade-off: simpler than diffing, slightly more churn. OK for MVP scale.
-  await tx.delete(trigger).where(eq(trigger.flowId, flowId));
+  await tx
+    .delete(trigger)
+    .where(and(eq(trigger.flowId, flowId), eq(trigger.organizationId, organizationId)));
 
   const triggerNodes = graph.nodes.filter(isTriggerNode);
   for (const node of triggerNodes) {

@@ -12,6 +12,7 @@ import {
   parseInstagramToken,
 } from '@/lib/instagram-oauth';
 import { subscribeInstagramWebhook } from '@/lib/meta-subscriptions';
+import { requireWorkspacePermission } from '@/lib/workspace-permission';
 
 const logger = createLogger('web.oauth.instagram');
 
@@ -67,6 +68,12 @@ export async function GET(req: NextRequest) {
       .update(sessionTable)
       .set({ activeOrganizationId: orgId })
       .where(eq(sessionTable.id, session.session.id));
+  }
+
+  try {
+    await requireWorkspacePermission(session.user.id, orgId, 'instagram.connect');
+  } catch {
+    return oauthResult('ig_error', 'permission_denied');
   }
 
   const appId = process.env.INSTAGRAM_APP_ID;

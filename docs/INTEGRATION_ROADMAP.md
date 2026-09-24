@@ -215,13 +215,21 @@ Fontes consultadas pelo MCP:
   erro explícito de token inválido mantém o fluxo de reconexão. Removido o log
   da URL de Redis no bootstrap. Incluídos 14 testes de regressão.
 - Threads: `THREADS_APP_ID` e `THREADS_APP_SECRET` ausentes em produção.
-- SMTP e Stripe: variáveis presentes, ainda sem comprovação ponta a ponta.
+- SMTP: autenticação testada sem envio de e-mail e recusada com código 535
+  (EAUTH); corrigir credenciais antes de validar convites e recuperação.
+- Stripe: variáveis presentes, ainda sem comprovação ponta a ponta.
 - S3: variáveis ausentes; a busca nas ações e bibliotecas consultadas não
   encontrou implementação de upload S3. Não classificar como falha de uma
   função ativa sem identificar primeiro o fluxo que precisaria dela.
-- Permissões: existem verificações em membros, cobrança e partes da inbox,
-  mas conectar/desconectar contas e ações de fluxos ainda precisam de auditoria
-  de autorização por papel. Não declarar isolamento/roles totalmente validados.
+- Permissões: adicionada resolução de membro pelo usuário autenticado e workspace
+  antes de conectar/desconectar contas e criar, editar, publicar ou excluir fluxos.
+  Exclusão de gatilhos também filtra explicitamente o workspace. Novos testes
+  verificam bloqueio antes de efeitos externos ou alterações no banco. A auditoria
+  completa das demais ações e o teste de papéis na UI continuam pendentes.
 - Manutenção de `email_delivery`: dispatcher tem um caso ainda não implementado.
 - Teste real depende da identificação dos perfis e autorização para mensagens
   e comentários de teste, solicitadas ao usuário.
+
+Validação do lote com permissões: 177 testes passaram em 20 arquivos; checagem
+de tipos passou nos quatro pacotes. Publicação via integração Git do VS Code
+(o terminal não herdava inicialmente o helper de autenticação).

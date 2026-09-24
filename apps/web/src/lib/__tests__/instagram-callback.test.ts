@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  permission: vi.fn(),
   existing: [] as { id: string; organizationId: string }[],
   insert: vi.fn(),
   update: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock('@/lib/auth', () => ({
   auth: { api: { getSession: mocks.session } },
   ensureUserOrg: vi.fn(),
 }));
+vi.mock('@/lib/workspace-permission', () => ({ requireWorkspacePermission: mocks.permission }));
 vi.mock('@/lib/crypto', () => ({ encryptToken: mocks.encrypt }));
 vi.mock('@/lib/meta-subscriptions', () => ({ subscribeInstagramWebhook: mocks.subscribe }));
 vi.mock('@/lib/audit', () => ({
@@ -74,6 +76,15 @@ afterEach(() => {
 });
 
 describe('Instagram OAuth callback', () => {
+  it('rejects an unauthorized member before exchanging or persisting tokens', async () => {
+    mocks.permission.mockRejectedValue(new Error('permission_denied'));
+    const response = await GET(request());
+    expect(response.headers.get('location')).toContain('ig_error=permission_denied');
+    expect(mocks.permission).toHaveBeenCalledWith('user', 'org', 'instagram.connect');
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.subscribe).not.toHaveBeenCalled();
+  });
   it('persists only encrypted credentials and returns to accounts with a consumed state cookie', async () => {
     const response = await GET(request());
     expect(response.headers.get('location')).toBe(

@@ -3,16 +3,14 @@
 import { instagramAccount, withOrgTx } from '@mushu/db';
 import { createLogger } from '@mushu/shared/logger';
 import { and, eq } from 'drizzle-orm';
-import { headers as nextHeaders } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { headers as nextHeaders } from 'next/headers';
 import { z } from 'zod';
 import { AUDIT_ACTIONS, recordAudit, requestMeta } from '@/lib/audit';
 import { auth } from '@/lib/auth';
 import { decryptToken } from '@/lib/crypto';
-import {
-  unsubscribeInstagramWebhook,
-  unsubscribeThreadsWebhook,
-} from '@/lib/meta-subscriptions';
+import { unsubscribeInstagramWebhook, unsubscribeThreadsWebhook } from '@/lib/meta-subscriptions';
+import { requireWorkspacePermission } from '@/lib/workspace-permission';
 
 const logger = createLogger('web.connected-accounts');
 
@@ -50,6 +48,7 @@ export async function disconnectAccount(
   if (!orgId) return { ok: false, error: 'no_active_org' };
 
   try {
+    await requireWorkspacePermission(session.user.id, orgId, 'instagram.disconnect');
     const result = await withOrgTx(orgId, async (tx) => {
       const [acc] = await tx
         .select()

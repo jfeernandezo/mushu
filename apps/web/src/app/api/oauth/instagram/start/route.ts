@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { INSTAGRAM_SCOPES } from '@/lib/instagram-oauth';
+import { requireWorkspacePermission } from '@/lib/workspace-permission';
 
 /**
  * Start the Instagram OAuth flow. Redirects the user to Meta's authorize
@@ -12,6 +13,17 @@ export async function GET(req: NextRequest) {
   if (!session) {
     const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
     return NextResponse.redirect(new URL('/login?next=/api/oauth/instagram/start', base));
+  }
+
+  const orgId = session.session.activeOrganizationId;
+  if (orgId) {
+    try {
+      await requireWorkspacePermission(session.user.id, orgId, 'instagram.connect');
+    } catch {
+      return NextResponse.redirect(
+        new URL('/settings/workspace?ig_error=permission_denied', req.url),
+      );
+    }
   }
 
   const appId = process.env.INSTAGRAM_APP_ID;

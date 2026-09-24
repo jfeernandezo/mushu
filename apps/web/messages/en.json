@@ -1123,6 +1123,7 @@
         "token_exchange_failed": "Authorization with Instagram could not be completed. Try connecting again.",
         "long_token_failed": "Instagram authorization could not be extended. Try connecting again.",
         "me_failed": "Your Instagram account could not be retrieved. Check that it is a professional account and try again.",
+        "permission_denied": "You do not have permission to connect accounts in this workspace.",
         "missing_permissions": "Allow access to your profile, messages and comments to connect the account.",
         "account_already_connected": "This account is already connected to another workspace. Contact the administrator to arrange a transfer.",
         "unknown": "The connection failed. Try again or contact your administrator."

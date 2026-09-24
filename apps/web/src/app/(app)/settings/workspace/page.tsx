@@ -32,6 +32,7 @@ export default async function WorkspaceSettingsPage({
     'long_token_failed',
     'me_failed',
     'missing_permissions',
+    'permission_denied',
     'account_already_connected',
   ] as const;
   const errorKey = errorKeys.find((key) => key === params.ig_error) ?? 'unknown';

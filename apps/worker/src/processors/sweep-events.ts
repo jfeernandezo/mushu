@@ -36,7 +36,7 @@ export async function sweepIncomingEvents(): Promise<void> {
       DELETE FROM "incoming_event"
        WHERE "id" IN (
          SELECT "id" FROM "incoming_event"
-          WHERE "created_at" < ${cutoff}
+          WHERE ${lt(incomingEvent.createdAt, cutoff)}
           ORDER BY "created_at"
           LIMIT ${BATCH_SIZE}
        )
@@ -54,9 +54,4 @@ export async function sweepIncomingEvents(): Promise<void> {
     { cutoff: cutoff.toISOString(), batches, total_deleted: totalDeleted },
     'sweep complete',
   );
-
-  // Reference to keep the import linted in case the local Drizzle helper
-  // tree-shakes differently across versions.
-  void incomingEvent;
-  void lt;
 }

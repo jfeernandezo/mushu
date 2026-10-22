@@ -4,6 +4,76 @@ Auditoria iniciada em 23/09/2026. Este documento distingue código local,
 configuração consultada pelo MCP meta-devtools e validação real em produção.
 Uma alteração local não significa que a instalação publicada já foi atualizada.
 
+## Retomada em 24/09/2026
+
+- Repositório local em `b95de0d`, sem alterações pendentes no início da sessão.
+  O usuário informa web e worker publicados nessa revisão; a revisão dos
+  containers ainda não foi reconferida nesta sessão.
+- Suite local executada novamente: 177 testes aprovados em 20 arquivos.
+- Checagem de tipos aprovada nos quatro pacotes, executada individualmente
+  via `corepack pnpm --filter <pacote> typecheck`; o comando raiz via Turbo
+  não encontrou o executável `pnpm` no PATH desta sessão.
+- Consultas HTTP via curl: `/`, `/login`, `/signup`, `/privacy`, `/terms` e
+  `/data-deletion` retornaram 200. `/dashboard`, `/settings/workspace` e início
+  OAuth de Instagram/Threads redirecionaram para login (307), sem autenticação.
+  O cliente Python recebeu 403; isso não foi reproduzido com curl e não constitui
+  evidência de indisponibilidade geral do aplicativo.
+- MCP Meta confirmou a assinatura Instagram ativa com `comments`, `messages`,
+  `messaging_postbacks`, `messaging_seen`, `messaging_referral` e
+  `message_reactions`. Entrega de eventos e assinatura da conta continuam
+  pendentes de validação real após reconexão.
+- Nenhum navegador conectado; tentativa de abrir navegador integrado retornou
+  indisponibilidade. Validação visual/autenticada ainda não executada.
+- Acesso à VPS/Easypanel precisa ser identificado nesta sessão. O único alias
+  SSH configurado é `hostinger-raya`, documentado como outra hospedagem.
+- Solicitada definição dos valores de cobrança. R$197/mês (Pro) e R$597/mês
+  (Agency) constam no guia, mas não foram tratados como decisão comercial final.
+- Próxima ação operacional: recuperar acesso à produção, reconferir serviços e
+  configuração sem expor segredos, reconectar Instagram e validar SMTP/Threads.
+  Nenhum deploy ou alteração de configuração em produção nesta retomada.
+
+### Continuação com acesso SSH recuperado
+
+- Acesso confirmado à VPS informada pelo usuário, com a chave existente
+  `v3nexus_kvm2` no diretório de credenciais indicado; nenhum segredo copiado
+  para este documento. Web/worker estão ativos desde a publicação da madrugada,
+  sem estado de reinício ou OOM na inspeção; Postgres e Redis também ativos.
+- Banco consultado novamente: 11 migrações; uma conta Instagram, expirada,
+  com `webhook_subscribed=false`. Não basta a assinatura ativa do app na Meta.
+- SMTP da web: Hostinger, porta 465/TLS, remetente corresponde ao usuário.
+  Nova tentativa de autenticação retornou 535, sem envio de mensagem.
+  Solicitado caminho local da credencial atualizada.
+- Worker não possui `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` nem `EMAIL_FROM`.
+  Sua implementação usa essas variáveis para avisos por e-mail; configurar
+  após validar a credencial correta, sem propagar a credencial recusada.
+- Threads continua sem ID/segredo/redirect configurados. Solicitado caminho
+  local das credenciais, caso já existam. Reconexão Instagram solicitada ao
+  usuário, pois o navegador permanece indisponível nesta sessão.
+- **Cobrança adiada pelo usuário para a tarde**: valores serão reformulados.
+  Não alterar preços, catálogo ou configuração Stripe nesta etapa.
+- Logs revelaram falha da limpeza diária de `incoming_event`: parâmetro `Date`
+  interpolado em SQL bruto sem o encoder da coluna. Correção local usa
+  `lt(incomingEvent.createdAt, cutoff)` para serializar o timestamp pelo Drizzle.
+  Incluídos quatro testes: serialização do corte de 90 dias, continuação por
+  lote, limite de 50 lotes e propagação de erros. Correção ainda não publicada;
+  nenhuma limpeza manual de dados executada em produção.
+
+### Recuperação de acesso e conferência do `.env`
+
+- Usuário informou que desativou o Instagram anterior e pretende conectar um
+  novo perfil. Não excluir nem reassociar a conta existente automaticamente.
+- `.env` local salvo e ignorado pelo Git. Os seis campos SMTP foram comparados
+  com o serviço web na VPS e coincidem; teste local Nodemailer também retornou
+  `EAUTH / 535`. Ter as variáveis preenchidas não comprova autenticação válida.
+- Identificada uma única conta de login, com senha cadastrada e e-mail ainda
+  não verificado. Recuperação solicitada pelo endpoint normal do app: HTTP 200,
+  token criado, mas envio registrado como falha. Link temporário salvo em
+  arquivo local de segredos com permissão 0600, fora do repositório.
+- A senha ainda não foi alterada pelo agente. Aguardando o usuário escolher a
+  nova senha pelo link, confirmar acesso à caixa cadastrada e atualizar a
+  credencial SMTP. Como `MUSHU_MODE=hosted`, a verificação do e-mail continua
+  obrigatória; não foi alterado `email_verified` nem desabilitada a exigência.
+
 ## 1. Diagnóstico e primeira correção
 
 App Meta: **mushu**, ID `1554434252782653`.
